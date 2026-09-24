@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # macos-15 can only run Xcode 26.x (Xcode 27 needs macOS 26.6), so latest-stable can't jump a major version.
       - name: Select the latest stable Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -98,6 +99,23 @@ jobs:
           cp -R build/Hanaseru.xcarchive/Products/Applications/Hanaseru.app Payload/
           zip -qry Hanaseru-unsigned.ipa Payload
 
+      - name: Check the IPA contents
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          APP=Payload/Hanaseru.app
+          test -x "$APP/Hanaseru" || { echo "::error::IPA has no Hanaseru executable"; exit 1; }
+          find "$APP" -name phrases.json | grep -q . || { echo "::error::IPA is missing the Japanese content bundle"; exit 1; }
+          INFO=$(plutil -p "$APP/Info.plist")
+          for key in CFBundleIdentifier UIBackgroundModes NSMicrophoneUsageDescription NSSpeechRecognitionUsageDescription; do
+            echo "$INFO" | grep -q "$key" || { echo "::error::Info.plist is missing $key"; exit 1; }
+          done
+          {
+            echo "### IPA"
+            echo "- Size: $(du -h Hanaseru-unsigned.ipa | cut -f1)"
+            echo "- $(echo "$INFO" | grep -E '"CFBundleIdentifier"|"CFBundleShortVersionString"|"MinimumOSVersion"' | tr -s ' ' | paste -sd ',' -)"
+            echo "- Content: $(find "$APP" -name '*.json' | wc -l | tr -d ' ') JSON files, background audio, microphone and speech permissions present"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -107,6 +125,7 @@ jobs:
             *.log
             UITests.xcresult
           if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload screenshots
         if: ${{ always() }}
@@ -115,6 +134,7 @@ jobs:
           name: screenshots
           path: screenshots
           if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload IPA
         if: ${{ !cancelled() }}
@@ -123,3 +143,4 @@ jobs:
           name: ipa
           path: Hanaseru-unsigned.ipa
           if-no-files-found: ignore
+          retention-days: 14
