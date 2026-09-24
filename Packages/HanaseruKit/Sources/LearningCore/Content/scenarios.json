@@ -1,0 +1,154 @@
+[
+  {
+    "id": "s.site.pier", "title": "Site visit: bridge pier", "titleJa": "現場確認：橋脚", "track": "work", "level": 3, "personaID": "p.sato",
+    "situationEn": "You're on site with Sato-san, a senior Japanese engineer, looking at a bridge pier.",
+    "roleReversal": false, "targetTerms": ["v.kyoukyaku", "v.mondai", "v.kensa", "v.kiroku"],
+    "beats": [
+      { "line": "おはようございます。今日はよろしくお願いします。", "kana": "おはようございます。きょうはよろしくおねがいします。", "english": "Good morning. Thanks for your help today.",
+        "hintEn": "Greet them back.", "exampleResponses": ["おはようございます。よろしくお願いします。"], "keyTerms": [["おはよう", "よろしく"]] },
+      { "line": "この橋脚について、何か問題がありますか？", "kana": "このきょうきゃくについて、なにかもんだいがありますか？", "english": "Is there any problem with this pier?",
+        "hintEn": "Say whether there's any problem with the pier.", "exampleResponses": ["いいえ、特に問題はありません。", "はい、少しひびがあります。"], "keyTerms": [["問題", "もんだい", "ありません", "あります"]] },
+      { "line": "そうですか。検査はもう終わりましたか？", "kana": "そうですか。けんさはもうおわりましたか？", "english": "I see. Has the inspection already been done?",
+        "hintEn": "Say whether the inspection is finished.", "exampleResponses": ["はい、昨日終わりました。", "いいえ、まだです。来週の予定です。"], "keyTerms": [["終わりました", "おわりました", "まだ", "予定"]] },
+      { "line": "わかりました。では、検査の記録を送ってください。", "kana": "わかりました。では、けんさのきろくをおくってください。", "english": "Understood. Please send me the inspection records, then.",
+        "hintEn": "Agree to send the records.", "exampleResponses": ["はい、今日送ります。", "承知しました。後で送っておきます。"], "keyTerms": [["送ります", "おくります", "承知", "わかりました", "はい"]] }
+    ],
+    "closingLine": "ありがとうございます。助かります。", "closingKana": "ありがとうございます。たすかります。", "closingEnglish": "Thank you, that really helps."
+  },
+  {
+    "id": "s.progress.meeting", "title": "Progress meeting", "titleJa": "進捗会議", "track": "work", "level": 3, "personaID": "p.suzuki",
+    "situationEn": "Weekly progress meeting with Suzuki-san, the Japanese project manager.",
+    "roleReversal": false, "targetTerms": ["v.shinchoku", "v.yotei", "v.kanryou", "v.okure"],
+    "beats": [
+      { "line": "この区間の進捗はどうですか？", "kana": "このくかんのしんちょくはどうですか？", "english": "How is progress on this section?",
+        "hintEn": "Say how progress is going.", "exampleResponses": ["順調です。", "少し遅れています。"], "keyTerms": [["順調", "じゅんちょう", "遅れて", "おくれて", "予定"]] },
+      { "line": "予定どおり進んでいますか？", "kana": "よていどおりすすんでいますか？", "english": "Is it progressing on schedule?",
+        "hintEn": "Say whether you're on schedule.", "exampleResponses": ["はい、予定どおりです。", "いいえ、一週間ぐらい遅れています。"], "keyTerms": [["予定", "よてい", "遅れて", "おくれて"]] },
+      { "line": "来月までに完了できそうですか？", "kana": "らいげつまでにかんりょうできそうですか？", "english": "Does it look like you can finish by next month?",
+        "hintEn": "Say whether you can finish by next month.", "exampleResponses": ["はい、できると思います。", "少し難しいかもしれません。"], "keyTerms": [["できる", "できます", "難しい", "むずかしい"]] },
+      { "line": "何か心配なことはありますか？", "kana": "なにかしんぱいなことはありますか？", "english": "Is there anything you're worried about?",
+        "hintEn": "Mention a concern, or say there's nothing in particular.", "exampleResponses": ["天気が少し心配です。", "特にありません。"], "keyTerms": [] }
+    ],
+    "closingLine": "わかりました。引き続きよろしくお願いします。", "closingKana": "わかりました。ひきつづきよろしくおねがいします。", "closingEnglish": "Understood. Please keep it up."
+  },
+  {
+    "id": "s.delay", "title": "Discussing a delay", "titleJa": "工事の遅れ", "track": "work", "level": 4, "personaID": "p.takahashi",
+    "situationEn": "Takahashi-san, a technical consultant, wants to know whether your works will finish on time.",
+    "roleReversal": false, "targetTerms": ["v.kouji", "v.okure", "v.taiou", "v.taisaku"],
+    "beats": [
+      { "line": "この工事は予定どおり完了できますか？", "kana": "このこうじはよていどおりかんりょうできますか？", "english": "Can this work be completed on schedule?",
+        "hintEn": "Say it's a little behind schedule.", "exampleResponses": ["実は、少し遅れています。", "はい、予定どおり完了できます。"], "keyTerms": [] },
+      { "line": "何か問題がありますか？", "kana": "なにかもんだいがありますか？", "english": "Is there some problem?",
+        "hintEn": "Give a reason, for example materials arriving late.", "exampleResponses": ["資材の到着が遅れています。", "雨で作業ができませんでした。"], "keyTerms": [] },
+      { "line": "どのくらい遅れそうですか？", "kana": "どのくらいおくれそうですか？", "english": "About how long is the delay likely to be?",
+        "hintEn": "Say about one week.", "exampleResponses": ["一週間ぐらいです。", "二、三日だと思います。"], "keyTerms": [] },
+      { "line": "どのように対応しますか？", "kana": "どのようにたいおうしますか？", "english": "How will you deal with it?",
+        "hintEn": "Explain a countermeasure, like adding workers or working weekends.", "exampleResponses": ["作業員を増やして対応します。", "週末も作業します。"], "keyTerms": [] }
+    ],
+    "closingLine": "わかりました。対策をまとめて、報告をお願いします。", "closingKana": "わかりました。たいさくをまとめて、ほうこくをおねがいします。", "closingEnglish": "Understood. Please put the countermeasures together and report back."
+  },
+  {
+    "id": "s.safety", "title": "Safety check", "titleJa": "安全確認", "track": "work", "level": 3, "personaID": "p.ito",
+    "situationEn": "Morning on site. Ito-san, the site engineer, is checking safety before work starts.",
+    "roleReversal": false, "targetTerms": ["v.anzen", "v.sagyou", "v.anzenkakunin", "v.tachiirikinshi"],
+    "beats": [
+      { "line": "この作業の安全について、何か問題はありませんか？", "kana": "このさぎょうのあんぜんについて、なにかもんだいはありませんか？", "english": "Are there any safety problems with this work?",
+        "hintEn": "Say there's no problem, or mention one.", "exampleResponses": ["特に問題はありません。", "足場が少し心配です。"], "keyTerms": [] },
+      { "line": "今朝の安全確認はしましたか？", "kana": "けさのあんぜんかくにんはしましたか？", "english": "Did you do this morning's safety check?",
+        "hintEn": "Say yes, you did it.", "exampleResponses": ["はい、しました。", "はい、八時に確認しました。"], "keyTerms": [["しました", "確認"]] },
+      { "line": "立入禁止の場所はどこですか？", "kana": "たちいりきんしのばしょはどこですか？", "english": "Where is the no-entry area?",
+        "hintEn": "Say it's near the crane over there.", "exampleResponses": ["あそこのクレーンの近くです。"], "keyTerms": [] }
+    ],
+    "closingLine": "ありがとうございます。今日も安全第一でお願いします。", "closingKana": "ありがとうございます。きょうもあんぜんだいいちでおねがいします。", "closingEnglish": "Thanks. Safety first today as always."
+  },
+  {
+    "id": "s.drawing", "title": "Drawing discussion", "titleJa": "図面の説明", "track": "work", "level": 5, "personaID": "p.kobayashi",
+    "situationEn": "Kobayashi-san, a railway systems specialist, asks you to walk through a viaduct drawing.",
+    "roleReversal": false, "targetTerms": ["v.zumen", "v.setsumei", "v.sekkei", "v.henkou", "v.shounin"],
+    "beats": [
+      { "line": "この図面について説明していただけますか？", "kana": "このずめんについてせつめいしていただけますか？", "english": "Could you explain this drawing?",
+        "hintEn": "Say it's the drawing of the viaduct.", "exampleResponses": ["はい。これは高架橋の図面です。"], "keyTerms": [["図面", "ずめん", "高架橋"]] },
+      { "line": "この部分は何ですか？", "kana": "このぶぶんはなんですか？", "english": "What is this part?",
+        "hintEn": "Say it's the foundation of the pier.", "exampleResponses": ["ここは橋脚の基礎です。"], "keyTerms": [] },
+      { "line": "設計の変更はありましたか？", "kana": "せっけいのへんこうはありましたか？", "english": "Were there any design changes?",
+        "hintEn": "Say there was a small change last month.", "exampleResponses": ["はい、先月少し変更がありました。", "いいえ、ありません。"], "keyTerms": [] },
+      { "line": "その変更は承認されていますか？", "kana": "そのへんこうはしょうにんされていますか？", "english": "Has that change been approved?",
+        "hintEn": "Say it's approved, or that you're still checking.", "exampleResponses": ["はい、承認されています。", "まだ確認中です。"], "keyTerms": [] }
+    ],
+    "closingLine": "なるほど。よくわかりました。", "closingKana": "なるほど。よくわかりました。", "closingEnglish": "I see. That's very clear."
+  },
+  {
+    "id": "s.inspection", "title": "Inspection schedule", "titleJa": "検査の予定", "track": "work", "level": 4, "personaID": "p.sato",
+    "situationEn": "Sato-san asks about the upcoming inspection.",
+    "roleReversal": false, "targetTerms": ["v.kensa", "v.kanryou", "v.fuguai", "v.houkoku"],
+    "beats": [
+      { "line": "検査はいつ完了する予定ですか？", "kana": "けんさはいつかんりょうするよていですか？", "english": "When is the inspection scheduled to be completed?",
+        "hintEn": "Say it's scheduled for Friday.", "exampleResponses": ["金曜日に完了する予定です。"], "keyTerms": [] },
+      { "line": "結果はいつわかりますか？", "kana": "けっかはいつわかりますか？", "english": "When will we know the results?",
+        "hintEn": "Say you think next week.", "exampleResponses": ["来週わかると思います。"], "keyTerms": [] },
+      { "line": "不具合が見つかったら、すぐに連絡してください。", "kana": "ふぐあいがみつかったら、すぐにれんらくしてください。", "english": "If you find any defects, contact me right away.",
+        "hintEn": "Agree to contact them right away.", "exampleResponses": ["はい、すぐに連絡します。", "承知しました。"], "keyTerms": [] }
+    ],
+    "closingLine": "よろしくお願いします。", "closingKana": "よろしくおねがいします。", "closingEnglish": "Thanks, I'm counting on you."
+  },
+  {
+    "id": "s.problem", "title": "Problem resolution", "titleJa": "問題への対応", "track": "work", "level": 6, "personaID": "p.takahashi",
+    "situationEn": "A crack was found during inspection. Takahashi-san wants your plan.",
+    "roleReversal": false, "targetTerms": ["v.mondai", "v.taiou", "v.koutei", "v.shuusei", "v.houkoku"],
+    "beats": [
+      { "line": "この問題について、どのように対応しますか？", "kana": "このもんだいについて、どのようにたいおうしますか？", "english": "How will you deal with this problem?",
+        "hintEn": "Explain that you'll investigate the cause and repair it.", "exampleResponses": ["まず原因を調べて、それから修正します。"], "keyTerms": [] },
+      { "line": "その対策で、工程に影響はありませんか？", "kana": "そのたいさくで、こうていにえいきょうはありませんか？", "english": "Won't that countermeasure affect the schedule?",
+        "hintEn": "Say there may be a small impact of a few days.", "exampleResponses": ["二、三日ぐらい影響があるかもしれません。"], "keyTerms": [] },
+      { "line": "いつまでに修正できますか？", "kana": "いつまでにしゅうせいできますか？", "english": "By when can it be fixed?",
+        "hintEn": "Give a date, e.g. by the end of next week.", "exampleResponses": ["来週末までに修正できます。"], "keyTerms": [] },
+      { "line": "では、修正したら報告してください。", "kana": "では、しゅうせいしたらほうこくしてください。", "english": "Then please report once it's fixed.",
+        "hintEn": "Agree to report.", "exampleResponses": ["承知しました。修正したらすぐ報告します。"], "keyTerms": [] }
+    ],
+    "closingLine": "よろしくお願いします。", "closingKana": "よろしくおねがいします。", "closingEnglish": "Thank you."
+  },
+  {
+    "id": "s.first.meeting", "title": "First meeting (you start)", "titleJa": "はじめての打ち合わせ", "track": "work", "level": 2, "personaID": "p.suzuki",
+    "situationEn": "You're meeting Suzuki-san, a Japanese project manager, for the first time. You start the conversation.",
+    "roleReversal": true, "targetTerms": ["v.kousokutetsudou"],
+    "beats": [
+      { "line": "", "kana": "", "english": "",
+        "hintEn": "Greet them, say your name, and that you work on the high-speed rail project.", "exampleResponses": ["はじめまして。{name}です。高速鉄道のプロジェクトで働いています。よろしくお願いします。"], "keyTerms": [["はじめまして", "よろしく"]] },
+      { "line": "はじめまして、鈴木です。こちらこそよろしくお願いします。日本語がお上手ですね。", "kana": "はじめまして、すずきです。こちらこそよろしくおねがいします。にほんごがおじょうずですね。", "english": "Nice to meet you, I'm Suzuki. Likewise. Your Japanese is very good.",
+        "hintEn": "Respond modestly, and mention you lived in Japan before.", "exampleResponses": ["いえいえ、まだまだです。前に日本に住んでいました。"], "keyTerms": [] },
+      { "line": "そうなんですか。日本のどこに住んでいましたか？", "kana": "そうなんですか。にほんのどこにすんでいましたか？", "english": "Really? Where in Japan did you live?",
+        "hintEn": "Say where you lived.", "exampleResponses": ["東京に住んでいました。"], "keyTerms": [["住んでいました", "すんでいました", "いました"]] },
+      { "line": "いいですね。日本の生活はどうでしたか？", "kana": "いいですね。にほんのせいかつはどうでしたか？", "english": "Nice. How was life in Japan?",
+        "hintEn": "Say it was very enjoyable.", "exampleResponses": ["とても楽しかったです。"], "keyTerms": [["かった", "でした"]] }
+    ],
+    "closingLine": "これからよろしくお願いします。", "closingKana": "これからよろしくおねがいします。", "closingEnglish": "I look forward to working with you."
+  },
+  {
+    "id": "s.weekend.chat", "title": "Monday small talk", "titleJa": "週末の話", "track": "everyday", "level": 2, "personaID": "p.nakamura",
+    "situationEn": "Monday morning. Your colleague Nakamura-san asks about your weekend.",
+    "roleReversal": false, "targetTerms": [],
+    "beats": [
+      { "line": "週末は何をしましたか？", "kana": "しゅうまつはなにをしましたか？", "english": "What did you do at the weekend?",
+        "hintEn": "Say what you did, in the past tense.", "exampleResponses": ["友達と出かけました。", "家でゆっくりしました。"], "keyTerms": [["ました"]] },
+      { "line": "へえ、そうなんですか。楽しかったですか？", "kana": "へえ、そうなんですか。たのしかったですか？", "english": "Oh really? Was it fun?",
+        "hintEn": "Say yes, it was fun.", "exampleResponses": ["はい、楽しかったです。", "はい、とてもよかったです。"], "keyTerms": [["かった"]] },
+      { "line": "今週末は何か予定がありますか？", "kana": "こんしゅうまつはなにかよていがありますか？", "english": "Do you have any plans this weekend?",
+        "hintEn": "Say your plan, or that you haven't decided.", "exampleResponses": ["まだ決めていません。", "映画を見に行く予定です。"], "keyTerms": [] }
+    ],
+    "closingLine": "いいですね。じゃあ、今週も頑張りましょう。", "closingKana": "いいですね。じゃあ、こんしゅうもがんばりましょう。", "closingEnglish": "Sounds good. Well, let's do our best this week."
+  },
+  {
+    "id": "s.after.work", "title": "Dinner after work", "titleJa": "仕事のあとで", "track": "everyday", "level": 2, "personaID": "p.nakamura",
+    "situationEn": "End of the day. Nakamura-san suggests getting dinner.",
+    "roleReversal": false, "targetTerms": [],
+    "beats": [
+      { "line": "お疲れさまです。この後、ご飯でもどうですか？", "kana": "おつかれさまです。このあと、ごはんでもどうですか？", "english": "Good work today. How about getting dinner after this?",
+        "hintEn": "Accept the invitation.", "exampleResponses": ["いいですね。行きましょう。"], "keyTerms": [] },
+      { "line": "何が食べたいですか？", "kana": "なにがたべたいですか？", "english": "What do you feel like eating?",
+        "hintEn": "Say what you'd like to eat.", "exampleResponses": ["ラーメンが食べたいです。", "何でもいいですよ。"], "keyTerms": [] },
+      { "line": "インドでは、どんな料理をよく食べますか？", "kana": "インドでは、どんなりょうりをよくたべますか？", "english": "What kind of food do you usually eat in India?",
+        "hintEn": "Name some dishes you often eat.", "exampleResponses": ["カレーやビリヤニをよく食べます。"], "keyTerms": [] }
+    ],
+    "closingLine": "おいしそうですね。じゃあ、行きましょう。", "closingKana": "おいしそうですね。じゃあ、いきましょう。", "closingEnglish": "Sounds delicious. Well, let's go."
+  }
+]

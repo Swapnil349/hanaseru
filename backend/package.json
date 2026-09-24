@@ -1,0 +1,23 @@
+{
+  "name": "hanaseru-coach-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Keeps the Anthropic API key off the phone and turns Hanaseru conversation turns into Claude requests.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "start:mock": "COACH_MOCK=1 node src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^7.0.2"
+  }
+}

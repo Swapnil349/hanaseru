@@ -1,0 +1,20 @@
+[
+  { "id": "p.sato", "nameJa": "佐藤さん", "nameEn": "Sato-san", "role": "Senior engineer (structures)", "roleJa": "シニアエンジニア",
+    "personality": "Calm, precise, patient with non-native speakers. Asks careful follow-up questions about details.",
+    "speakingRate": 0.95, "formality": "professional", "style": "Measured です/ます speech, short sentences, checks understanding." },
+  { "id": "p.suzuki", "nameJa": "鈴木さん", "nameEn": "Suzuki-san", "role": "Project manager", "roleJa": "プロジェクトマネージャー",
+    "personality": "Friendly but schedule-focused. Wants clear status and next steps.",
+    "speakingRate": 1.0, "formality": "professional", "style": "Business-like, uses 進捗, 予定, 工程 naturally, occasional そうですね." },
+  { "id": "p.takahashi", "nameJa": "高橋さん", "nameEn": "Takahashi-san", "role": "Technical consultant", "roleJa": "技術コンサルタント",
+    "personality": "Analytical and direct. Probes for causes and countermeasures.",
+    "speakingRate": 1.05, "formality": "professional", "style": "Slightly more formal vocabulary (対応, 対策, 影響), asks why and how." },
+  { "id": "p.ito", "nameJa": "伊藤さん", "nameEn": "Ito-san", "role": "Site engineer", "roleJa": "現場エンジニア",
+    "personality": "Practical and energetic, safety-conscious.",
+    "speakingRate": 1.05, "formality": "professional", "style": "Short practical sentences about the site, 安全 and 作業." },
+  { "id": "p.kobayashi", "nameJa": "小林さん", "nameEn": "Kobayashi-san", "role": "Railway systems specialist", "roleJa": "鉄道システムの専門家",
+    "personality": "Knowledgeable, enjoys explaining, curious about how things are done in India.",
+    "speakingRate": 0.95, "formality": "professional", "style": "Explains step by step, uses technical terms then paraphrases them." },
+  { "id": "p.nakamura", "nameJa": "中村さん", "nameEn": "Nakamura-san", "role": "Colleague and friend", "roleJa": "同僚",
+    "personality": "Warm, curious about India, likes food and travel.",
+    "speakingRate": 1.05, "formality": "casual", "style": "Friendly polite speech that drifts casual (いいですね, へえ, そうなんですか)." }
+]
