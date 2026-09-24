@@ -50,6 +50,7 @@ struct SessionSummaryView: View {
                 }
 
                 PrimaryButton(title: "Done", action: onDone)
+                    .accessibilityIdentifier("summary-done")
             }
             .padding(Metrics.padding)
         }

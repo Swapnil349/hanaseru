@@ -27,6 +27,7 @@ struct HomeView: View {
                     PrimaryButton(title: "Start \(minutes)-minute session", systemImage: "headphones") {
                         activeSession = SessionRequest(minutes: minutes, focus: focus)
                     }
+                    .accessibilityIdentifier("start-session")
                     Text("Put your earphones in and your phone away — everything is spoken.")
                         .font(.footnote)
                         .foregroundStyle(Palette.inkSecondary)
@@ -76,6 +77,7 @@ struct HomeView: View {
             HStack(spacing: 8) {
                 ForEach(timeOptions, id: \.self) { option in
                     ChoiceChip(title: "\(option)", subtitle: "min", isSelected: minutes == option) { minutes = option }
+                        .accessibilityIdentifier("time-\(option)")
                 }
             }
         }

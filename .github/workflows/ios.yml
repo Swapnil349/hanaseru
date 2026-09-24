@@ -1,0 +1,125 @@
+# Builds and checks the app on a GitHub-hosted Mac, so no local Mac is needed.
+#
+# Artifacts on every run:
+#   logs          core tests, app build, UI tests, archive
+#   screenshots   demo sessions played in the iOS Simulator (scripted voice, no microphone)
+#   ipa           Hanaseru-unsigned.ipa — sign and install it on your iPhone from Windows
+name: iOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select the latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Core package tests
+        id: core
+        working-directory: Packages/HanaseruKit
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee ../../core-tests.log
+
+      - name: Generate the Xcode project
+        if: ${{ !cancelled() }}
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Pick an iPhone simulator
+        id: sim
+        if: ${{ !cancelled() }}
+        run: |
+          UDID=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          runtimes = sorted((r for r in devices if "iOS" in r), reverse=True)
+          print(next(d["udid"] for r in runtimes for d in devices[r] if d["name"].startswith("iPhone")))
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep "$UDID"
+
+      - name: Build the app for the Simulator
+        id: build
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Hanaseru.xcodeproj -scheme Hanaseru \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build 2>&1 | tee app-build.log
+
+      - name: Play demo sessions in the Simulator
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project Hanaseru.xcodeproj -scheme Hanaseru \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build -resultBundlePath UITests.xcresult 2>&1 | tee ui-tests.log
+
+      - name: Export screenshots
+        if: ${{ always() }}
+        run: |
+          mkdir -p screenshots
+          if [ -d UITests.xcresult ]; then
+            xcrun xcresulttool export attachments --path UITests.xcresult --output-path screenshots || true
+          fi
+
+      - name: Build an unsigned IPA for iPhone
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Hanaseru.xcodeproj -scheme Hanaseru -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/Hanaseru.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 2>&1 | tee archive.log
+          mkdir -p Payload
+          cp -R build/Hanaseru.xcarchive/Products/Applications/Hanaseru.app Payload/
+          zip -qry Hanaseru-unsigned.ipa Payload
+
+      - name: Upload logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: |
+            *.log
+            UITests.xcresult
+          if-no-files-found: ignore
+
+      - name: Upload screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots
+          if-no-files-found: ignore
+
+      - name: Upload IPA
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipa
+          path: Hanaseru-unsigned.ipa
+          if-no-files-found: ignore

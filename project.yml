@@ -58,12 +58,33 @@ targets:
         # Set your team in Xcode (Signing & Capabilities) or here.
         DEVELOPMENT_TEAM: ""
 
+  # Plays demo-voice sessions in the Simulator and attaches screenshots (no microphone needed).
+  HanaseruUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: Hanaseru
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.swapnil.hanaseru.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Hanaseru
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+
 schemes:
   Hanaseru:
     build:
       targets:
         Hanaseru: all
+        HanaseruUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - HanaseruUITests
     archive:
       config: Release

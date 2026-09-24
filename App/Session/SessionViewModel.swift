@@ -38,6 +38,8 @@ final class SessionViewModel {
     private let app: AppEnvironment
     private var runner: SessionRunner?
     private var tornDown = false
+    /// Scripted voice for Simulator/CI runs (see `DemoVoice`).
+    private let demo = DemoVoice.isEnabled
 
     init(app: AppEnvironment, minutes: Int, focus: SessionFocus) {
         self.app = app
@@ -46,36 +48,43 @@ final class SessionViewModel {
     }
 
     var usesCoach: Bool { app.isCoachConfigured }
-    var processingDescription: String { app.voice.recognizer.processingDescription }
+    var processingDescription: String { demo ? "Demo voice" : app.voice.recognizer.processingDescription }
 
     // MARK: - Lifecycle
 
     func start() async {
         guard runner == nil, phase == .preparing else { return }
-        var permitted = VoicePermissions.granted
-        if !permitted { permitted = await VoicePermissions.request() }
-        guard permitted else {
-            phase = .failed("Hanaseru needs microphone and speech recognition access. You can allow them in Settings › Hanaseru.")
-            return
-        }
-        do {
-            try app.voice.beginSession()
-        } catch {
-            phase = .failed("Couldn't start audio: \(error.localizedDescription)")
-            return
-        }
+        if !demo { guard await startRealVoice() else { return } }
 
         let prepared = await SessionPreparer(library: app.library, repository: app.repository)
             .prepare(minutes: minutes, focus: focus)
-        let runner = SessionRunner(plan: prepared.plan, library: prepared.library, voice: app.voice.runnerVoice,
+        let voice = demo ? DemoVoice.makeVoice() : app.voice.runnerVoice
+        let runner = SessionRunner(plan: prepared.plan, library: prepared.library, voice: voice,
                                    ai: app.makeAIProvider(), repository: app.repository)
         runner.onEvent = { [weak self] event in self?.handle(event) }
         self.runner = runner
-        wireVoiceControls(to: runner)
+        if !demo { wireVoiceControls(to: runner) }
 
         startedAt = Date()
         phase = .running
         runner.start()
+    }
+
+    /// Permissions, audio session and microphone engine. Returns false (and sets `.failed`) if unavailable.
+    private func startRealVoice() async -> Bool {
+        var permitted = VoicePermissions.granted
+        if !permitted { permitted = await VoicePermissions.request() }
+        guard permitted else {
+            phase = .failed("Hanaseru needs microphone and speech recognition access. You can allow them in Settings › Hanaseru.")
+            return false
+        }
+        do {
+            try app.voice.beginSession()
+            return true
+        } catch {
+            phase = .failed("Couldn't start audio: \(error.localizedDescription)")
+            return false
+        }
     }
 
     func togglePause() {
@@ -101,6 +110,7 @@ final class SessionViewModel {
         guard !tornDown else { return }
         tornDown = true
         if let runner, !runner.isFinished { runner.stop() }
+        guard !demo else { return }
         app.voice.onMicLevel = nil
         app.voice.endSession()
     }
@@ -175,6 +185,7 @@ final class SessionViewModel {
     }
 
     private func updateNowPlaying() {
+        guard !demo else { return }
         let status: String = switch activity {
         case .listening: "Your turn"
         case .paused: "Paused"

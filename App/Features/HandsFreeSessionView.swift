@@ -127,6 +127,18 @@ struct HandsFreeSessionView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 200)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("status-\(statusName)")
+    }
+
+    private var statusName: String {
+        switch model.activity {
+        case .preparing: "preparing"
+        case .speaking: "speaking"
+        case .listening: "listening"
+        case .thinking: "thinking"
+        case .paused: "paused"
+        case .finished: "finished"
+        }
     }
 
     /// Always shows whether the mic is being transcribed, where, and that nothing is recorded (spec §60).
