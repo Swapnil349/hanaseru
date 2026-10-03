@@ -22,6 +22,7 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     greeting
+                    expiryBanner
                     timePicker
                     focusPicker
                     PrimaryButton(title: "Start \(minutes)-minute session", systemImage: "headphones") {
@@ -69,6 +70,28 @@ struct HomeView: View {
                 .foregroundStyle(Palette.ink)
         }
         .padding(.top, 12)
+    }
+
+    /// A free Apple ID signs the app for 7 days; warn two days ahead so practice isn't cut off.
+    @ViewBuilder
+    private var expiryBanner: some View {
+        if let days = InstallInfo.daysLeft(), days <= 2, let expiry = InstallInfo.expiryText {
+            Label {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(days == 0 ? "Reinstall today" : "Reinstall within \(days) day\(days == 1 ? "" : "s")")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Palette.ink)
+                    Text("This install stops opening on \(expiry). Reinstall with Sideloadly and the same Apple ID to keep your progress — and keep a backup from Settings, just in case.")
+                        .font(.footnote)
+                        .foregroundStyle(Palette.inkSecondary)
+                }
+            } icon: {
+                Image(systemName: "clock.badge.exclamationmark").foregroundStyle(Palette.caution)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.caution.opacity(0.08), in: RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous))
+        }
     }
 
     private var timePicker: some View {

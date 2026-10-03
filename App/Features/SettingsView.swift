@@ -1,6 +1,8 @@
 import ConversationCore
+import SessionCore
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var app
@@ -12,12 +14,19 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.englishVoice) private var englishVoice = "en-IN"
     @AppStorage(SettingsKey.coachServerURL) private var coachServerURL = ""
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = true
+    @AppStorage(SettingsKey.lastBackupAt) private var lastBackupAt = 0.0
 
     @State private var name = ""
     @State private var token = ""
     @State private var connectionStatus: String?
     @State private var confirmVoiceDelete = false
     @State private var confirmReset = false
+    @State private var backupDocument: BackupDocument?
+    @State private var backupFileName = ""
+    @State private var showBackupExporter = false
+    @State private var showBackupImporter = false
+    @State private var pendingRestore: LearnerBackup?
+    @State private var backupStatus: String?
 
     var body: some View {
         NavigationStack {
@@ -71,6 +80,34 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    if let expiry = InstallInfo.expiryText {
+                        LabeledContent("This install works until", value: expiry)
+                    }
+                    Button("Back up my progress…") { prepareBackup() }
+                        .fileExporter(isPresented: $showBackupExporter, document: backupDocument, contentType: .json,
+                                      defaultFilename: backupFileName) { result in
+                            switch result {
+                            case .success(let url):
+                                lastBackupAt = Date().timeIntervalSince1970
+                                backupStatus = "Saved “\(url.lastPathComponent)”."
+                            case .failure(let error):
+                                backupStatus = "Not saved: \(error.localizedDescription)"
+                            }
+                        }
+                    Button("Restore from a backup…") { showBackupImporter = true }
+                        .fileImporter(isPresented: $showBackupImporter, allowedContentTypes: [.json]) { result in
+                            readBackup(result)
+                        }
+                    if let backupStatus {
+                        Text(backupStatus).font(.footnote).foregroundStyle(Palette.inkSecondary)
+                    }
+                } header: {
+                    Text("Backup")
+                } footer: {
+                    Text(backupFooter)
+                }
+
+                Section {
                     VStack(alignment: .leading, spacing: 8) {
                         privacyRow("mic", "The microphone is only transcribed during your turn. The indicator on screen shows when.")
                         privacyRow("iphone", app.voice.recognizer.processingDescription + ".")
@@ -99,7 +136,57 @@ struct SettingsView: View {
                     onboardingDone = false
                 }
             }
+            .confirmationDialog("Replace your progress on this iPhone with this backup?",
+                                isPresented: Binding(get: { pendingRestore != nil }, set: { if !$0 { pendingRestore = nil } }),
+                                titleVisibility: .visible, presenting: pendingRestore) { backup in
+                Button("Restore", role: .destructive) { restore(backup) }
+            } message: { backup in
+                Text(backup.overview)
+            }
         }
+    }
+
+    // MARK: - Backup
+
+    private var backupFooter: String {
+        let last = lastBackupAt > 0
+            ? "Last backup: " + Date(timeIntervalSince1970: lastBackupAt).formatted(date: .abbreviated, time: .shortened) + ". "
+            : "No backup yet. "
+        return last + "Save the file to iCloud Drive or Files. Reinstalling with the same Apple ID keeps your progress; "
+            + "with a different Apple ID the app starts empty, and this file brings everything back."
+    }
+
+    private func prepareBackup() {
+        do {
+            let backup = app.repository.makeBackup()
+            backupDocument = BackupDocument(data: try backup.encoded())
+            backupFileName = LearnerBackup.fileName(for: backup.exportedAt)
+            showBackupExporter = true
+        } catch {
+            backupStatus = "Couldn't make the backup: \(error.localizedDescription)"
+        }
+    }
+
+    private func readBackup(_ result: Result<URL, Error>) {
+        switch result {
+        case .success(let url):
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            do {
+                pendingRestore = try LearnerBackup.decode(Data(contentsOf: url))
+            } catch {
+                backupStatus = error.localizedDescription
+            }
+        case .failure(let error):
+            backupStatus = error.localizedDescription
+        }
+    }
+
+    private func restore(_ backup: LearnerBackup) {
+        app.repository.restore(backup)
+        name = backup.profile.name
+        pendingRestore = nil
+        backupStatus = "Restored: \(backup.overview)."
     }
 
     private func privacyRow(_ symbol: String, _ text: String) -> some View {

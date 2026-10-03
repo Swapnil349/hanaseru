@@ -6,7 +6,7 @@ import SwiftData
 /// `LearnerRepository` backed by SwiftData (spec §56, §58: local-first).
 @MainActor
 final class SwiftDataLearnerRepository: LearnerRepository {
-    private let context: ModelContext
+    let context: ModelContext
     private let encoder = JSONEncoder()
 
     init(context: ModelContext) {
@@ -153,7 +153,7 @@ final class SwiftDataLearnerRepository: LearnerRepository {
         persist()
     }
 
-    private func persist() {
+    func persist() {
         do {
             try context.save()
         } catch {

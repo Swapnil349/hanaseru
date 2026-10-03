@@ -13,6 +13,8 @@ enum SettingsKey {
     static let lastFocus = "lastFocus"
     /// The hands-free help words (もう一度, ゆっくり, ヒント, 答え) have been taught.
     static let helpOnboardingDone = "helpOnboardingDone"
+    /// When the learner last saved a backup file (seconds since 1970; 0 = never).
+    static let lastBackupAt = "lastBackupAt"
 }
 
 /// How much kanji to show (spec §41). Default: minimal.
