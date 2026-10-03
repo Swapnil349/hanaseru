@@ -20,9 +20,14 @@ final class CueFeedbackController: CueFeedbackProvider {
             engine.playChime(.yourTurn)
             impact.impactOccurred(intensity: 0.8)
         case .correct:
-            notification.notificationOccurred(.success)
-        case .tryAgain:
-            impact.impactOccurred(intensity: 0.4)
+            engine.playChime(.tick)
+            impact.impactOccurred(intensity: 0.3)
+        case .nudge:
+            engine.playChime(.nudge)
+        case .reveal:
+            // Neutral, never a failure sound.
+            engine.playChime(.reveal)
+            impact.impactOccurred(intensity: 0.3)
         case .sessionComplete:
             engine.playChime(.complete)
             notification.notificationOccurred(.success)
@@ -37,7 +42,10 @@ final class RemoteCommandBridge {
     var onPause: (() -> Void)?
     var onResume: (() -> Void)?
     var onToggle: (() -> Void)?
+    /// "Next track": during the learner's turn, give the answer and move on; otherwise skip.
     var onSkip: (() -> Void)?
+    /// "Previous track": hear it again (もう一度).
+    var onPrevious: (() -> Void)?
 
     private var registrations: [(MPRemoteCommand, Any)] = []
 
@@ -48,7 +56,7 @@ final class RemoteCommandBridge {
         register(center.pauseCommand) { [weak self] in self?.onPause?() }
         register(center.playCommand) { [weak self] in self?.onResume?() }
         register(center.nextTrackCommand) { [weak self] in self?.onSkip?() }
-        center.previousTrackCommand.isEnabled = false
+        register(center.previousTrackCommand) { [weak self] in self?.onPrevious?() }
         UIApplication.shared.beginReceivingRemoteControlEvents()
     }
 

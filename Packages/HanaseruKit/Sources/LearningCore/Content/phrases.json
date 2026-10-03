@@ -1,343 +1,2553 @@
 [
   {
-    "id": "w.progress.how", "track": "work", "category": "progress", "level": 3, "kind": "question", "politeness": "professional",
-    "japanese": "この区間の進捗はどうですか？", "kana": "このくかんのしんちょくはどうですか？", "romaji": "Kono kukan no shinchoku wa dō desu ka?",
+    "id": "w.progress.how",
+    "track": "work",
+    "category": "progress",
+    "level": 3,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "この区間の進捗はどうですか？",
+    "kana": "このくかんのしんちょくはどうですか？",
+    "romaji": "Kono kukan no shinchoku wa dō desu ka?",
     "english": "How is progress on this section?",
+    "chunks": [
+      {
+        "ja": "この区間の",
+        "kana": "このくかんの"
+      },
+      {
+        "ja": "進捗は",
+        "kana": "しんちょくは"
+      },
+      {
+        "ja": "どうですか？",
+        "kana": "どうですか？"
+      }
+    ],
+    "situationEn": "You visit Ito-san, the site engineer in charge of this section.",
+    "cueEn": "Ask: how is progress on this section?",
+    "intentEn": "Ask him how this section is coming along.",
+    "noteEn": "「進捗」 means progress — you'll hear it in every meeting.",
     "usageNote": "The standard way a Japanese engineer opens a progress check. いかがですか is one notch more polite, good with clients.",
-    "terms": ["v.kukan", "v.shinchoku"], "grammar": [],
+    "terms": [
+      "v.kukan",
+      "v.shinchoku"
+    ],
+    "grammar": [],
     "promptEn": "Ask a colleague: how is progress on this section?",
-    "acceptableResponses": ["この区間の進捗はどうですか", "この区間の進捗はいかがですか", "この区間の進み具合はどうですか", "この区間はどうですか進捗は"],
-    "keyTerms": [["進捗", "しんちょく", "進み具合", "すすみぐあい"], ["どう", "いかが"]],
-    "listening": { "questionJa": "何について聞いていますか？", "questionEn": "What are they asking about?", "answerTerms": [["進捗", "しんちょく", "進み具合"]], "modelAnswer": "進捗についてです。" }
+    "acceptableResponses": [
+      "この区間の進捗はどうですか",
+      "この区間の進捗はいかがですか",
+      "この区間の進み具合はどうですか",
+      "この区間はどうですか進捗は"
+    ],
+    "keyTerms": [
+      [
+        "進捗",
+        "しんちょく",
+        "進み具合",
+        "すすみぐあい"
+      ],
+      [
+        "どう",
+        "いかが"
+      ]
+    ],
+    "listening": {
+      "topicEn": "A colleague asks you something about this section.",
+      "questionJa": "何について聞いていますか？",
+      "questionEn": "What are they asking about?",
+      "choiceQuestionJa": "進捗についてですか、安全についてですか？",
+      "choiceQuestionKana": "しんちょくについてですか、あんぜんについてですか？",
+      "choiceQuestionEn": "About progress, or about safety?",
+      "answerTerms": [
+        [
+          "進捗",
+          "しんちょく",
+          "進み具合"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "安全",
+          "あんぜん"
+        ]
+      ],
+      "modelAnswer": "進捗についてです。",
+      "modelAnswerKana": "しんちょくについてです。",
+      "modelAnswerEn": "About progress."
+    }
   },
   {
-    "id": "w.progress.ontrack", "track": "work", "category": "progress", "level": 2, "kind": "sentence", "politeness": "professional",
-    "japanese": "順調です。予定どおり進んでいます。", "kana": "じゅんちょうです。よていどおりすすんでいます。", "romaji": "Junchō desu. Yotei dōri susunde imasu.",
+    "id": "w.progress.ontrack",
+    "track": "work",
+    "category": "progress",
+    "level": 2,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "順調です。予定どおり進んでいます。",
+    "kana": "じゅんちょうです。よていどおりすすんでいます。",
+    "romaji": "Junchō desu. Yotei dōri susunde imasu.",
     "english": "It's going smoothly. We're on schedule.",
+    "chunks": [
+      {
+        "ja": "順調です。",
+        "kana": "じゅんちょうです。"
+      },
+      {
+        "ja": "予定どおり",
+        "kana": "よていどおり"
+      },
+      {
+        "ja": "進んでいます。",
+        "kana": "すすんでいます。"
+      }
+    ],
+    "situationEn": "In the weekly meeting, Suzuki-san asks how your section is going.",
+    "cueEn": "Say: it's going smoothly — we're on schedule.",
+    "intentEn": "Tell her how progress is going.",
+    "noteEn": "「順調です」 on its own is already a complete answer.",
+    "partner": {
+      "japanese": "この区間の進捗はどうですか？",
+      "kana": "このくかんのしんちょくはどうですか？",
+      "english": "How is progress on this section?",
+      "personaID": "p.suzuki"
+    },
     "usageNote": "順調です alone is a complete, natural answer to 進捗はどうですか.",
-    "terms": ["v.yotei"], "grammar": ["g.te-imasu"],
+    "terms": [
+      "v.yotei"
+    ],
+    "grammar": [
+      "g.te-imasu"
+    ],
     "promptEn": "Say: it's going smoothly — we're on schedule.",
-    "acceptableResponses": ["順調です", "順調です予定どおり進んでいます", "予定どおり進んでいます", "予定通り進んでいます", "順調に進んでいます"],
-    "keyTerms": [["順調", "じゅんちょう", "予定どおり", "予定通り", "よていどおり"]],
-    "listening": { "questionJa": "工事は予定どおりですか？", "questionEn": "Is the work on schedule?", "answerTerms": [["はい", "予定どおり", "予定通り", "順調"]], "modelAnswer": "はい、予定どおりです。" }
+    "acceptableResponses": [
+      "順調です",
+      "順調です予定どおり進んでいます",
+      "予定どおり進んでいます",
+      "予定通り進んでいます",
+      "順調に進んでいます"
+    ],
+    "keyTerms": [
+      [
+        "順調",
+        "じゅんちょう",
+        "予定どおり",
+        "予定通り",
+        "よていどおり"
+      ]
+    ],
+    "listening": {
+      "topicEn": "Suzuki-san asks whether the work is on schedule.",
+      "questionJa": "工事は予定どおりですか？",
+      "questionEn": "Is the work on schedule?",
+      "choiceQuestionJa": "予定どおりですか、遅れていますか？",
+      "choiceQuestionKana": "よていどおりですか、おくれていますか？",
+      "choiceQuestionEn": "On schedule, or behind?",
+      "answerTerms": [
+        [
+          "はい",
+          "予定どおり",
+          "予定通り",
+          "順調"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "遅れて",
+          "おくれて"
+        ]
+      ],
+      "modelAnswer": "はい、予定どおりです。",
+      "modelAnswerKana": "はい、よていどおりです。",
+      "modelAnswerEn": "Yes, it's on schedule."
+    }
   },
   {
-    "id": "w.delay.behind", "track": "work", "category": "progress", "level": 5, "kind": "sentence", "politeness": "professional",
-    "japanese": "少し遅れていますが、来週までに取り戻せる見込みです。", "kana": "すこしおくれていますが、らいしゅうまでにとりもどせるみこみです。", "romaji": "Sukoshi okurete imasu ga, raishū made ni torimodoseru mikomi desu.",
+    "id": "w.delay.behind",
+    "track": "work",
+    "category": "progress",
+    "level": 5,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "少し遅れていますが、来週までに取り戻せる見込みです。",
+    "kana": "すこしおくれていますが、らいしゅうまでにとりもどせるみこみです。",
+    "romaji": "Sukoshi okurete imasu ga, raishū made ni torimodoseru mikomi desu.",
     "english": "We're a little behind, but we expect to catch up by next week.",
     "literal": "It is a little late, but the outlook is that we can take it back by next week.",
+    "chunks": [
+      {
+        "ja": "少し",
+        "kana": "すこし"
+      },
+      {
+        "ja": "遅れていますが、",
+        "kana": "おくれていますが、"
+      },
+      {
+        "ja": "来週までに",
+        "kana": "らいしゅうまでに"
+      },
+      {
+        "ja": "取り戻せる",
+        "kana": "とりもどせる"
+      },
+      {
+        "ja": "見込みです。",
+        "kana": "みこみです。"
+      }
+    ],
+    "situationEn": "In the weekly meeting, Suzuki-san asks about the schedule, which has slipped a little.",
+    "cueEn": "Say: we're a little behind, but we expect to catch up by next week.",
+    "intentEn": "Tell her about the delay and when you'll recover.",
+    "noteEn": "「見込み」 means a realistic expectation, not a promise.",
+    "partner": {
+      "japanese": "工程は予定どおりですか？",
+      "kana": "こうていはよていどおりですか？",
+      "english": "Is the schedule on track?",
+      "personaID": "p.suzuki"
+    },
     "usageNote": "Report the delay first, then the recovery plan — the order Japanese managers expect. 見込み = realistic expectation.",
-    "terms": ["v.okure"], "grammar": ["g.te-imasu", "g.made-ni"],
+    "terms": [
+      "v.okure"
+    ],
+    "grammar": [
+      "g.te-imasu",
+      "g.made-ni"
+    ],
     "promptEn": "Say: we're a little behind, but we expect to catch up by next week.",
-    "acceptableResponses": ["少し遅れていますが来週までに取り戻せる見込みです", "少し遅れていますが来週までに取り戻せると思います", "少し遅れていますが来週までに取り戻します"],
-    "keyTerms": [["遅れて", "おくれて"], ["来週", "らいしゅう"]],
-    "listening": { "questionJa": "いつまでに取り戻せますか？", "questionEn": "By when can they catch up?", "answerTerms": [["来週", "らいしゅう"]], "modelAnswer": "来週までです。" }
+    "acceptableResponses": [
+      "少し遅れていますが来週までに取り戻せる見込みです",
+      "少し遅れていますが来週までに取り戻せると思います",
+      "少し遅れていますが来週までに取り戻します"
+    ],
+    "keyTerms": [
+      [
+        "遅れて",
+        "おくれて"
+      ],
+      [
+        "来週",
+        "らいしゅう"
+      ]
+    ],
+    "listening": {
+      "topicEn": "An engineer explains a delay and when they'll catch up.",
+      "questionJa": "いつまでに取り戻せますか？",
+      "questionEn": "By when can they catch up?",
+      "choiceQuestionJa": "来週までですか、来月までですか？",
+      "choiceQuestionKana": "らいしゅうまでですか、らいげつまでですか？",
+      "choiceQuestionEn": "By next week, or by next month?",
+      "answerTerms": [
+        [
+          "来週",
+          "らいしゅう"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "来月",
+          "らいげつ"
+        ]
+      ],
+      "modelAnswer": "来週までです。",
+      "modelAnswerKana": "らいしゅうまでです。",
+      "modelAnswerEn": "By next week."
+    }
   },
   {
-    "id": "w.confirm.will", "track": "work", "category": "confirmation", "level": 1, "kind": "phrase", "politeness": "professional",
-    "japanese": "確認しておきます。", "kana": "かくにんしておきます。", "romaji": "Kakunin shite okimasu.",
-    "english": "I'll check on that.", "literal": "I will confirm it in advance.",
+    "id": "w.confirm.will",
+    "track": "work",
+    "category": "confirmation",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "確認しておきます。",
+    "kana": "かくにんしておきます。",
+    "romaji": "Kakunin shite okimasu.",
+    "english": "I'll check on that.",
+    "literal": "I will confirm it in advance.",
+    "chunks": [
+      {
+        "ja": "確認して",
+        "kana": "かくにんして"
+      },
+      {
+        "ja": "おきます。",
+        "kana": "おきます。"
+      }
+    ],
+    "situationEn": "Sato-san asks about a document you're not sure of.",
+    "cueEn": "Say: I'll check on that.",
+    "intentEn": "Promise to look into it.",
+    "noteEn": "「しておきます」 sounds proactive: you'll take care of it.",
+    "partner": {
+      "japanese": "この資料は最新版ですか？",
+      "kana": "このしりょうはさいしんばんですか？",
+      "english": "Is this document the latest version?",
+      "personaID": "p.sato"
+    },
     "usageNote": "Used constantly at work to promise a follow-up. Sounds proactive. 確認します is also fine.",
-    "terms": ["v.kakunin"], "grammar": ["g.te-okimasu"],
+    "terms": [
+      "v.kakunin"
+    ],
+    "grammar": [
+      "g.te-okimasu"
+    ],
     "promptEn": "Your colleague asks about a document you're not sure of. Say: I'll check on that.",
-    "acceptableResponses": ["確認しておきます", "確認します", "確認しときます", "すぐ確認します", "確認してみます"],
-    "keyTerms": [["確認", "かくにん"]]
+    "acceptableResponses": [
+      "確認しておきます",
+      "確認します",
+      "確認しときます",
+      "すぐ確認します",
+      "確認してみます"
+    ],
+    "keyTerms": [
+      [
+        "確認",
+        "かくにん"
+      ]
+    ]
   },
   {
-    "id": "w.confirm.request", "track": "work", "category": "confirmation", "level": 2, "kind": "phrase", "politeness": "professional",
-    "japanese": "ご確認をお願いします。", "kana": "ごかくにんをおねがいします。", "romaji": "Go-kakunin o onegai shimasu.",
+    "id": "w.confirm.request",
+    "track": "work",
+    "category": "confirmation",
+    "level": 2,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "ご確認をお願いします。",
+    "kana": "ごかくにんをおねがいします。",
+    "romaji": "Go-kakunin o onegai shimasu.",
     "english": "Could you please check this?",
+    "chunks": [
+      {
+        "ja": "ご確認を",
+        "kana": "ごかくにんを"
+      },
+      {
+        "ja": "お願いします。",
+        "kana": "おねがいします。"
+      }
+    ],
+    "situationEn": "You hand Sato-san a revised drawing.",
+    "cueEn": "Say: could you please check this?",
+    "intentEn": "Politely ask him to look it over.",
+    "noteEn": "「ご」 makes it polite enough for seniors and clients.",
     "usageNote": "Standard when handing over a document or drawing. The ご makes it polite; fine with seniors and clients.",
-    "terms": ["v.kakunin"],
+    "terms": [
+      "v.kakunin"
+    ],
     "promptEn": "Hand over a drawing and politely ask them to check it.",
-    "acceptableResponses": ["ご確認をお願いします", "ご確認お願いします", "確認をお願いします", "確認お願いします", "ご確認をお願いいたします"],
-    "keyTerms": [["確認", "かくにん"], ["お願い", "おねがい"]]
+    "acceptableResponses": [
+      "ご確認をお願いします",
+      "ご確認お願いします",
+      "確認をお願いします",
+      "確認お願いします",
+      "ご確認をお願いいたします"
+    ],
+    "keyTerms": [
+      [
+        "確認",
+        "かくにん"
+      ],
+      [
+        "お願い",
+        "おねがい"
+      ]
+    ]
   },
   {
-    "id": "w.pier.issue", "track": "work", "category": "site", "level": 4, "kind": "question", "politeness": "professional",
-    "japanese": "この橋脚について、何か問題がありますか？", "kana": "このきょうきゃくについて、なにかもんだいがありますか？", "romaji": "Kono kyōkyaku ni tsuite, nanika mondai ga arimasu ka?",
+    "id": "w.pier.issue",
+    "track": "work",
+    "category": "site",
+    "level": 4,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "この橋脚について、何か問題がありますか？",
+    "kana": "このきょうきゃくについて、なにかもんだいがありますか？",
+    "romaji": "Kono kyōkyaku ni tsuite, nanika mondai ga arimasu ka?",
     "english": "Is there any problem with this pier?",
-    "terms": ["v.kyoukyaku", "v.mondai"], "grammar": ["g.ni-tsuite"],
+    "chunks": [
+      {
+        "ja": "この橋脚について、",
+        "kana": "このきょうきゃくについて、"
+      },
+      {
+        "ja": "何か",
+        "kana": "なにか"
+      },
+      {
+        "ja": "問題が",
+        "kana": "もんだいが"
+      },
+      {
+        "ja": "ありますか？",
+        "kana": "ありますか？"
+      }
+    ],
+    "situationEn": "On site, Ito-san shows you a bridge pier.",
+    "cueEn": "Ask: is there any problem with this pier?",
+    "intentEn": "Check whether anything is wrong with the pier.",
+    "noteEn": "「について」 means 'about' or 'regarding'.",
+    "partner": {
+      "japanese": "これが三番の橋脚です。",
+      "kana": "これがさんばんのきょうきゃくです。",
+      "english": "This is pier number three.",
+      "personaID": "p.ito"
+    },
+    "terms": [
+      "v.kyoukyaku",
+      "v.mondai"
+    ],
+    "grammar": [
+      "g.ni-tsuite"
+    ],
     "promptEn": "On site, ask: is there any problem with this pier?",
-    "acceptableResponses": ["この橋脚について何か問題がありますか", "この橋脚に何か問題はありますか", "この橋脚は何か問題がありますか", "この橋脚について問題はありますか"],
-    "keyTerms": [["橋脚", "きょうきゃく"], ["問題", "もんだい"]],
-    "listening": { "questionJa": "何について聞いていますか？", "questionEn": "What are they asking about?", "answerTerms": [["橋脚", "きょうきゃく"]], "modelAnswer": "橋脚についてです。" }
+    "acceptableResponses": [
+      "この橋脚について何か問題がありますか",
+      "この橋脚に何か問題はありますか",
+      "この橋脚は何か問題がありますか",
+      "この橋脚について問題はありますか"
+    ],
+    "keyTerms": [
+      [
+        "橋脚",
+        "きょうきゃく"
+      ],
+      [
+        "問題",
+        "もんだい"
+      ]
+    ],
+    "listening": {
+      "topicEn": "Sato-san asks about something on site.",
+      "questionJa": "何について聞いていますか？",
+      "questionEn": "What are they asking about?",
+      "choiceQuestionJa": "橋脚についてですか、線路についてですか？",
+      "choiceQuestionKana": "きょうきゃくについてですか、せんろについてですか？",
+      "choiceQuestionEn": "About the pier, or about the track?",
+      "answerTerms": [
+        [
+          "橋脚",
+          "きょうきゃく"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "線路",
+          "せんろ"
+        ]
+      ],
+      "modelAnswer": "橋脚についてです。",
+      "modelAnswerKana": "きょうきゃくについてです。",
+      "modelAnswerEn": "About the pier."
+    }
   },
   {
-    "id": "w.problem.any", "track": "work", "category": "problems", "level": 1, "kind": "question", "politeness": "professional",
-    "japanese": "何か問題はありますか？", "kana": "なにかもんだいはありますか？", "romaji": "Nanika mondai wa arimasu ka?",
+    "id": "w.problem.any",
+    "track": "work",
+    "category": "problems",
+    "level": 1,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "何か問題はありますか？",
+    "kana": "なにかもんだいはありますか？",
+    "romaji": "Nanika mondai wa arimasu ka?",
     "english": "Is there any problem?",
-    "terms": ["v.mondai"],
+    "chunks": [
+      {
+        "ja": "何か",
+        "kana": "なにか"
+      },
+      {
+        "ja": "問題は",
+        "kana": "もんだいは"
+      },
+      {
+        "ja": "ありますか？",
+        "kana": "ありますか？"
+      }
+    ],
+    "situationEn": "At the end of a site visit, you check in with the crew.",
+    "cueEn": "Ask: is there any problem?",
+    "intentEn": "Find out if there are any issues.",
+    "noteEn": "「何か」 means 'any' here: 'any problem at all?'",
+    "terms": [
+      "v.mondai"
+    ],
     "promptEn": "Ask: is there any problem?",
-    "acceptableResponses": ["何か問題はありますか", "何か問題がありますか", "問題はありますか", "問題ありますか"],
-    "keyTerms": [["問題", "もんだい"], ["あります", "ある"]]
+    "acceptableResponses": [
+      "何か問題はありますか",
+      "何か問題がありますか",
+      "問題はありますか",
+      "問題ありますか"
+    ],
+    "keyTerms": [
+      [
+        "問題",
+        "もんだい"
+      ],
+      [
+        "あります",
+        "ある"
+      ]
+    ]
   },
   {
-    "id": "w.inspection.when", "track": "work", "category": "inspection", "level": 4, "kind": "question", "politeness": "professional",
-    "japanese": "検査はいつ完了する予定ですか？", "kana": "けんさはいつかんりょうするよていですか？", "romaji": "Kensa wa itsu kanryō suru yotei desu ka?",
+    "id": "w.inspection.when",
+    "track": "work",
+    "category": "inspection",
+    "level": 4,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "検査はいつ完了する予定ですか？",
+    "kana": "けんさはいつかんりょうするよていですか？",
+    "romaji": "Kensa wa itsu kanryō suru yotei desu ka?",
     "english": "When is the inspection scheduled to be completed?",
-    "terms": ["v.kensa", "v.kanryou", "v.yotei"], "grammar": ["g.yotei-desu"],
+    "chunks": [
+      {
+        "ja": "検査は",
+        "kana": "けんさは"
+      },
+      {
+        "ja": "いつ",
+        "kana": "いつ"
+      },
+      {
+        "ja": "完了する",
+        "kana": "かんりょうする"
+      },
+      {
+        "ja": "予定ですか？",
+        "kana": "よていですか？"
+      }
+    ],
+    "situationEn": "Sato-san tells you about next week's inspection.",
+    "cueEn": "Ask: when is the inspection scheduled to finish?",
+    "intentEn": "Find out when it should be finished.",
+    "noteEn": "「予定です」 means 'it's scheduled' or 'it's planned'.",
+    "partner": {
+      "japanese": "来週、高架橋の検査があります。",
+      "kana": "らいしゅう、こうかきょうのけんさがあります。",
+      "english": "There's a viaduct inspection next week.",
+      "personaID": "p.sato"
+    },
+    "terms": [
+      "v.kensa",
+      "v.kanryou",
+      "v.yotei"
+    ],
+    "grammar": [
+      "g.yotei-desu"
+    ],
     "promptEn": "Ask: when is the inspection scheduled to finish?",
-    "acceptableResponses": ["検査はいつ完了する予定ですか", "検査はいつ終わる予定ですか", "検査はいつ終わりますか", "検査はいつ完了しますか"],
-    "keyTerms": [["検査", "けんさ"], ["いつ"]],
-    "listening": { "questionJa": "何の話ですか？", "questionEn": "What is this about?", "answerTerms": [["検査", "けんさ"]], "modelAnswer": "検査の話です。" }
+    "acceptableResponses": [
+      "検査はいつ完了する予定ですか",
+      "検査はいつ終わる予定ですか",
+      "検査はいつ終わりますか",
+      "検査はいつ完了しますか"
+    ],
+    "keyTerms": [
+      [
+        "検査",
+        "けんさ"
+      ],
+      [
+        "いつ"
+      ]
+    ],
+    "listening": {
+      "topicEn": "Sato-san asks when something will be finished.",
+      "questionJa": "何の話ですか？",
+      "questionEn": "What is this about?",
+      "choiceQuestionJa": "検査の話ですか、会議の話ですか？",
+      "choiceQuestionKana": "けんさのはなしですか、かいぎのはなしですか？",
+      "choiceQuestionEn": "The inspection, or the meeting?",
+      "answerTerms": [
+        [
+          "検査",
+          "けんさ"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "会議",
+          "かいぎ"
+        ]
+      ],
+      "modelAnswer": "検査の話です。",
+      "modelAnswerKana": "けんさのはなしです。",
+      "modelAnswerEn": "The inspection."
+    }
   },
   {
-    "id": "w.inspection.friday", "track": "work", "category": "inspection", "level": 3, "kind": "sentence", "politeness": "professional",
-    "japanese": "検査は金曜日に完了する予定です。", "kana": "けんさはきんようびにかんりょうするよていです。", "romaji": "Kensa wa kin'yōbi ni kanryō suru yotei desu.",
+    "id": "w.inspection.friday",
+    "track": "work",
+    "category": "inspection",
+    "level": 3,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "検査は金曜日に完了する予定です。",
+    "kana": "けんさはきんようびにかんりょうするよていです。",
+    "romaji": "Kensa wa kin'yōbi ni kanryō suru yotei desu.",
     "english": "The inspection is scheduled to be completed on Friday.",
-    "terms": ["v.kensa", "v.kanryou", "v.yotei"], "grammar": ["g.yotei-desu"],
+    "chunks": [
+      {
+        "ja": "検査は",
+        "kana": "けんさは"
+      },
+      {
+        "ja": "金曜日に",
+        "kana": "きんようびに"
+      },
+      {
+        "ja": "完了する",
+        "kana": "かんりょうする"
+      },
+      {
+        "ja": "予定です。",
+        "kana": "よていです。"
+      }
+    ],
+    "situationEn": "Sato-san asks when the inspection will be finished.",
+    "cueEn": "Say: the inspection is scheduled to finish on Friday.",
+    "intentEn": "Tell him when it's due to finish.",
+    "noteEn": "「完了する」 is formal for finish; 「終わる」 also works.",
+    "partner": {
+      "japanese": "検査はいつ完了する予定ですか？",
+      "kana": "けんさはいつかんりょうするよていですか？",
+      "english": "When is the inspection scheduled to be completed?",
+      "personaID": "p.sato"
+    },
+    "terms": [
+      "v.kensa",
+      "v.kanryou",
+      "v.yotei"
+    ],
+    "grammar": [
+      "g.yotei-desu"
+    ],
     "promptEn": "Say: the inspection is scheduled to finish on Friday.",
-    "acceptableResponses": ["検査は金曜日に完了する予定です", "検査は金曜日に終わる予定です", "検査は金曜日に終わります", "金曜日に完了する予定です"],
-    "keyTerms": [["金曜", "きんよう"], ["予定", "よてい", "終わ", "おわ", "完了"]],
-    "listening": { "questionJa": "検査はいつ完了しますか？", "questionEn": "When will the inspection be completed?", "answerTerms": [["金曜", "きんよう"]], "modelAnswer": "金曜日です。" }
+    "acceptableResponses": [
+      "検査は金曜日に完了する予定です",
+      "検査は金曜日に終わる予定です",
+      "検査は金曜日に終わります",
+      "金曜日に完了する予定です"
+    ],
+    "keyTerms": [
+      [
+        "金曜",
+        "きんよう"
+      ],
+      [
+        "予定",
+        "よてい",
+        "終わ",
+        "おわ",
+        "完了"
+      ]
+    ],
+    "listening": {
+      "topicEn": "An engineer tells Sato-san when the inspection will finish.",
+      "questionJa": "検査はいつ完了しますか？",
+      "questionEn": "When will the inspection be completed?",
+      "choiceQuestionJa": "金曜日ですか、月曜日ですか？",
+      "choiceQuestionKana": "きんようびですか、げつようびですか？",
+      "choiceQuestionEn": "Friday, or Monday?",
+      "answerTerms": [
+        [
+          "金曜",
+          "きんよう"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "月曜",
+          "げつよう"
+        ]
+      ],
+      "modelAnswer": "金曜日です。",
+      "modelAnswerKana": "きんようびです。",
+      "modelAnswerEn": "Friday."
+    }
   },
   {
-    "id": "w.safety.before", "track": "work", "category": "safety", "level": 3, "kind": "sentence", "politeness": "professional",
-    "japanese": "作業の前に安全確認をお願いします。", "kana": "さぎょうのまえにあんぜんかくにんをおねがいします。", "romaji": "Sagyō no mae ni anzen kakunin o onegai shimasu.",
+    "id": "w.safety.before",
+    "track": "work",
+    "category": "safety",
+    "level": 3,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "作業の前に安全確認をお願いします。",
+    "kana": "さぎょうのまえにあんぜんかくにんをおねがいします。",
+    "romaji": "Sagyō no mae ni anzen kakunin o onegai shimasu.",
     "english": "Please do a safety check before starting work.",
-    "terms": ["v.sagyou", "v.anzenkakunin"],
+    "chunks": [
+      {
+        "ja": "作業の前に",
+        "kana": "さぎょうのまえに"
+      },
+      {
+        "ja": "安全確認を",
+        "kana": "あんぜんかくにんを"
+      },
+      {
+        "ja": "お願いします。",
+        "kana": "おねがいします。"
+      }
+    ],
+    "situationEn": "At the morning briefing, Ito-san's crew is about to start work.",
+    "cueEn": "Say: please do a safety check before starting work.",
+    "intentEn": "Remind the team to check safety first.",
+    "noteEn": "「作業前に」 without 「の」 is common in site talk.",
+    "partner": {
+      "japanese": "準備ができました。始めましょうか。",
+      "kana": "じゅんびができました。はじめましょうか。",
+      "english": "We're ready. Shall we start?",
+      "personaID": "p.ito"
+    },
+    "terms": [
+      "v.sagyou",
+      "v.anzenkakunin"
+    ],
     "promptEn": "Ask the team: please do a safety check before starting work.",
-    "acceptableResponses": ["作業の前に安全確認をお願いします", "作業の前に安全確認してください", "作業前に安全確認をお願いします", "作業する前に安全確認をお願いします"],
-    "keyTerms": [["安全", "あんぜん"], ["確認", "かくにん"]],
-    "listening": { "questionJa": "いつ安全確認をしますか？", "questionEn": "When should the safety check happen?", "answerTerms": [["前", "まえ"]], "modelAnswer": "作業の前です。" }
+    "acceptableResponses": [
+      "作業の前に安全確認をお願いします",
+      "作業の前に安全確認してください",
+      "作業前に安全確認をお願いします",
+      "作業する前に安全確認をお願いします"
+    ],
+    "keyTerms": [
+      [
+        "安全",
+        "あんぜん"
+      ],
+      [
+        "確認",
+        "かくにん"
+      ]
+    ],
+    "listening": {
+      "topicEn": "Ito-san gives the team an instruction about safety.",
+      "questionJa": "いつ安全確認をしますか？",
+      "questionEn": "When should the safety check happen?",
+      "choiceQuestionJa": "作業の前ですか、後ですか？",
+      "choiceQuestionKana": "さぎょうのまえですか、あとですか？",
+      "choiceQuestionEn": "Before the work, or after?",
+      "answerTerms": [
+        [
+          "前",
+          "まえ"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "後",
+          "あと"
+        ]
+      ],
+      "modelAnswer": "作業の前です。",
+      "modelAnswerKana": "さぎょうのまえです。",
+      "modelAnswerEn": "Before the work starts."
+    }
   },
   {
-    "id": "w.drawing.explain", "track": "work", "category": "meetings", "level": 4, "kind": "question", "politeness": "veryPolite",
-    "japanese": "この図面について説明していただけますか？", "kana": "このずめんについてせつめいしていただけますか？", "romaji": "Kono zumen ni tsuite setsumei shite itadakemasu ka?",
+    "id": "w.drawing.explain",
+    "track": "work",
+    "category": "meetings",
+    "level": 4,
+    "kind": "question",
+    "politeness": "veryPolite",
+    "japanese": "この図面について説明していただけますか？",
+    "kana": "このずめんについてせつめいしていただけますか？",
+    "romaji": "Kono zumen ni tsuite setsumei shite itadakemasu ka?",
     "english": "Could you explain this drawing?",
+    "chunks": [
+      {
+        "ja": "この図面について",
+        "kana": "このずめんについて"
+      },
+      {
+        "ja": "説明して",
+        "kana": "せつめいして"
+      },
+      {
+        "ja": "いただけますか？",
+        "kana": "いただけますか？"
+      }
+    ],
+    "situationEn": "Kobayashi-san, a senior specialist, brings you a new drawing.",
+    "cueEn": "Ask: could you explain this drawing?",
+    "intentEn": "Politely ask him to walk you through it.",
+    "noteEn": "「していただけますか」 is a polite 'could you…?' for seniors.",
+    "partner": {
+      "japanese": "これが新しい図面です。",
+      "kana": "これがあたらしいずめんです。",
+      "english": "This is the new drawing.",
+      "personaID": "p.kobayashi"
+    },
     "usageNote": "Polite request to a senior or a client. With a close colleague, 説明してもらえますか is enough.",
-    "terms": ["v.zumen", "v.setsumei"], "grammar": ["g.te-itadakemasuka", "g.ni-tsuite"],
+    "terms": [
+      "v.zumen",
+      "v.setsumei"
+    ],
+    "grammar": [
+      "g.te-itadakemasuka",
+      "g.ni-tsuite"
+    ],
     "promptEn": "Politely ask a senior engineer: could you explain this drawing?",
-    "acceptableResponses": ["この図面について説明していただけますか", "この図面を説明していただけますか", "この図面について説明してもらえますか", "この図面について説明してください"],
-    "keyTerms": [["図面", "ずめん"], ["説明", "せつめい"]],
-    "listening": { "questionJa": "何を説明してほしいですか？", "questionEn": "What do they want explained?", "answerTerms": [["図面", "ずめん"]], "modelAnswer": "図面です。" }
+    "acceptableResponses": [
+      "この図面について説明していただけますか",
+      "この図面を説明していただけますか",
+      "この図面について説明してもらえますか",
+      "この図面について説明してください"
+    ],
+    "keyTerms": [
+      [
+        "図面",
+        "ずめん"
+      ],
+      [
+        "説明",
+        "せつめい"
+      ]
+    ],
+    "listening": {
+      "topicEn": "Someone politely asks Kobayashi-san to explain something.",
+      "questionJa": "何を説明してほしいですか？",
+      "questionEn": "What do they want explained?",
+      "choiceQuestionJa": "図面ですか、資料ですか？",
+      "choiceQuestionKana": "ずめんですか、しりょうですか？",
+      "choiceQuestionEn": "The drawing, or the documents?",
+      "answerTerms": [
+        [
+          "図面",
+          "ずめん"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "資料",
+          "しりょう"
+        ]
+      ],
+      "modelAnswer": "図面です。",
+      "modelAnswerKana": "ずめんです。",
+      "modelAnswerEn": "The drawing."
+    }
   },
   {
-    "id": "w.question.until", "track": "work", "category": "questions", "level": 1, "kind": "question", "politeness": "professional",
-    "japanese": "いつまでですか？", "kana": "いつまでですか？", "romaji": "Itsu made desu ka?",
+    "id": "w.question.until",
+    "track": "work",
+    "category": "questions",
+    "level": 1,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "いつまでですか？",
+    "kana": "いつまでですか？",
+    "romaji": "Itsu made desu ka?",
     "english": "By when? (What's the deadline?)",
+    "chunks": [
+      {
+        "ja": "いつまで",
+        "kana": "いつまで"
+      },
+      {
+        "ja": "ですか？",
+        "kana": "ですか？"
+      }
+    ],
+    "situationEn": "Sato-san asks you to check a report.",
+    "cueEn": "Ask: what's the deadline?",
+    "intentEn": "Find out when he needs it.",
+    "noteEn": "Add 「に」 for 'by': 「いつまでに必要ですか？」",
+    "partner": {
+      "japanese": "この報告書を確認してもらえますか？",
+      "kana": "このほうこくしょをかくにんしてもらえますか？",
+      "english": "Could you check this report?",
+      "personaID": "p.sato"
+    },
     "usageNote": "Short and completely natural at work. Add に for 'by': いつまでに必要ですか？ (By when do you need it?)",
-    "grammar": ["g.made-ni"],
+    "grammar": [
+      "g.made-ni"
+    ],
     "promptEn": "Ask: what's the deadline?",
-    "acceptableResponses": ["いつまでですか", "いつまでに必要ですか", "締め切りはいつですか", "いつまでにですか"],
-    "keyTerms": [["いつまで", "締め切り", "しめきり"]]
+    "acceptableResponses": [
+      "いつまでですか",
+      "いつまでに必要ですか",
+      "締め切りはいつですか",
+      "いつまでにですか"
+    ],
+    "keyTerms": [
+      [
+        "いつまで",
+        "締め切り",
+        "しめきり"
+      ]
+    ]
   },
   {
-    "id": "w.question.possible", "track": "work", "category": "questions", "level": 3, "kind": "question", "politeness": "professional",
-    "japanese": "来週までに可能ですか？", "kana": "らいしゅうまでにかのうですか？", "romaji": "Raishū made ni kanō desu ka?",
+    "id": "w.question.possible",
+    "track": "work",
+    "category": "questions",
+    "level": 3,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "来週までに可能ですか？",
+    "kana": "らいしゅうまでにかのうですか？",
+    "romaji": "Raishū made ni kanō desu ka?",
     "english": "Is it possible by next week?",
-    "grammar": ["g.made-ni"],
+    "chunks": [
+      {
+        "ja": "来週までに",
+        "kana": "らいしゅうまでに"
+      },
+      {
+        "ja": "可能ですか？",
+        "kana": "かのうですか？"
+      }
+    ],
+    "situationEn": "Kobayashi-san says a fix will take some time.",
+    "cueEn": "Ask: is it possible by next week?",
+    "intentEn": "Check whether it can be done by next week.",
+    "noteEn": "「までに」 means 'by'; 「まで」 alone means 'until'.",
+    "partner": {
+      "japanese": "この修正は、少し時間がかかります。",
+      "kana": "このしゅうせいは、すこしじかんがかかります。",
+      "english": "This fix will take a little time.",
+      "personaID": "p.kobayashi"
+    },
+    "grammar": [
+      "g.made-ni"
+    ],
     "promptEn": "Ask: is it possible by next week?",
-    "acceptableResponses": ["来週までに可能ですか", "来週までにできますか", "来週までに可能でしょうか", "来週までに間に合いますか"],
-    "keyTerms": [["来週", "らいしゅう"], ["可能", "かのう", "できます", "間に合い", "まにあい"]]
+    "acceptableResponses": [
+      "来週までに可能ですか",
+      "来週までにできますか",
+      "来週までに可能でしょうか",
+      "来週までに間に合いますか"
+    ],
+    "keyTerms": [
+      [
+        "来週",
+        "らいしゅう"
+      ],
+      [
+        "可能",
+        "かのう",
+        "できます",
+        "間に合い",
+        "まにあい"
+      ]
+    ]
   },
   {
-    "id": "w.understood.polite", "track": "work", "category": "politeness", "level": 2, "kind": "phrase", "politeness": "veryPolite",
-    "japanese": "承知しました。", "kana": "しょうちしました。", "romaji": "Shōchi shimashita.",
+    "id": "w.understood.polite",
+    "track": "work",
+    "category": "politeness",
+    "level": 2,
+    "kind": "phrase",
+    "politeness": "veryPolite",
+    "japanese": "承知しました。",
+    "kana": "しょうちしました。",
+    "romaji": "Shōchi shimashita.",
     "english": "Understood. / Certainly.",
+    "chunks": [
+      {
+        "ja": "承知",
+        "kana": "しょうち"
+      },
+      {
+        "ja": "しました。",
+        "kana": "しました。"
+      }
+    ],
+    "situationEn": "Sato-san, a senior engineer, gives you an instruction.",
+    "cueEn": "Say: understood — politely.",
+    "intentEn": "Accept the instruction politely.",
+    "noteEn": "「わかりました」 is fine with peers; this is for seniors.",
+    "partner": {
+      "japanese": "この図面を、明日までに修正してください。",
+      "kana": "このずめんを、あしたまでにしゅうせいしてください。",
+      "english": "Please revise this drawing by tomorrow.",
+      "personaID": "p.sato"
+    },
     "usageNote": "わかりました is correct and fine with colleagues. 承知しました sounds professional with seniors and clients. 承知いたしました is very formal — mostly emails and client-facing situations. You don't need it in daily site talk.",
     "promptEn": "A senior Japanese engineer gives you an instruction. Politely say: understood.",
-    "acceptableResponses": ["承知しました", "承知いたしました", "かしこまりました"],
-    "keyTerms": [["承知", "しょうち", "かしこまり"]],
-    "naturalAlternatives": ["わかりました"],
+    "acceptableResponses": [
+      "承知しました",
+      "承知いたしました",
+      "かしこまりました"
+    ],
+    "keyTerms": [
+      [
+        "承知",
+        "しょうち",
+        "かしこまり"
+      ]
+    ],
+    "naturalAlternatives": [
+      "わかりました"
+    ],
     "commonMistakes": [
-      { "id": "w.understood.wakarimashita", "type": "politeness", "whenContainsAll": [["わかりました", "分かりました"]],
-        "correction": "承知しました。", "explanation": "わかりました is fine with colleagues. To a senior engineer, 承知しました sounds more professional." }
+      {
+        "id": "w.understood.wakarimashita",
+        "type": "politeness",
+        "whenContainsAll": [
+          [
+            "わかりました",
+            "分かりました"
+          ]
+        ],
+        "correction": "承知しました。",
+        "explanation": "わかりました is fine with colleagues. To a senior engineer, 承知しました sounds more professional.",
+        "spokenEn": "To a senior, 「承知しました」 sounds more professional."
+      }
     ]
   },
   {
-    "id": "w.meeting.open", "track": "work", "category": "meetings", "level": 4, "kind": "sentence", "politeness": "professional",
-    "japanese": "それでは、工事の進捗について確認しましょう。", "kana": "それでは、こうじのしんちょくについてかくにんしましょう。", "romaji": "Sore de wa, kōji no shinchoku ni tsuite kakunin shimashō.",
+    "id": "w.meeting.open",
+    "track": "work",
+    "category": "meetings",
+    "level": 4,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "それでは、工事の進捗について確認しましょう。",
+    "kana": "それでは、こうじのしんちょくについてかくにんしましょう。",
+    "romaji": "Sore de wa, kōji no shinchoku ni tsuite kakunin shimashō.",
     "english": "Well then, let's go over the construction progress.",
+    "chunks": [
+      {
+        "ja": "それでは、",
+        "kana": "それでは、"
+      },
+      {
+        "ja": "工事の",
+        "kana": "こうじの"
+      },
+      {
+        "ja": "進捗について",
+        "kana": "しんちょくについて"
+      },
+      {
+        "ja": "確認しましょう。",
+        "kana": "かくにんしましょう。"
+      }
+    ],
+    "situationEn": "You're chairing the weekly progress meeting.",
+    "cueEn": "Say: well then, let's go over the construction progress.",
+    "intentEn": "Open the meeting and say what you'll review.",
+    "noteEn": "「それでは」 signals the meeting is starting.",
+    "partner": {
+      "japanese": "全員そろいました。",
+      "kana": "ぜんいんそろいました。",
+      "english": "Everyone's here.",
+      "personaID": "p.sato"
+    },
     "usageNote": "それでは signals the meeting is starting. You'll hear this at the top of most progress meetings.",
-    "terms": ["v.kouji", "v.shinchoku", "v.kakunin"], "grammar": ["g.ni-tsuite"],
-    "listening": { "questionJa": "何について確認しますか？", "questionEn": "What are they going to go over?", "answerTerms": [["進捗", "しんちょく"]], "modelAnswer": "工事の進捗です。" }
+    "terms": [
+      "v.kouji",
+      "v.shinchoku",
+      "v.kakunin"
+    ],
+    "grammar": [
+      "g.ni-tsuite"
+    ],
+    "listening": {
+      "topicEn": "A colleague opens the weekly meeting.",
+      "questionJa": "何について確認しますか？",
+      "questionEn": "What are they going to go over?",
+      "choiceQuestionJa": "工事の進捗ですか、予算ですか？",
+      "choiceQuestionKana": "こうじのしんちょくですか、よさんですか？",
+      "choiceQuestionEn": "Construction progress, or the budget?",
+      "answerTerms": [
+        [
+          "進捗",
+          "しんちょく"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "予算",
+          "よさん"
+        ]
+      ],
+      "modelAnswer": "工事の進捗です。",
+      "modelAnswerKana": "こうじのしんちょくです。",
+      "modelAnswerEn": "The construction progress."
+    }
   },
   {
-    "id": "w.sorry.late", "track": "work", "category": "politeness", "level": 1, "kind": "phrase", "politeness": "professional",
-    "japanese": "遅れてすみません。", "kana": "おくれてすみません。", "romaji": "Okurete sumimasen.",
+    "id": "w.sorry.late",
+    "track": "work",
+    "category": "politeness",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "遅れてすみません。",
+    "kana": "おくれてすみません。",
+    "romaji": "Okurete sumimasen.",
     "english": "Sorry I'm late.",
+    "chunks": [
+      {
+        "ja": "遅れて",
+        "kana": "おくれて"
+      },
+      {
+        "ja": "すみません。",
+        "kana": "すみません。"
+      }
+    ],
+    "situationEn": "You arrive late to a site meeting.",
+    "cueEn": "Say: sorry I'm late.",
+    "intentEn": "Apologise for arriving late.",
+    "noteEn": "To a client, say 「遅くなって申し訳ありません」.",
     "usageNote": "遅くなってすみません is equally natural. To a client: 遅くなって申し訳ありません.",
     "promptEn": "You arrive late to a site meeting. Say: sorry I'm late.",
-    "acceptableResponses": ["遅れてすみません", "遅くなってすみません", "遅れて申し訳ありません", "遅くなって申し訳ありません"],
-    "keyTerms": [["遅れて", "おくれて", "遅くなって", "おそくなって"], ["すみません", "申し訳", "もうしわけ"]]
+    "acceptableResponses": [
+      "遅れてすみません",
+      "遅くなってすみません",
+      "遅れて申し訳ありません",
+      "遅くなって申し訳ありません"
+    ],
+    "keyTerms": [
+      [
+        "遅れて",
+        "おくれて",
+        "遅くなって",
+        "おそくなって"
+      ],
+      [
+        "すみません",
+        "申し訳",
+        "もうしわけ"
+      ]
+    ]
   },
   {
-    "id": "w.leave.first", "track": "work", "category": "politeness", "level": 1, "kind": "phrase", "politeness": "professional",
-    "japanese": "お先に失礼します。", "kana": "おさきにしつれいします。", "romaji": "Osaki ni shitsurei shimasu.",
-    "english": "I'm heading off now.", "literal": "Excuse me for (leaving) first.",
+    "id": "w.leave.first",
+    "track": "work",
+    "category": "politeness",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "お先に失礼します。",
+    "kana": "おさきにしつれいします。",
+    "romaji": "Osaki ni shitsurei shimasu.",
+    "english": "I'm heading off now.",
+    "literal": "Excuse me for (leaving) first.",
+    "chunks": [
+      {
+        "ja": "お先に",
+        "kana": "おさきに"
+      },
+      {
+        "ja": "失礼します。",
+        "kana": "しつれいします。"
+      }
+    ],
+    "situationEn": "You're leaving the site office before your Japanese colleagues.",
+    "cueEn": "Say: I'm heading off now.",
+    "intentEn": "Excuse yourself as you leave before the others.",
+    "noteEn": "The usual reply is 「お疲れさまでした」.",
     "usageNote": "Said when you leave while others are still working. The usual reply is お疲れさまでした.",
     "promptEn": "You're leaving the site office before your Japanese colleagues. What do you say?",
-    "acceptableResponses": ["お先に失礼します", "お先に失礼いたします", "失礼します"],
-    "keyTerms": [["失礼", "しつれい"]]
+    "acceptableResponses": [
+      "お先に失礼します",
+      "お先に失礼いたします",
+      "失礼します"
+    ],
+    "keyTerms": [
+      [
+        "失礼",
+        "しつれい"
+      ]
+    ]
   },
   {
-    "id": "w.otsukare", "track": "work", "category": "politeness", "level": 1, "kind": "phrase", "politeness": "professional",
-    "japanese": "お疲れさまです。", "kana": "おつかれさまです。", "romaji": "Otsukaresama desu.",
-    "english": "Hi (to a colleague at work).", "literal": "You are tired (thanks for your hard work).",
+    "id": "w.otsukare",
+    "track": "work",
+    "category": "politeness",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "お疲れさまです。",
+    "kana": "おつかれさまです。",
+    "romaji": "Otsukaresama desu.",
+    "english": "Hi (to a colleague at work).",
+    "literal": "You are tired (thanks for your hard work).",
+    "chunks": [
+      {
+        "ja": "お疲れさま",
+        "kana": "おつかれさま"
+      },
+      {
+        "ja": "です。",
+        "kana": "です。"
+      }
+    ],
+    "situationEn": "You pass a colleague in the site office in the afternoon.",
+    "cueEn": "Say: hi — the everyday work greeting.",
+    "intentEn": "Greet your colleague.",
+    "noteEn": "Works as hello, goodbye and thanks at work.",
     "usageNote": "The all-purpose workplace greeting: passing someone in the office, starting a call, sending a message.",
     "promptEn": "You pass a Japanese colleague in the site office in the afternoon. Greet them.",
-    "acceptableResponses": ["お疲れさまです", "お疲れ様です", "おつかれさまです"],
-    "keyTerms": [["お疲れ", "おつかれ"]]
+    "acceptableResponses": [
+      "お疲れさまです",
+      "お疲れ様です",
+      "おつかれさまです"
+    ],
+    "keyTerms": [
+      [
+        "お疲れ",
+        "おつかれ"
+      ]
+    ]
   },
   {
-    "id": "w.intro.work", "track": "work", "category": "introductions", "level": 2, "kind": "sentence", "politeness": "professional",
-    "japanese": "高速鉄道のプロジェクトで働いています。", "kana": "こうそくてつどうのプロジェクトではたらいています。", "romaji": "Kōsoku tetsudō no purojekuto de hataraite imasu.",
+    "id": "w.intro.work",
+    "track": "work",
+    "category": "introductions",
+    "level": 2,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "高速鉄道のプロジェクトで働いています。",
+    "kana": "こうそくてつどうのプロジェクトではたらいています。",
+    "romaji": "Kōsoku tetsudō no purojekuto de hataraite imasu.",
     "english": "I work on the high-speed rail project.",
-    "terms": ["v.kousokutetsudou"], "grammar": ["g.te-imasu"],
+    "chunks": [
+      {
+        "ja": "高速鉄道の",
+        "kana": "こうそくてつどうの"
+      },
+      {
+        "ja": "プロジェクトで",
+        "kana": "プロジェクトで"
+      },
+      {
+        "ja": "働いています。",
+        "kana": "はたらいています。"
+      }
+    ],
+    "situationEn": "At a first meeting, Suzuki-san asks what you do.",
+    "cueEn": "Say: I work on the high-speed rail project.",
+    "intentEn": "Tell her what you work on.",
+    "noteEn": "「で働いています」: 「で」 marks where you work.",
+    "partner": {
+      "japanese": "どんなお仕事をされていますか？",
+      "kana": "どんなおしごとをされていますか？",
+      "english": "What kind of work do you do?",
+      "personaID": "p.suzuki"
+    },
+    "terms": [
+      "v.kousokutetsudou"
+    ],
+    "grammar": [
+      "g.te-imasu"
+    ],
     "promptEn": "Say: I work on the high-speed rail project.",
-    "acceptableResponses": ["高速鉄道のプロジェクトで働いています", "高速鉄道のプロジェクトの仕事をしています", "新幹線のプロジェクトで働いています", "高速鉄道の仕事をしています"],
-    "keyTerms": [["高速鉄道", "こうそくてつどう", "新幹線", "しんかんせん"], ["働いて", "はたらいて", "仕事", "しごと"]]
+    "acceptableResponses": [
+      "高速鉄道のプロジェクトで働いています",
+      "高速鉄道のプロジェクトの仕事をしています",
+      "新幹線のプロジェクトで働いています",
+      "高速鉄道の仕事をしています"
+    ],
+    "keyTerms": [
+      [
+        "高速鉄道",
+        "こうそくてつどう",
+        "新幹線",
+        "しんかんせん"
+      ],
+      [
+        "働いて",
+        "はたらいて",
+        "仕事",
+        "しごと"
+      ]
+    ]
   },
   {
-    "id": "w.schedule.impact", "track": "work", "category": "problems", "level": 5, "kind": "question", "politeness": "professional",
-    "japanese": "この問題は工程に影響しますか？", "kana": "このもんだいはこうていにえいきょうしますか？", "romaji": "Kono mondai wa kōtei ni eikyō shimasu ka?",
+    "id": "w.schedule.impact",
+    "track": "work",
+    "category": "problems",
+    "level": 5,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "この問題は工程に影響しますか？",
+    "kana": "このもんだいはこうていにえいきょうしますか？",
+    "romaji": "Kono mondai wa kōtei ni eikyō shimasu ka?",
     "english": "Will this problem affect the schedule?",
-    "terms": ["v.mondai", "v.koutei"],
+    "chunks": [
+      {
+        "ja": "この問題は",
+        "kana": "このもんだいは"
+      },
+      {
+        "ja": "工程に",
+        "kana": "こうていに"
+      },
+      {
+        "ja": "影響しますか？",
+        "kana": "えいきょうしますか？"
+      }
+    ],
+    "situationEn": "Ito-san reports a crack found on a pier.",
+    "cueEn": "Ask: will this problem affect the schedule?",
+    "intentEn": "Ask about the impact on the schedule.",
+    "noteEn": "「工程」 is the works schedule; 「影響」 means impact.",
+    "partner": {
+      "japanese": "橋脚に小さいひびが見つかりました。",
+      "kana": "きょうきゃくにちいさいひびがみつかりました。",
+      "english": "We found a small crack in a pier.",
+      "personaID": "p.ito"
+    },
+    "terms": [
+      "v.mondai",
+      "v.koutei"
+    ],
     "promptEn": "Ask: will this problem affect the schedule?",
-    "acceptableResponses": ["この問題は工程に影響しますか", "この問題で工程に影響はありますか", "この問題はスケジュールに影響しますか"],
-    "keyTerms": [["工程", "こうてい", "スケジュール"], ["影響", "えいきょう"]],
-    "listening": { "questionJa": "何に影響しますか？", "questionEn": "What might be affected?", "answerTerms": [["工程", "こうてい", "スケジュール"]], "modelAnswer": "工程です。" }
+    "acceptableResponses": [
+      "この問題は工程に影響しますか",
+      "この問題で工程に影響はありますか",
+      "この問題はスケジュールに影響しますか"
+    ],
+    "keyTerms": [
+      [
+        "工程",
+        "こうてい",
+        "スケジュール"
+      ],
+      [
+        "影響",
+        "えいきょう"
+      ]
+    ],
+    "listening": {
+      "topicEn": "Takahashi-san asks about the effect of a problem.",
+      "questionJa": "何に影響しますか？",
+      "questionEn": "What might be affected?",
+      "choiceQuestionJa": "工程ですか、費用ですか？",
+      "choiceQuestionKana": "こうていですか、ひようですか？",
+      "choiceQuestionEn": "The schedule, or the cost?",
+      "answerTerms": [
+        [
+          "工程",
+          "こうてい",
+          "スケジュール"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "費用",
+          "ひよう"
+        ]
+      ],
+      "modelAnswer": "工程です。",
+      "modelAnswerKana": "こうていです。",
+      "modelAnswerEn": "The schedule."
+    }
   },
   {
-    "id": "w.problem.handle", "track": "work", "category": "problems", "level": 5, "kind": "question", "politeness": "professional",
-    "japanese": "この問題について、どのように対応しますか？", "kana": "このもんだいについて、どのようにたいおうしますか？", "romaji": "Kono mondai ni tsuite, dono yō ni taiō shimasu ka?",
+    "id": "w.problem.handle",
+    "track": "work",
+    "category": "problems",
+    "level": 5,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "この問題について、どのように対応しますか？",
+    "kana": "このもんだいについて、どのようにたいおうしますか？",
+    "romaji": "Kono mondai ni tsuite, dono yō ni taiō shimasu ka?",
     "english": "How will you deal with this problem?",
-    "terms": ["v.mondai", "v.taiou"], "grammar": ["g.ni-tsuite"],
+    "chunks": [
+      {
+        "ja": "この問題について、",
+        "kana": "このもんだいについて、"
+      },
+      {
+        "ja": "どのように",
+        "kana": "どのように"
+      },
+      {
+        "ja": "対応しますか？",
+        "kana": "たいおうしますか？"
+      }
+    ],
+    "situationEn": "Ito-san tells you the materials will arrive late.",
+    "cueEn": "Ask: how will you deal with this problem?",
+    "intentEn": "Ask how he'll respond to the problem.",
+    "noteEn": "「対応」 means dealing with or responding to something.",
+    "partner": {
+      "japanese": "資材の到着が、一週間遅れるそうです。",
+      "kana": "しざいのとうちゃくが、いっしゅうかんおくれるそうです。",
+      "english": "Apparently the materials will arrive a week late.",
+      "personaID": "p.ito"
+    },
+    "terms": [
+      "v.mondai",
+      "v.taiou"
+    ],
+    "grammar": [
+      "g.ni-tsuite"
+    ],
     "promptEn": "Ask: how will you deal with this problem?",
-    "acceptableResponses": ["この問題についてどのように対応しますか", "この問題にどう対応しますか", "この問題はどう対応しますか"],
-    "keyTerms": [["対応", "たいおう"], ["どのように", "どう"]]
+    "acceptableResponses": [
+      "この問題についてどのように対応しますか",
+      "この問題にどう対応しますか",
+      "この問題はどう対応しますか"
+    ],
+    "keyTerms": [
+      [
+        "対応",
+        "たいおう"
+      ],
+      [
+        "どのように",
+        "どう"
+      ]
+    ]
   },
   {
-    "id": "w.site.together", "track": "work", "category": "site", "level": 2, "kind": "sentence", "politeness": "professional",
-    "japanese": "一緒に現場を確認しましょう。", "kana": "いっしょにげんばをかくにんしましょう。", "romaji": "Issho ni genba o kakunin shimashō.",
+    "id": "w.site.together",
+    "track": "work",
+    "category": "site",
+    "level": 2,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "一緒に現場を確認しましょう。",
+    "kana": "いっしょにげんばをかくにんしましょう。",
+    "romaji": "Issho ni genba o kakunin shimashō.",
     "english": "Let's check the site together.",
-    "terms": ["v.genba", "v.kakunin"],
+    "chunks": [
+      {
+        "ja": "一緒に",
+        "kana": "いっしょに"
+      },
+      {
+        "ja": "現場を",
+        "kana": "げんばを"
+      },
+      {
+        "ja": "確認しましょう。",
+        "kana": "かくにんしましょう。"
+      }
+    ],
+    "situationEn": "Ito-san is worried about something on site.",
+    "cueEn": "Say: let's check the site together.",
+    "intentEn": "Suggest going to look at it with him.",
+    "noteEn": "「しましょう」 means 'let's' — a friendly suggestion.",
+    "partner": {
+      "japanese": "現場で、少し気になるところがあります。",
+      "kana": "げんばで、すこしきになるところがあります。",
+      "english": "There's something on site I'm a bit concerned about.",
+      "personaID": "p.ito"
+    },
+    "terms": [
+      "v.genba",
+      "v.kakunin"
+    ],
     "promptEn": "Suggest: let's check the site together.",
-    "acceptableResponses": ["一緒に現場を確認しましょう", "一緒に現場を見に行きましょう", "現場を一緒に確認しましょう"],
-    "keyTerms": [["現場", "げんば"], ["一緒", "いっしょ"]]
+    "acceptableResponses": [
+      "一緒に現場を確認しましょう",
+      "一緒に現場を見に行きましょう",
+      "現場を一緒に確認しましょう"
+    ],
+    "keyTerms": [
+      [
+        "現場",
+        "げんば"
+      ],
+      [
+        "一緒",
+        "いっしょ"
+      ]
+    ]
   },
-
   {
-    "id": "e.past.tokyo", "track": "everyday", "category": "pastExperiences", "level": 1, "kind": "sentence", "politeness": "professional",
-    "japanese": "昨日、東京に行きました。", "kana": "きのう、とうきょうにいきました。", "romaji": "Kinō, Tōkyō ni ikimashita.",
+    "id": "e.past.tokyo",
+    "track": "everyday",
+    "category": "pastExperiences",
+    "level": 1,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "昨日、東京に行きました。",
+    "kana": "きのう、とうきょうにいきました。",
+    "romaji": "Kinō, Tōkyō ni ikimashita.",
     "english": "I went to Tokyo yesterday.",
-    "grammar": ["g.past-masu"],
+    "chunks": [
+      {
+        "ja": "昨日、",
+        "kana": "きのう、"
+      },
+      {
+        "ja": "東京に",
+        "kana": "とうきょうに"
+      },
+      {
+        "ja": "行きました。",
+        "kana": "いきました。"
+      }
+    ],
+    "situationEn": "Nakamura-san asks what you did yesterday.",
+    "cueEn": "Say: I went to Tokyo yesterday.",
+    "intentEn": "Tell her where you went yesterday.",
+    "noteEn": "「ました」 is the polite past of 「ます」.",
+    "partner": {
+      "japanese": "昨日は何をしましたか？",
+      "kana": "きのうはなにをしましたか？",
+      "english": "What did you do yesterday?",
+      "personaID": "p.nakamura"
+    },
+    "grammar": [
+      "g.past-masu"
+    ],
     "promptEn": "Say: I went to Tokyo yesterday.",
-    "acceptableResponses": ["昨日東京に行きました", "昨日東京へ行きました", "昨日は東京に行きました"],
-    "keyTerms": [["昨日", "きのう"], ["東京", "とうきょう"], ["行きました", "いきました"]],
+    "acceptableResponses": [
+      "昨日東京に行きました",
+      "昨日東京へ行きました",
+      "昨日は東京に行きました"
+    ],
+    "keyTerms": [
+      [
+        "昨日",
+        "きのう"
+      ],
+      [
+        "東京",
+        "とうきょう"
+      ],
+      [
+        "行きました",
+        "いきました"
+      ]
+    ],
     "commonMistakes": [
-      { "id": "e.past.tokyo.ikimasu", "type": "pastTense", "whenContainsAll": [["昨日", "きのう"], ["行きます", "いきます"]], "unlessContainsAny": ["行きました", "いきました"],
-        "correction": "昨日、東京に行きました。", "explanation": "With 昨日 (yesterday), use the past form: 行きます becomes 行きました." }
+      {
+        "id": "e.past.tokyo.ikimasu",
+        "type": "pastTense",
+        "whenContainsAll": [
+          [
+            "昨日",
+            "きのう"
+          ],
+          [
+            "行きます",
+            "いきます"
+          ]
+        ],
+        "unlessContainsAny": [
+          "行きました",
+          "いきました"
+        ],
+        "correction": "昨日、東京に行きました。",
+        "explanation": "With 昨日 (yesterday), use the past form: 行きます becomes 行きました.",
+        "spokenEn": "With 「昨日」, use the past: 「行きました」."
+      }
     ]
   },
   {
-    "id": "e.weekend.ask", "track": "everyday", "category": "weekend", "level": 1, "kind": "question", "politeness": "professional",
-    "japanese": "週末は何をしましたか？", "kana": "しゅうまつはなにをしましたか？", "romaji": "Shūmatsu wa nani o shimashita ka?",
+    "id": "e.weekend.ask",
+    "track": "everyday",
+    "category": "weekend",
+    "level": 1,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "週末は何をしましたか？",
+    "kana": "しゅうまつはなにをしましたか？",
+    "romaji": "Shūmatsu wa nani o shimashita ka?",
     "english": "What did you do at the weekend?",
+    "chunks": [
+      {
+        "ja": "週末は",
+        "kana": "しゅうまつは"
+      },
+      {
+        "ja": "何を",
+        "kana": "なにを"
+      },
+      {
+        "ja": "しましたか？",
+        "kana": "しましたか？"
+      }
+    ],
+    "situationEn": "It's Monday morning, and Nakamura-san sits down next to you.",
+    "cueEn": "Ask: what did you do at the weekend?",
+    "intentEn": "Ask about her weekend.",
+    "noteEn": "「土日」, Saturday and Sunday, also means the weekend.",
     "usageNote": "Classic Monday small talk with colleagues.",
-    "grammar": ["g.past-masu"],
+    "grammar": [
+      "g.past-masu"
+    ],
     "promptEn": "It's Monday. Ask a Japanese colleague what they did at the weekend.",
-    "acceptableResponses": ["週末は何をしましたか", "週末何をしましたか", "週末は何しましたか", "土日は何をしましたか"],
-    "keyTerms": [["週末", "しゅうまつ", "土日", "どにち"], ["しましたか", "しました"]]
-  },
-  {
-    "id": "e.weekend.friends", "track": "everyday", "category": "weekend", "level": 1, "kind": "sentence", "politeness": "professional",
-    "japanese": "友達と出かけました。", "kana": "ともだちとでかけました。", "romaji": "Tomodachi to dekakemashita.",
-    "english": "I went out with friends.",
-    "grammar": ["g.past-masu"],
-    "promptEn": "Say: I went out with friends.",
-    "acceptableResponses": ["友達と出かけました", "友達と一緒に出かけました", "友達と遊びました", "友達と遊びに行きました"],
-    "keyTerms": [["友達", "ともだち"], ["ました"]],
-    "commonMistakes": [
-      { "id": "e.weekend.friends.nonpast", "type": "pastTense", "whenContainsAll": [["友達", "ともだち"], ["出かけます", "でかけます", "遊びます", "あそびます"]], "unlessContainsAny": ["ました"],
-        "correction": "友達と出かけました。", "explanation": "Last weekend is in the past: 出かけます becomes 出かけました." }
+    "acceptableResponses": [
+      "週末は何をしましたか",
+      "週末何をしましたか",
+      "週末は何しましたか",
+      "土日は何をしましたか"
+    ],
+    "keyTerms": [
+      [
+        "週末",
+        "しゅうまつ",
+        "土日",
+        "どにち"
+      ],
+      [
+        "しましたか",
+        "しました"
+      ]
     ]
   },
   {
-    "id": "e.restaurant.colleagues", "track": "everyday", "category": "restaurants", "level": 2, "kind": "sentence", "politeness": "professional",
-    "japanese": "昨日、会社の人と一緒に新しいレストランに行きました。", "kana": "きのう、かいしゃのひとといっしょにあたらしいレストランにいきました。", "romaji": "Kinō, kaisha no hito to issho ni atarashii resutoran ni ikimashita.",
+    "id": "e.weekend.friends",
+    "track": "everyday",
+    "category": "weekend",
+    "level": 1,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "友達と出かけました。",
+    "kana": "ともだちとでかけました。",
+    "romaji": "Tomodachi to dekakemashita.",
+    "english": "I went out with friends.",
+    "chunks": [
+      {
+        "ja": "友達と",
+        "kana": "ともだちと"
+      },
+      {
+        "ja": "出かけました。",
+        "kana": "でかけました。"
+      }
+    ],
+    "situationEn": "On Monday, Nakamura-san asks about your weekend.",
+    "cueEn": "Say: I went out with friends.",
+    "intentEn": "Tell her what you did at the weekend.",
+    "noteEn": "「出かけました」 means 'went out' — no destination needed.",
+    "partner": {
+      "japanese": "週末は何をしましたか？",
+      "kana": "しゅうまつはなにをしましたか？",
+      "english": "What did you do at the weekend?",
+      "personaID": "p.nakamura"
+    },
+    "grammar": [
+      "g.past-masu"
+    ],
+    "promptEn": "Say: I went out with friends.",
+    "acceptableResponses": [
+      "友達と出かけました",
+      "友達と一緒に出かけました",
+      "友達と遊びました",
+      "友達と遊びに行きました"
+    ],
+    "keyTerms": [
+      [
+        "友達",
+        "ともだち"
+      ],
+      [
+        "ました"
+      ]
+    ],
+    "commonMistakes": [
+      {
+        "id": "e.weekend.friends.nonpast",
+        "type": "pastTense",
+        "whenContainsAll": [
+          [
+            "友達",
+            "ともだち"
+          ],
+          [
+            "出かけます",
+            "でかけます",
+            "遊びます",
+            "あそびます"
+          ]
+        ],
+        "unlessContainsAny": [
+          "ました"
+        ],
+        "correction": "友達と出かけました。",
+        "explanation": "Last weekend is in the past: 出かけます becomes 出かけました.",
+        "spokenEn": "For last weekend, use the past: 「出かけました」."
+      }
+    ]
+  },
+  {
+    "id": "e.restaurant.colleagues",
+    "track": "everyday",
+    "category": "restaurants",
+    "level": 2,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "昨日、会社の人と一緒に新しいレストランに行きました。",
+    "kana": "きのう、かいしゃのひとといっしょにあたらしいレストランにいきました。",
+    "romaji": "Kinō, kaisha no hito to issho ni atarashii resutoran ni ikimashita.",
     "english": "Yesterday I went to a new restaurant with people from work.",
-    "grammar": ["g.past-masu"],
+    "chunks": [
+      {
+        "ja": "昨日、",
+        "kana": "きのう、"
+      },
+      {
+        "ja": "会社の人と",
+        "kana": "かいしゃのひとと"
+      },
+      {
+        "ja": "一緒に",
+        "kana": "いっしょに"
+      },
+      {
+        "ja": "新しいレストランに",
+        "kana": "あたらしいレストランに"
+      },
+      {
+        "ja": "行きました。",
+        "kana": "いきました。"
+      }
+    ],
+    "situationEn": "Nakamura-san asks if you've been anywhere good to eat lately.",
+    "cueEn": "Say: yesterday I went to a new restaurant with people from work.",
+    "intentEn": "Tell her where you ate yesterday, and with whom.",
+    "noteEn": "「会社の人」, literally 'company people', means colleagues.",
+    "partner": {
+      "japanese": "最近、どこかおいしい店に行きましたか？",
+      "kana": "さいきん、どこかおいしいみせにいきましたか？",
+      "english": "Have you been anywhere good to eat lately?",
+      "personaID": "p.nakamura"
+    },
+    "grammar": [
+      "g.past-masu"
+    ],
     "promptEn": "Say: yesterday I went to a new restaurant with people from work.",
-    "acceptableResponses": ["昨日会社の人と一緒に新しいレストランに行きました", "昨日会社の人と新しいレストランに行きました", "昨日同僚と新しいレストランに行きました"],
-    "keyTerms": [["会社の人", "かいしゃのひと", "同僚", "どうりょう"], ["レストラン"], ["行きました", "いきました"]],
-    "listening": { "questionJa": "誰と行きましたか？", "questionEn": "Who did they go with?", "answerTerms": [["会社の人", "かいしゃのひと", "同僚", "どうりょう", "会社"]], "modelAnswer": "会社の人と行きました。" }
+    "acceptableResponses": [
+      "昨日会社の人と一緒に新しいレストランに行きました",
+      "昨日会社の人と新しいレストランに行きました",
+      "昨日同僚と新しいレストランに行きました"
+    ],
+    "keyTerms": [
+      [
+        "会社の人",
+        "かいしゃのひと",
+        "同僚",
+        "どうりょう"
+      ],
+      [
+        "レストラン"
+      ],
+      [
+        "行きました",
+        "いきました"
+      ]
+    ],
+    "listening": {
+      "topicEn": "A colleague talks about trying a new restaurant.",
+      "questionJa": "誰と行きましたか？",
+      "questionEn": "Who did they go with?",
+      "choiceQuestionJa": "会社の人とですか、家族とですか？",
+      "choiceQuestionKana": "かいしゃのひととですか、かぞくとですか？",
+      "choiceQuestionEn": "With people from work, or with family?",
+      "answerTerms": [
+        [
+          "会社の人",
+          "かいしゃのひと",
+          "同僚",
+          "どうりょう",
+          "会社"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "家族",
+          "かぞく"
+        ]
+      ],
+      "modelAnswer": "会社の人と行きました。",
+      "modelAnswerKana": "かいしゃのひとといきました。",
+      "modelAnswerEn": "With people from work."
+    }
   },
   {
-    "id": "e.busy.ask", "track": "everyday", "category": "smallTalk", "level": 1, "kind": "question", "politeness": "professional",
-    "japanese": "今日は忙しかったですか？", "kana": "きょうはいそがしかったですか？", "romaji": "Kyō wa isogashikatta desu ka?",
+    "id": "e.busy.ask",
+    "track": "everyday",
+    "category": "smallTalk",
+    "level": 1,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "今日は忙しかったですか？",
+    "kana": "きょうはいそがしかったですか？",
+    "romaji": "Kyō wa isogashikatta desu ka?",
     "english": "Were you busy today?",
-    "grammar": ["g.i-adj-past"],
+    "chunks": [
+      {
+        "ja": "今日は",
+        "kana": "きょうは"
+      },
+      {
+        "ja": "忙しかったですか？",
+        "kana": "いそがしかったですか？"
+      }
+    ],
+    "situationEn": "At the end of the day, you chat with Nakamura-san.",
+    "cueEn": "Ask: were you busy today?",
+    "intentEn": "Ask whether her day was hectic.",
+    "noteEn": "「忙しかった」 is the past of 「忙しい」.",
+    "grammar": [
+      "g.i-adj-past"
+    ],
     "promptEn": "At the end of the day, ask a colleague: were you busy today?",
-    "acceptableResponses": ["今日は忙しかったですか", "今日忙しかったですか"],
-    "keyTerms": [["忙しかった", "いそがしかった"]]
+    "acceptableResponses": [
+      "今日は忙しかったですか",
+      "今日忙しかったですか"
+    ],
+    "keyTerms": [
+      [
+        "忙しかった",
+        "いそがしかった"
+      ]
+    ]
   },
   {
-    "id": "e.busy.answer", "track": "everyday", "category": "smallTalk", "level": 1, "kind": "sentence", "politeness": "professional",
-    "japanese": "はい、ちょっと忙しかったです。", "kana": "はい、ちょっといそがしかったです。", "romaji": "Hai, chotto isogashikatta desu.",
+    "id": "e.busy.answer",
+    "track": "everyday",
+    "category": "smallTalk",
+    "level": 1,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "はい、ちょっと忙しかったです。",
+    "kana": "はい、ちょっといそがしかったです。",
+    "romaji": "Hai, chotto isogashikatta desu.",
     "english": "Yes, it was a bit busy.",
+    "chunks": [
+      {
+        "ja": "はい、",
+        "kana": "はい、"
+      },
+      {
+        "ja": "ちょっと",
+        "kana": "ちょっと"
+      },
+      {
+        "ja": "忙しかったです。",
+        "kana": "いそがしかったです。"
+      }
+    ],
+    "situationEn": "At the end of the day, Nakamura-san asks about your day.",
+    "cueEn": "Say: yes, it was a bit busy.",
+    "intentEn": "Tell her how your day was.",
+    "noteEn": "「ちょっと」 softens it — very natural in conversation.",
+    "partner": {
+      "japanese": "今日は忙しかったですか？",
+      "kana": "きょうはいそがしかったですか？",
+      "english": "Were you busy today?",
+      "personaID": "p.nakamura"
+    },
     "usageNote": "ちょっと softens it — very natural in conversation.",
-    "grammar": ["g.i-adj-past"],
+    "grammar": [
+      "g.i-adj-past"
+    ],
     "promptEn": "Answer: yes, it was a bit busy.",
-    "acceptableResponses": ["はいちょっと忙しかったです", "ちょっと忙しかったです", "はい少し忙しかったです", "はい忙しかったです"],
-    "keyTerms": [["忙しかった", "いそがしかった"]],
-    "listening": { "questionJa": "今日はどうでしたか？", "questionEn": "How was their day?", "answerTerms": [["忙しかった", "いそがしかった", "忙しい"]], "modelAnswer": "ちょっと忙しかったです。" }
+    "acceptableResponses": [
+      "はいちょっと忙しかったです",
+      "ちょっと忙しかったです",
+      "はい少し忙しかったです",
+      "はい忙しかったです"
+    ],
+    "keyTerms": [
+      [
+        "忙しかった",
+        "いそがしかった"
+      ]
+    ],
+    "listening": {
+      "topicEn": "A colleague says how their day went.",
+      "questionJa": "今日はどうでしたか？",
+      "questionEn": "How was their day?",
+      "choiceQuestionJa": "忙しかったですか、暇でしたか？",
+      "choiceQuestionKana": "いそがしかったですか、ひまでしたか？",
+      "choiceQuestionEn": "Busy, or quiet?",
+      "answerTerms": [
+        [
+          "忙しかった",
+          "いそがしかった",
+          "忙しい"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "暇",
+          "ひま"
+        ]
+      ],
+      "modelAnswer": "ちょっと忙しかったです。",
+      "modelAnswerKana": "ちょっといそがしかったです。",
+      "modelAnswerEn": "A bit busy."
+    }
   },
   {
-    "id": "e.india.from", "track": "everyday", "category": "introductions", "level": 1, "kind": "sentence", "politeness": "professional",
-    "japanese": "インドから来ました。", "kana": "インドからきました。", "romaji": "Indo kara kimashita.",
-    "english": "I'm from India.", "literal": "I came from India.",
+    "id": "e.india.from",
+    "track": "everyday",
+    "category": "introductions",
+    "level": 1,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "インドから来ました。",
+    "kana": "インドからきました。",
+    "romaji": "Indo kara kimashita.",
+    "english": "I'm from India.",
+    "literal": "I came from India.",
+    "chunks": [
+      {
+        "ja": "インドから",
+        "kana": "インドから"
+      },
+      {
+        "ja": "来ました。",
+        "kana": "きました。"
+      }
+    ],
+    "situationEn": "At a first meeting, Suzuki-san asks where you're from.",
+    "cueEn": "Say: I'm from India.",
+    "intentEn": "Tell her your home country.",
+    "noteEn": "「インド出身です」 also means 'I'm from India'.",
+    "partner": {
+      "japanese": "どちらから来ましたか？",
+      "kana": "どちらからきましたか？",
+      "english": "Where are you from?",
+      "personaID": "p.suzuki"
+    },
     "promptEn": "Say: I'm from India.",
-    "acceptableResponses": ["インドから来ました", "インド出身です", "インドから来ています"],
-    "keyTerms": [["インド"]]
+    "acceptableResponses": [
+      "インドから来ました",
+      "インド出身です",
+      "インドから来ています"
+    ],
+    "keyTerms": [
+      [
+        "インド"
+      ]
+    ]
   },
   {
-    "id": "e.lived.japan", "track": "everyday", "category": "introductions", "level": 2, "kind": "sentence", "politeness": "professional",
-    "japanese": "前に二年ぐらい日本に住んでいました。", "kana": "まえににねんぐらいにほんにすんでいました。", "romaji": "Mae ni ni-nen gurai Nihon ni sunde imashita.",
+    "id": "e.lived.japan",
+    "track": "everyday",
+    "category": "introductions",
+    "level": 2,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "前に二年ぐらい日本に住んでいました。",
+    "kana": "まえににねんぐらいにほんにすんでいました。",
+    "romaji": "Mae ni ni-nen gurai Nihon ni sunde imashita.",
     "english": "I lived in Japan for about two years before.",
-    "grammar": ["g.te-imasu"],
+    "chunks": [
+      {
+        "ja": "前に",
+        "kana": "まえに"
+      },
+      {
+        "ja": "二年ぐらい",
+        "kana": "にねんぐらい"
+      },
+      {
+        "ja": "日本に",
+        "kana": "にほんに"
+      },
+      {
+        "ja": "住んでいました。",
+        "kana": "すんでいました。"
+      }
+    ],
+    "situationEn": "Over lunch, Nakamura-san asks if you've ever lived in Japan.",
+    "cueEn": "Say: I lived in Japan for about two years before.",
+    "intentEn": "Tell her about your time in Japan.",
+    "noteEn": "「住んでいました」 means you lived there, but no longer.",
+    "partner": {
+      "japanese": "日本に住んだことがありますか？",
+      "kana": "にほんにすんだことがありますか？",
+      "english": "Have you ever lived in Japan?",
+      "personaID": "p.nakamura"
+    },
+    "grammar": [
+      "g.te-imasu"
+    ],
     "promptEn": "Say: I lived in Japan for about two years before.",
-    "acceptableResponses": ["前に二年ぐらい日本に住んでいました", "前に2年ぐらい日本に住んでいました", "二年ぐらい日本に住んでいました", "2年くらい日本に住んでいました"],
-    "keyTerms": [["日本", "にほん"], ["住んで", "すんで"], ["二年", "2年", "にねん"]],
-    "listening": { "questionJa": "日本にどのくらい住んでいましたか？", "questionEn": "How long did they live in Japan?", "answerTerms": [["二年", "2年", "にねん"]], "modelAnswer": "二年ぐらいです。" }
+    "acceptableResponses": [
+      "前に二年ぐらい日本に住んでいました",
+      "前に2年ぐらい日本に住んでいました",
+      "二年ぐらい日本に住んでいました",
+      "2年くらい日本に住んでいました"
+    ],
+    "keyTerms": [
+      [
+        "日本",
+        "にほん"
+      ],
+      [
+        "住んで",
+        "すんで"
+      ],
+      [
+        "二年",
+        "2年",
+        "にねん"
+      ]
+    ],
+    "listening": {
+      "topicEn": "A colleague talks about living in Japan.",
+      "questionJa": "日本にどのくらい住んでいましたか？",
+      "questionEn": "How long did they live in Japan?",
+      "choiceQuestionJa": "二年ぐらいですか、五年ぐらいですか？",
+      "choiceQuestionKana": "にねんぐらいですか、ごねんぐらいですか？",
+      "choiceQuestionEn": "About two years, or about five?",
+      "answerTerms": [
+        [
+          "二年",
+          "2年",
+          "にねん"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "五年",
+          "5年",
+          "ごねん"
+        ]
+      ],
+      "modelAnswer": "二年ぐらいです。",
+      "modelAnswerKana": "にねんぐらいです。",
+      "modelAnswerEn": "About two years."
+    }
   },
   {
-    "id": "e.food.like", "track": "everyday", "category": "food", "level": 1, "kind": "question", "politeness": "professional",
-    "japanese": "インド料理は好きですか？", "kana": "インドりょうりはすきですか？", "romaji": "Indo ryōri wa suki desu ka?",
+    "id": "e.food.like",
+    "track": "everyday",
+    "category": "food",
+    "level": 1,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "インド料理は好きですか？",
+    "kana": "インドりょうりはすきですか？",
+    "romaji": "Indo ryōri wa suki desu ka?",
     "english": "Do you like Indian food?",
+    "chunks": [
+      {
+        "ja": "インド料理は",
+        "kana": "インドりょうりは"
+      },
+      {
+        "ja": "好きですか？",
+        "kana": "すきですか？"
+      }
+    ],
+    "situationEn": "At lunch, you chat with Nakamura-san about food.",
+    "cueEn": "Ask: do you like Indian food?",
+    "intentEn": "Find out if she enjoys Indian cuisine.",
     "promptEn": "Ask a Japanese colleague: do you like Indian food?",
-    "acceptableResponses": ["インド料理は好きですか", "インド料理が好きですか", "インドの料理は好きですか"],
-    "keyTerms": [["インド"], ["好き", "すき"]]
+    "acceptableResponses": [
+      "インド料理は好きですか",
+      "インド料理が好きですか",
+      "インドの料理は好きですか"
+    ],
+    "keyTerms": [
+      [
+        "インド"
+      ],
+      [
+        "好き",
+        "すき"
+      ]
+    ]
   },
   {
-    "id": "e.restaurant.recommend", "track": "everyday", "category": "restaurants", "level": 1, "kind": "question", "politeness": "professional",
-    "japanese": "おすすめは何ですか？", "kana": "おすすめはなんですか？", "romaji": "Osusume wa nan desu ka?",
+    "id": "e.restaurant.recommend",
+    "track": "everyday",
+    "category": "restaurants",
+    "level": 1,
+    "kind": "question",
+    "politeness": "professional",
+    "japanese": "おすすめは何ですか？",
+    "kana": "おすすめはなんですか？",
+    "romaji": "Osusume wa nan desu ka?",
     "english": "What do you recommend?",
+    "chunks": [
+      {
+        "ja": "おすすめは",
+        "kana": "おすすめは"
+      },
+      {
+        "ja": "何ですか？",
+        "kana": "なんですか？"
+      }
+    ],
+    "situationEn": "You're at a restaurant with Nakamura-san, looking at the menu.",
+    "cueEn": "Ask: what do you recommend?",
+    "intentEn": "Ask for her suggestion.",
+    "noteEn": "「おすすめ」 works for dishes, places, anything.",
+    "partner": {
+      "japanese": "ここは何でもおいしいですよ。",
+      "kana": "ここはなんでもおいしいですよ。",
+      "english": "Everything here is good.",
+      "personaID": "p.nakamura"
+    },
     "usageNote": "Works in any restaurant or izakaya, and when asking a colleague about places to visit.",
     "promptEn": "At a restaurant, ask: what do you recommend?",
-    "acceptableResponses": ["おすすめは何ですか", "おすすめはありますか", "何がおすすめですか"],
-    "keyTerms": [["おすすめ", "お勧め", "お薦め"]]
+    "acceptableResponses": [
+      "おすすめは何ですか",
+      "おすすめはありますか",
+      "何がおすすめですか"
+    ],
+    "keyTerms": [
+      [
+        "おすすめ",
+        "お勧め",
+        "お薦め"
+      ]
+    ]
   },
   {
-    "id": "e.shinkansen.rode", "track": "everyday", "category": "transportation", "level": 2, "kind": "sentence", "politeness": "professional",
-    "japanese": "日本にいたとき、新幹線に何度も乗りました。", "kana": "にほんにいたとき、しんかんせんになんどものりました。", "romaji": "Nihon ni ita toki, shinkansen ni nando mo norimashita.",
+    "id": "e.shinkansen.rode",
+    "track": "everyday",
+    "category": "transportation",
+    "level": 2,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "日本にいたとき、新幹線に何度も乗りました。",
+    "kana": "にほんにいたとき、しんかんせんになんどものりました。",
+    "romaji": "Nihon ni ita toki, shinkansen ni nando mo norimashita.",
     "english": "When I was in Japan, I rode the Shinkansen many times.",
-    "terms": ["v.shinkansen"], "grammar": ["g.past-masu"],
+    "chunks": [
+      {
+        "ja": "日本にいたとき、",
+        "kana": "にほんにいたとき、"
+      },
+      {
+        "ja": "新幹線に",
+        "kana": "しんかんせんに"
+      },
+      {
+        "ja": "何度も",
+        "kana": "なんども"
+      },
+      {
+        "ja": "乗りました。",
+        "kana": "のりました。"
+      }
+    ],
+    "situationEn": "Kobayashi-san asks if you've ever ridden the Shinkansen.",
+    "cueEn": "Say: when I was in Japan, I rode the Shinkansen many times.",
+    "intentEn": "Tell him about your Shinkansen experience.",
+    "noteEn": "Use 「に」 with 「乗る」: 「新幹線に乗りました」.",
+    "partner": {
+      "japanese": "新幹線に乗ったことがありますか？",
+      "kana": "しんかんせんにのったことがありますか？",
+      "english": "Have you ever ridden the Shinkansen?",
+      "personaID": "p.kobayashi"
+    },
+    "terms": [
+      "v.shinkansen"
+    ],
+    "grammar": [
+      "g.past-masu"
+    ],
     "promptEn": "Say: when I was in Japan, I rode the Shinkansen many times.",
-    "acceptableResponses": ["日本にいたとき新幹線に何度も乗りました", "日本にいた時新幹線に何回も乗りました", "日本で新幹線に何度も乗りました"],
-    "keyTerms": [["新幹線", "しんかんせん"], ["乗りました", "のりました"]],
-    "listening": { "questionJa": "新幹線に何回乗りましたか？", "questionEn": "How often did they ride the Shinkansen?", "answerTerms": [["何度も", "なんども", "何回も", "なんかいも", "たくさん"]], "modelAnswer": "何度も乗りました。" }
+    "acceptableResponses": [
+      "日本にいたとき新幹線に何度も乗りました",
+      "日本にいた時新幹線に何回も乗りました",
+      "日本で新幹線に何度も乗りました"
+    ],
+    "keyTerms": [
+      [
+        "新幹線",
+        "しんかんせん"
+      ],
+      [
+        "乗りました",
+        "のりました"
+      ]
+    ],
+    "listening": {
+      "topicEn": "A colleague talks about riding the Shinkansen in Japan.",
+      "questionJa": "新幹線に何回乗りましたか？",
+      "questionEn": "How often did they ride the Shinkansen?",
+      "choiceQuestionJa": "何度もですか、一回だけですか？",
+      "choiceQuestionKana": "なんどもですか、いっかいだけですか？",
+      "choiceQuestionEn": "Many times, or just once?",
+      "answerTerms": [
+        [
+          "何度も",
+          "なんども",
+          "何回も",
+          "なんかいも",
+          "たくさん"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "一回",
+          "いっかい",
+          "一度",
+          "いちど"
+        ]
+      ],
+      "modelAnswer": "何度も乗りました。",
+      "modelAnswerKana": "なんどものりました。",
+      "modelAnswerEn": "Many times."
+    }
   },
   {
-    "id": "e.weekend.plan", "track": "everyday", "category": "plans", "level": 2, "kind": "sentence", "politeness": "professional",
-    "japanese": "週末は家でゆっくりする予定です。", "kana": "しゅうまつはいえでゆっくりするよていです。", "romaji": "Shūmatsu wa ie de yukkuri suru yotei desu.",
+    "id": "e.weekend.plan",
+    "track": "everyday",
+    "category": "plans",
+    "level": 2,
+    "kind": "sentence",
+    "politeness": "professional",
+    "japanese": "週末は家でゆっくりする予定です。",
+    "kana": "しゅうまつはいえでゆっくりするよていです。",
+    "romaji": "Shūmatsu wa ie de yukkuri suru yotei desu.",
     "english": "I'm planning to take it easy at home this weekend.",
-    "grammar": ["g.yotei-desu"],
+    "chunks": [
+      {
+        "ja": "週末は",
+        "kana": "しゅうまつは"
+      },
+      {
+        "ja": "家で",
+        "kana": "いえで"
+      },
+      {
+        "ja": "ゆっくりする",
+        "kana": "ゆっくりする"
+      },
+      {
+        "ja": "予定です。",
+        "kana": "よていです。"
+      }
+    ],
+    "situationEn": "On Friday afternoon, Nakamura-san asks about your weekend plans.",
+    "cueEn": "Say: I'm planning to relax at home this weekend.",
+    "intentEn": "Tell her what you'll do this weekend.",
+    "noteEn": "「ゆっくりする」 means relax or take it easy.",
+    "partner": {
+      "japanese": "今週末は何か予定がありますか？",
+      "kana": "こんしゅうまつはなにかよていがありますか？",
+      "english": "Do you have any plans this weekend?",
+      "personaID": "p.nakamura"
+    },
+    "grammar": [
+      "g.yotei-desu"
+    ],
     "promptEn": "Say: I'm planning to relax at home this weekend.",
-    "acceptableResponses": ["週末は家でゆっくりする予定です", "週末は家でゆっくりするつもりです", "週末はうちでゆっくりします"],
-    "keyTerms": [["家", "いえ", "うち"], ["ゆっくり"]],
-    "listening": { "questionJa": "週末はどこで過ごしますか？", "questionEn": "Where will they spend the weekend?", "answerTerms": [["家", "いえ", "うち"]], "modelAnswer": "家です。" }
+    "acceptableResponses": [
+      "週末は家でゆっくりする予定です",
+      "週末は家でゆっくりするつもりです",
+      "週末はうちでゆっくりします"
+    ],
+    "keyTerms": [
+      [
+        "家",
+        "いえ",
+        "うち"
+      ],
+      [
+        "ゆっくり"
+      ]
+    ],
+    "listening": {
+      "topicEn": "A colleague talks about plans for the weekend.",
+      "questionJa": "週末はどこで過ごしますか？",
+      "questionEn": "Where will they spend the weekend?",
+      "choiceQuestionJa": "家で過ごしますか、出かけますか？",
+      "choiceQuestionKana": "いえですごしますか、でかけますか？",
+      "choiceQuestionEn": "Staying home, or going out?",
+      "answerTerms": [
+        [
+          "家",
+          "いえ",
+          "うち"
+        ]
+      ],
+      "distractorTerms": [
+        [
+          "出かけ",
+          "でかけ"
+        ]
+      ],
+      "modelAnswer": "家です。",
+      "modelAnswerKana": "いえです。",
+      "modelAnswerEn": "At home."
+    }
+  },
+  {
+    "id": "h.mouichido",
+    "track": "work",
+    "category": "strategy",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "もう一度お願いします。",
+    "kana": "もういちどおねがいします。",
+    "romaji": "Mō ichido onegai shimasu.",
+    "english": "One more time, please.",
+    "chunks": [
+      {
+        "ja": "もう一度",
+        "kana": "もういちど"
+      },
+      {
+        "ja": "お願いします。",
+        "kana": "おねがいします。"
+      }
+    ],
+    "situationEn": "In a meeting, Suzuki-san gives a date and time you didn't catch.",
+    "cueEn": "Say: one more time, please.",
+    "intentEn": "Ask her to repeat it.",
+    "noteEn": "Add 「すみません、」 first to sound softer.",
+    "partner": {
+      "japanese": "次の会議は、十五日の午後二時半からです。",
+      "kana": "つぎのかいぎは、じゅうごにちのごごにじはんからです。",
+      "english": "The next meeting is at 2:30 p.m. on the 15th.",
+      "personaID": "p.suzuki"
+    },
+    "usageNote": "Japanese colleagues say this in meetings whenever they miss a date, figure or name — it's normal, not rude. すみません、もう一度お願いします is softer; to a client, もう一度おっしゃっていただけますか is more formal.",
+    "promptEn": "You didn't catch what a colleague said in a meeting. Say: one more time, please.",
+    "acceptableResponses": [
+      "もう一度お願いします",
+      "もう一回お願いします",
+      "すみませんもう一度お願いします",
+      "もう一度お願いできますか",
+      "もう一度言っていただけますか"
+    ],
+    "keyTerms": [
+      [
+        "もう一度",
+        "もういちど",
+        "もう一回",
+        "もういっかい",
+        "もう1度",
+        "もう1回"
+      ]
+    ]
+  },
+  {
+    "id": "h.yukkuri",
+    "track": "work",
+    "category": "strategy",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "ゆっくりお願いします。",
+    "kana": "ゆっくりおねがいします。",
+    "romaji": "Yukkuri onegai shimasu.",
+    "english": "More slowly, please.",
+    "chunks": [
+      {
+        "ja": "ゆっくり",
+        "kana": "ゆっくり"
+      },
+      {
+        "ja": "お願いします。",
+        "kana": "おねがいします。"
+      }
+    ],
+    "situationEn": "Takahashi-san is explaining a technical point too fast for you.",
+    "cueEn": "Say: more slowly, please.",
+    "intentEn": "Ask him to slow down.",
+    "noteEn": "「もう少しゆっくり」 sounds a little gentler.",
+    "partner": {
+      "japanese": "配筋検査は、コンクリートを打つ前に行う必要があります。",
+      "kana": "はいきんけんさは、コンクリートをうつまえにおこなうひつようがあります。",
+      "english": "The rebar inspection has to be done before the concrete is poured.",
+      "personaID": "p.takahashi"
+    },
+    "usageNote": "Japanese colleagues use it in meetings when figures, names or a long list are read out too fast, or on a bad phone line. As a non-native speaker you can ask any time — people will gladly slow down. もう少しゆっくりお願いします sounds softer.",
+    "promptEn": "A colleague is explaining something too fast for you. Say: more slowly, please.",
+    "acceptableResponses": [
+      "ゆっくりお願いします",
+      "もう少しゆっくりお願いします",
+      "すみませんゆっくりお願いします",
+      "ゆっくり話してください",
+      "もう少しゆっくり話していただけますか"
+    ],
+    "keyTerms": [
+      [
+        "ゆっくり"
+      ]
+    ]
+  },
+  {
+    "id": "h.douiu",
+    "track": "work",
+    "category": "strategy",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "どういう意味ですか？",
+    "kana": "どういういみですか？",
+    "romaji": "Dō iu imi desu ka?",
+    "english": "What does that mean?",
+    "chunks": [
+      {
+        "ja": "どういう",
+        "kana": "どういう"
+      },
+      {
+        "ja": "意味ですか？",
+        "kana": "いみですか？"
+      }
+    ],
+    "situationEn": "At the morning briefing, Ito-san uses a term you don't know.",
+    "cueEn": "Ask: what does that mean?",
+    "intentEn": "Ask him what that term means.",
+    "noteEn": "Name the word first: 「KYって、どういう意味ですか？」",
+    "partner": {
+      "japanese": "朝礼のあとで、KYをやります。",
+      "kana": "ちょうれいのあとで、ケーワイをやります。",
+      "english": "After the morning briefing, we'll do KY.",
+      "personaID": "p.ito"
+    },
+    "usageNote": "Japanese colleagues ask this in meetings when someone uses an unfamiliar term or abbreviation, such as KY (危険予知, hazard prediction). Name the word first: KYって、どういう意味ですか？ Asking is normal and respectful.",
+    "promptEn": "A colleague uses a word you don't know. Ask: what does that mean?",
+    "acceptableResponses": [
+      "どういう意味ですか",
+      "それはどういう意味ですか",
+      "どういう意味でしょうか",
+      "どういうことですか",
+      "KYってどういう意味ですか",
+      "ケーワイってどういう意味ですか"
+    ],
+    "keyTerms": [
+      [
+        "意味",
+        "いみ",
+        "どういうこと"
+      ]
+    ]
+  },
+  {
+    "id": "h.eto",
+    "track": "work",
+    "category": "strategy",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "えーと…",
+    "kana": "えーと…",
+    "romaji": "Ēto…",
+    "english": "Um, let me see…",
+    "chunks": [
+      {
+        "ja": "えーと…",
+        "kana": "えーと…"
+      }
+    ],
+    "situationEn": "In a meeting, Suzuki-san asks a question you need to think about.",
+    "cueEn": "Say: um, let me see…",
+    "intentEn": "Buy yourself a moment while you work out the number.",
+    "noteEn": "Better than silence — it shows you're thinking.",
+    "partner": {
+      "japanese": "来月は、作業員が何人必要ですか？",
+      "kana": "らいげつは、さぎょういんがなんにんひつようですか？",
+      "english": "How many workers will you need next month?",
+      "personaID": "p.suzuki"
+    },
+    "usageNote": "Japanese speakers use えーと all the time in meetings to show they're thinking and keep their turn; silence can sound as if you didn't understand. ええと is a little softer; えっと is more casual.",
+    "promptEn": "You need a moment to think before answering. Say: um, let me see…",
+    "acceptableResponses": [
+      "えーと",
+      "ええと",
+      "えっと",
+      "えーっと"
+    ],
+    "keyTerms": [
+      [
+        "えーと",
+        "ええと",
+        "えっと",
+        "えーっと"
+      ]
+    ]
+  },
+  {
+    "id": "h.soudesune",
+    "track": "work",
+    "category": "strategy",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "そうですね…",
+    "kana": "そうですね…",
+    "romaji": "Sō desu ne…",
+    "english": "Well, let me think…",
+    "chunks": [
+      {
+        "ja": "そうですね…",
+        "kana": "そうですね…"
+      }
+    ],
+    "situationEn": "Takahashi-san asks for your opinion, and you need a moment.",
+    "cueEn": "Say: well, let me think…",
+    "intentEn": "Acknowledge the question while you think about your answer.",
+    "noteEn": "Said slowly, it means 'let me think'; quickly, 'that's right'.",
+    "partner": {
+      "japanese": "この遅れの一番の原因は、何だと思いますか？",
+      "kana": "このおくれのいちばんのげんいんは、なんだとおもいますか？",
+      "english": "What do you think is the main cause of this delay?",
+      "personaID": "p.takahashi"
+    },
+    "usageNote": "In meetings, Japanese colleagues often begin with a drawn-out そうですね… when asked for an opinion or an estimate, to show they're considering it. Said briskly, そうですね means 'that's right' instead.",
+    "promptEn": "Someone asks your opinion and you need a moment. Say: well, let me think…",
+    "acceptableResponses": [
+      "そうですね",
+      "そうですねえ",
+      "そうですねー",
+      "うーんそうですね"
+    ],
+    "keyTerms": [
+      [
+        "そうですね"
+      ]
+    ]
+  },
+  {
+    "id": "h.naruhodo",
+    "track": "work",
+    "category": "strategy",
+    "level": 1,
+    "kind": "phrase",
+    "politeness": "professional",
+    "japanese": "なるほど。",
+    "kana": "なるほど。",
+    "romaji": "Naruhodo.",
+    "english": "I see — that makes sense.",
+    "chunks": [
+      {
+        "ja": "なるほど。",
+        "kana": "なるほど。"
+      }
+    ],
+    "situationEn": "Nakamura-san explains why the site does morning exercises.",
+    "cueEn": "Say: I see — that makes sense.",
+    "intentEn": "Show her the explanation makes sense.",
+    "noteEn": "Fine with peers; to seniors, 「そうなんですね」 is safer.",
+    "partner": {
+      "japanese": "朝の体操は、けがを防ぐためなんですよ。",
+      "kana": "あさのたいそうは、けがをふせぐためなんですよ。",
+      "english": "The morning exercises are to prevent injuries.",
+      "personaID": "p.nakamura"
+    },
+    "usageNote": "Colleagues say なるほど in meetings when an explanation clicks. It's ideal with peers; to seniors or clients it can sound as if you're judging their point, so そうなんですね or 勉強になります is safer.",
+    "promptEn": "A colleague's explanation suddenly makes sense. Say: I see — that makes sense.",
+    "acceptableResponses": [
+      "なるほど",
+      "なるほどそうなんですね",
+      "なるほどそうですか",
+      "なるほどわかりました"
+    ],
+    "keyTerms": [
+      [
+        "なるほど"
+      ]
+    ]
   }
 ]

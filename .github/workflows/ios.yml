@@ -41,6 +41,10 @@ jobs:
           set -o pipefail
           swift test 2>&1 | tee ../../core-tests.log
 
+      - name: Annotate core test failures
+        if: ${{ always() && steps.core.outcome == 'failure' }}
+        run: python3 .github/scripts/annotate.py core-tests.log "Core tests"
+
       - name: Generate the Xcode project
         if: ${{ !cancelled() }}
         run: |
@@ -70,7 +74,12 @@ jobs:
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build 2>&1 | tee app-build.log
 
+      - name: Annotate app build failures
+        if: ${{ always() && steps.build.outcome == 'failure' }}
+        run: python3 .github/scripts/annotate.py app-build.log "App build"
+
       - name: Play demo sessions in the Simulator
+        id: ui
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           set -o pipefail
@@ -78,6 +87,10 @@ jobs:
             -project Hanaseru.xcodeproj -scheme Hanaseru \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build -resultBundlePath UITests.xcresult 2>&1 | tee ui-tests.log
+
+      - name: Annotate UI test failures
+        if: ${{ always() && steps.ui.outcome == 'failure' }}
+        run: python3 .github/scripts/annotate.py ui-tests.log "UI tests"
 
       - name: Export screenshots
         if: ${{ always() }}
@@ -88,6 +101,7 @@ jobs:
           fi
 
       - name: Build an unsigned IPA for iPhone
+        id: archive
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           set -o pipefail
@@ -98,6 +112,10 @@ jobs:
           mkdir -p Payload
           cp -R build/Hanaseru.xcarchive/Products/Applications/Hanaseru.app Payload/
           zip -qry Hanaseru-unsigned.ipa Payload
+
+      - name: Annotate archive failures
+        if: ${{ always() && steps.archive.outcome == 'failure' }}
+        run: python3 .github/scripts/annotate.py archive.log "Archive"
 
       - name: Check the IPA contents
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}

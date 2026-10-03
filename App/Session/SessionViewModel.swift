@@ -34,6 +34,15 @@ final class SessionViewModel {
     private(set) var micLevel: Float = 0
     private(set) var startedAt = Date()
     private(set) var isPaused = false
+    /// What the learner is being asked to say right now (English cue, how much Japanese to show).
+    private(set) var focusInfo: FocusInfo?
+    /// The answer after the latest turn.
+    private(set) var reveal: RevealInfo?
+    /// Think time for the current listen, for the think ring.
+    private(set) var thinkSeconds: Double = 0
+    private(set) var listenStartedAt = Date()
+    /// The line whose hidden Japanese the learner tapped to see (it counts as help for that turn).
+    private(set) var peekedLineID: String?
 
     private let app: AppEnvironment
     private var runner: SessionRunner?
@@ -59,8 +68,11 @@ final class SessionViewModel {
         let prepared = await SessionPreparer(library: app.library, repository: app.repository)
             .prepare(minutes: minutes, focus: focus)
         let voice = demo ? DemoVoice.makeVoice() : app.voice.runnerVoice
+        // The hands-free help words are taught once, in the first session of 5 minutes or more.
+        let teachHelp = minutes >= 5 && !UserDefaults.standard.bool(forKey: SettingsKey.helpOnboardingDone)
         let runner = SessionRunner(plan: prepared.plan, library: prepared.library, voice: voice,
-                                   ai: app.makeAIProvider(), repository: app.repository)
+                                   ai: app.makeAIProvider(), repository: app.repository,
+                                   options: SessionOptions(includeHelpOnboarding: teachHelp))
         runner.onEvent = { [weak self] event in self?.handle(event) }
         self.runner = runner
         if !demo { wireVoiceControls(to: runner) }
@@ -97,6 +109,23 @@ final class SessionViewModel {
         runner?.skip()
     }
 
+    /// Help bar: ヒント, 答え, もう一度, ゆっくり, 英語で, スキップ.
+    func command(_ command: VoiceCommand) {
+        runner?.command(command)
+    }
+
+    /// AirPods "next": the answer during the learner's turn, otherwise skip.
+    func answerAndNext() {
+        runner?.answerAndNext()
+    }
+
+    /// Shows the hidden Japanese of the current line.
+    func peek() {
+        guard let lineID = focusInfo?.lineID else { return }
+        peekedLineID = lineID
+        runner?.notePeek()
+    }
+
     func end() {
         if let runner, !runner.isFinished {
             runner.stop()
@@ -130,6 +159,8 @@ final class SessionViewModel {
             exerciseTitle = title
             feedback = nil
             instruction = nil
+            focusInfo = nil
+            reveal = nil
             updateNowPlaying()
         case .line(let line):
             switch line.role {
@@ -151,7 +182,22 @@ final class SessionViewModel {
             feedback = note
         case .aiDegraded(let degraded):
             aiDegraded = degraded
+        case .focus(let info):
+            peekedLineID = nil
+            focusInfo = info
+            reveal = nil
+            feedback = nil
+            updateNowPlaying()
+        case .reveal(let info):
+            reveal = info
+            updateNowPlaying()
+        case .turnWindow(let seconds, _):
+            thinkSeconds = seconds
+            listenStartedAt = Date()
         case .finished(let summary):
+            if summary.completedNormally && minutes >= 5 {
+                UserDefaults.standard.set(true, forKey: SettingsKey.helpOnboardingDone)
+            }
             phase = .finished(summary)
             teardown()
         }
@@ -172,7 +218,8 @@ final class SessionViewModel {
             guard let self, self.isPaused else { return }
             self.togglePause()
         }
-        remote.onSkip = { [weak self] in self?.skip() }
+        remote.onSkip = { [weak self] in self?.answerAndNext() }
+        remote.onPrevious = { [weak self] in self?.command(.repeatPrompt) }
         // A phone call or AirPods coming out pauses the session; resuming is the learner's choice.
         app.voice.audioSession.onInterruption = { [weak self] began in
             guard let self, began, !self.isPaused else { return }
@@ -184,6 +231,7 @@ final class SessionViewModel {
         }
     }
 
+    /// The lock screen shows the current English cue, so a glance is enough even with the phone locked.
     private func updateNowPlaying() {
         guard !demo else { return }
         let status: String = switch activity {
@@ -192,6 +240,8 @@ final class SessionViewModel {
         case .finished: "Finished"
         default: exerciseTitle
         }
-        app.voice.remote.updateNowPlaying(title: "\(minutes) min · \(focus.title)", detail: status, isPaused: isPaused)
+        let title = focusInfo?.cueEn.isEmpty == false ? (focusInfo?.cueEn ?? "") : "\(minutes) min · \(focus.title)"
+        let detail = reveal.map { "\($0.japanese) · \(status)" } ?? status
+        app.voice.remote.updateNowPlaying(title: title, detail: detail, isPaused: isPaused)
     }
 }

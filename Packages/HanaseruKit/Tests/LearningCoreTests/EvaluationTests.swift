@@ -19,12 +19,60 @@ struct JapaneseTextTests {
     @Test func voiceCommandsNeedTheWholeUtterance() {
         #expect(VoiceCommand.detect(in: "もう一度") == .repeatPrompt)
         #expect(VoiceCommand.detect(in: "もう一度お願いします。") == .repeatPrompt)
-        #expect(VoiceCommand.detect(in: "わかりません") == .dontKnow)
+        #expect(VoiceCommand.detect(in: "わかりません") == .answer)
+        #expect(VoiceCommand.detect(in: "答え") == .answer)
+        #expect(VoiceCommand.detect(in: "ヒント") == .hint)
+        #expect(VoiceCommand.detect(in: "ゆっくりお願いします") == .slower)
+        #expect(VoiceCommand.detect(in: "英語で") == .english)
+        #expect(VoiceCommand.detect(in: "どういう意味ですか") == .english)
         #expect(VoiceCommand.detect(in: "スキップ") == .skip)
-        #expect(VoiceCommand.detect(in: "ちょっと待ってください") == .pause)
+        #expect(VoiceCommand.detect(in: "ちょっと待ってください") == .moreTime)
+        #expect(VoiceCommand.detect(in: "ストップ") == .pause)
         #expect(VoiceCommand.detect(in: "もう一度確認します") == nil)
         #expect(VoiceCommand.detect(in: "次の検査は金曜日です") == nil)
         #expect(VoiceCommand.detect(in: "") == nil)
+    }
+
+    @Test func practisingAHelpPhraseIsNotACommand() {
+        // 「もう一度お願いします。」 is also a line the learner learns; saying it as an answer must count as the answer.
+        #expect(VoiceCommand.detect(in: "もう一度お願いします", expected: ["もう一度お願いします。"]) == nil)
+        #expect(VoiceCommand.detect(in: "もう一度お願いします", expected: ["確認しておきます。"]) == .repeatPrompt)
+    }
+
+    @Test func fillersHoldTheTurn() {
+        #expect(JapaneseText.isFillerOnly("えーと"))
+        #expect(JapaneseText.isFillerOnly("うーん、えっと"))
+        #expect(!JapaneseText.isFillerOnly("えーと、順調です"))
+        #expect(JapaneseText.stripLeadingFillers("えーと、順調です") == "順調です")
+        #expect(!JapaneseText.isFillerOnly(""))
+    }
+
+    @Test func englishAnswersAreRecognisedAsLatin() {
+        #expect(JapaneseText.isMostlyLatin("hello there"))
+        #expect(!JapaneseText.isMostlyLatin("順調です OK"))
+    }
+
+    @Test func moraeAndSegments() {
+        #expect(JapaneseText.firstMorae("じゅんちょうです", count: 2) == "じゅん")
+        #expect(JapaneseText.moraCount("じゅんちょうです") == 6)
+        let parts = JapaneseText.bilingualSegments("Stuck? Say 「ヒント」 for a hint.")
+        #expect(parts.map(\.text) == ["Stuck? Say", "ヒント", "for a hint."])
+        #expect(parts.map(\.isJapanese) == [false, true, false])
+        #expect(JapaneseText.punctuationChunks("いいえ、特に問題はありません。") == ["いいえ、", "特に問題はありません。"])
+    }
+
+    @Test func punctuationAloneIsNotSpoken() {
+        let parts = JapaneseText.bilingualSegments("Say 「お疲れさまでした」.")
+        #expect(parts.map(\.text) == ["Say", "お疲れさまでした"])
+        #expect(JapaneseText.isSpeakableInstruction("Say 「ました」, not 「ます」."))
+        #expect(!JapaneseText.isSpeakableInstruction("忙しい becomes 忙しかったです."))
+    }
+
+    @Test func englishIsTidiedForSpeech() {
+        #expect(JapaneseText.speakableEnglish("Understood. / Certainly.") == "Understood. or Certainly.")
+        #expect(JapaneseText.speakableEnglish("Hi (to a colleague at work).") == "Hi, to a colleague at work.")
+        #expect(JapaneseText.speakableEnglish("By when? (What's the deadline?)") == "By when? What's the deadline?")
+        #expect(JapaneseText.speakableEnglish("km/h") == "km/h")
     }
 }
 
@@ -77,6 +125,15 @@ struct ResponseEvaluatorTests {
     @Test func silenceAndEnglishAreHandled() {
         #expect(evaluator.evaluate("", against: target("w.confirm.will")).verdict == .noResponse)
         #expect(evaluator.evaluate("I will check", against: target("w.confirm.will")).verdict == .unclear)
+    }
+
+    @Test func answersNamingTheWrongOptionAreWrong() throws {
+        // 「いいえ」 contains 「いえ」 (home), but 出かけます is the other option.
+        let weekend = try #require(library.item(id: "e.weekend.plan")?.listening)
+        #expect(!evaluator.evaluate("いいえ、出かけます", against: EvaluationTarget(listening: weekend)).verdict.isSuccess)
+        #expect(evaluator.evaluate("家です", against: EvaluationTarget(listening: weekend)).verdict.isSuccess)
+        let progress = try #require(library.item(id: "w.progress.ontrack")?.listening)
+        #expect(!evaluator.evaluate("はい、遅れています", against: EvaluationTarget(listening: progress)).verdict.isSuccess)
     }
 
     @Test func unrelatedJapaneseIsNotConfident() {

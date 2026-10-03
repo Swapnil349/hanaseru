@@ -19,6 +19,9 @@ enum VoiceEngineError: LocalizedError {
 final class AudioEngineHost: @unchecked Sendable {
     enum Chime {
         case yourTurn
+        case tick
+        case nudge
+        case reveal
         case complete
     }
 
@@ -109,8 +112,11 @@ final class AudioEngineHost: @unchecked Sendable {
     /// A short two-note rising chime, in the spirit of a station departure melody's first notes.
     private func makeChime(_ chime: Chime) -> AVAudioPCMBuffer? {
         let notes: [(frequency: Double, duration: Double)] = switch chime {
-        case .yourTurn: [(880.0, 0.09), (1318.5, 0.13)]
-        case .complete: [(1318.5, 0.1), (1046.5, 0.1), (1568.0, 0.18)]
+        case .yourTurn: [(frequency: 880.0, duration: 0.09), (frequency: 1318.5, duration: 0.13)]
+        case .tick: [(frequency: 1568.0, duration: 0.06)]
+        case .nudge: [(frequency: 1046.5, duration: 0.08)]
+        case .reveal: [(frequency: 659.3, duration: 0.12)]
+        case .complete: [(frequency: 1318.5, duration: 0.1), (frequency: 1046.5, duration: 0.1), (frequency: 1568.0, duration: 0.18)]
         }
         let sampleRate = chimeFormat.sampleRate
         let totalFrames = AVAudioFrameCount(notes.map(\.duration).reduce(0, +) * sampleRate)

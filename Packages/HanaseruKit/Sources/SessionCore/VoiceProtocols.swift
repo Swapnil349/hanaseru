@@ -1,4 +1,5 @@
 import Foundation
+import LearningCore
 
 /// Voice-engine abstractions (spec §35, §55 layer 3). The session logic depends only on these;
 /// the iOS app provides AVFoundation/Speech implementations and tests provide scripted fakes.
@@ -8,6 +9,20 @@ public enum SpeechLanguage: String, Sendable {
     case english
 }
 
+/// Who is speaking. Three distinct voices make the session followable by ear alone.
+public enum VoiceRole: Equatable, Sendable {
+    /// The coach's English (instructions and meanings).
+    case coachEnglish
+    /// The coach's Japanese (cues and every model of the learner's own lines).
+    case coachJapanese
+    /// The role-play partner, in a different Japanese voice where possible.
+    case partner(VoiceGender?)
+
+    public static func `default`(for language: SpeechLanguage) -> VoiceRole {
+        language == .japanese ? .coachJapanese : .coachEnglish
+    }
+}
+
 public struct SpeechRequest: Equatable, Sendable {
     public var text: String
     public var language: SpeechLanguage
@@ -15,12 +30,18 @@ public struct SpeechRequest: Equatable, Sendable {
     public var rate: Double
     /// Silence after the utterance, in seconds.
     public var pauseAfter: TimeInterval
+    public var voice: VoiceRole
+    /// 0…1. Whispered cues use 0.6 on headphones.
+    public var volume: Double
 
-    public init(text: String, language: SpeechLanguage, rate: Double = 1.0, pauseAfter: TimeInterval = 0.15) {
+    public init(text: String, language: SpeechLanguage, rate: Double = 1.0, pauseAfter: TimeInterval = 0.15,
+                voice: VoiceRole? = nil, volume: Double = 1) {
         self.text = text
         self.language = language
         self.rate = rate
         self.pauseAfter = pauseAfter
+        self.voice = voice ?? .default(for: language)
+        self.volume = volume
     }
 }
 
@@ -86,9 +107,14 @@ public protocol SpeechRecognitionProvider: AnyObject {
 }
 
 public enum HapticCue: Sendable {
+    /// Chime + haptic: the learner's turn to speak.
     case yourTurn
+    /// Soft success tick.
     case correct
-    case tryAgain
+    /// Neutral tone before the answer is given. There is no failure sound anywhere.
+    case reveal
+    /// Soft chime after a nudge (one more step of help).
+    case nudge
     case sessionComplete
 }
 

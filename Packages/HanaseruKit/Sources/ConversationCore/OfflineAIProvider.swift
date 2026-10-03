@@ -73,7 +73,7 @@ public struct OfflineAIProvider: AIProvider {
     }
 
     /// A short, natural reaction before the next question (spec §78).
-    static func reaction(for verdict: ResponseVerdict, turn: Int, nextLine: String) -> (ja: String, kana: String, en: String) {
+    public static func reaction(for verdict: ResponseVerdict, turn: Int, nextLine: String) -> (ja: String, kana: String, en: String) {
         // Scripted lines that already open with a reaction or a greeting don't need another one.
         let opensWithReaction = ["そう", "なるほど", "へえ", "いいですね", "わかりました", "はじめまして", "おはよう", "お疲れ"]
             .contains { nextLine.hasPrefix($0) }

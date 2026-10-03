@@ -157,20 +157,93 @@ struct HandsFreeSessionView: View {
         .background(Palette.surfaceMuted, in: Capsule())
     }
 
+    /// The script card: the English of what to say, as much Japanese as the level allows, then the answer.
     @ViewBuilder
     private var currentLine: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let instruction = model.instruction, !instruction.english.isEmpty {
+        VStack(alignment: .leading, spacing: 14) {
+            if let instruction = model.instruction, !instruction.english.isEmpty, model.focusInfo == nil {
                 Text(instruction.english)
                     .font(.callout)
                     .foregroundStyle(Palette.inkSecondary)
             }
-            if let line = model.spokenLine, !line.japanese.isEmpty {
+            if let focus = model.focusInfo {
+                if !focus.partnerJapanese.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if !focus.partnerName.isEmpty {
+                            Text(focus.partnerName).font(.caption.weight(.semibold)).foregroundStyle(Palette.inkSecondary)
+                        }
+                        JapaneseTextView(japanese: focus.partnerJapanese, english: focus.partnerEnglish, style: .body,
+                                         showEnglish: showEnglish)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Palette.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Palette.hairline, lineWidth: 1))
+                }
+                scriptCard(focus)
+            } else if let line = model.spokenLine, !line.japanese.isEmpty {
                 JapaneseTextView(japanese: line.japanese, kana: line.kana, english: line.english,
                                  style: .title2, showEnglish: showEnglish)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func scriptCard(_ focus: FocusInfo) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(!focus.heading.isEmpty ? focus.heading : (focus.level == .model ? "LEARN" : "YOUR LINE"))
+                    .font(.caption2.weight(.bold)).tracking(1.2).foregroundStyle(Palette.line)
+                Spacer()
+                if focus.heading.isEmpty {
+                    Text(focus.level.title).font(.caption2).foregroundStyle(Palette.inkSecondary)
+                        .accessibilityIdentifier("line-mask-S\(focus.level.rawValue)")
+                }
+            }
+            Text(focus.cueEn.isEmpty ? focus.english : focus.cueEn)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let reveal = model.reveal, reveal.lineID == focus.lineID {
+                revealView(reveal)
+            } else if focus.level == .model {
+                JapaneseTextView(japanese: focus.japanese, kana: focus.kana, style: .title2, showEnglish: false)
+            } else if !focus.visibleJapanese.isEmpty {
+                Text(focus.visibleJapanese + " " + focus.hiddenPlaceholder)
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(Palette.ink)
+            } else if model.peekedLineID == focus.lineID {
+                JapaneseTextView(japanese: focus.japanese, kana: focus.kana, style: .title3, showEnglish: false)
+            } else if !focus.japanese.isEmpty {
+                Button("Tap to see the Japanese") { model.peek() }
+                    .font(.footnote)
+                    .foregroundStyle(Palette.line)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.line.opacity(0.06), in: RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous).stroke(Palette.line.opacity(0.25), lineWidth: 1))
+    }
+
+    /// After the turn: the full line, what was heard, and which parts were right. No red, no "wrong".
+    @ViewBuilder
+    private func revealView(_ reveal: RevealInfo) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            JapaneseTextView(japanese: reveal.japanese, kana: reveal.kana, style: .title2, showEnglish: false)
+            if !reveal.matchedChunks.isEmpty && !reveal.outcome.isClean {
+                Text("Right: " + reveal.matchedChunks.joined(separator: " · "))
+                    .font(.footnote).foregroundStyle(Palette.go)
+            }
+            if !reveal.heard.isEmpty {
+                Text("Heard: " + reveal.heard).font(.footnote).foregroundStyle(Palette.inkSecondary)
+            }
+            if !reveal.note.isEmpty {
+                Text(reveal.note).font(.footnote).foregroundStyle(Palette.inkSecondary)
+            }
+        }
     }
 
     private var transcript: some View {
@@ -186,16 +259,49 @@ struct HandsFreeSessionView: View {
 
     private var footer: some View {
         VStack(spacing: 10) {
+            helpBar
             AudioControl(isPaused: model.isPaused, onTogglePause: { model.togglePause() }, onSkip: { model.skip() })
             HStack {
                 Toggle("English", isOn: $showEnglish).toggleStyle(.button).font(.caption)
                 Toggle("Transcript", isOn: $showTranscript).toggleStyle(.button).font(.caption)
                 Spacer()
-                Text("Say 「もう一度」 to repeat").font(.caption2).foregroundStyle(Palette.inkSecondary)
             }
         }
         .padding(.horizontal, Metrics.padding)
         .padding(.vertical, 12)
         .background(Palette.surface.shadow(.drop(color: .black.opacity(0.06), radius: 8, y: -2)))
+    }
+
+    /// Tappable help, each chip showing the Japanese you can also just say.
+    private var helpBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                helpChip("ヒント", "Hint", .hint, id: "help-chip-hint")
+                helpChip("答え", "Answer", .answer, id: "help-chip-answer")
+                helpChip("もう一度", "Again", .repeatPrompt, id: "help-chip-again")
+                helpChip("ゆっくり", "Slower", .slower, id: "help-chip-slower")
+                helpChip("英語で", "English", .english, id: "help-chip-english")
+                helpChip("スキップ", "Skip", .skip, id: "help-chip-skip")
+            }
+        }
+        .scrollClipDisabled()
+    }
+
+    private func helpChip(_ ja: String, _ en: String, _ command: VoiceCommand, id: String) -> some View {
+        Button {
+            model.command(command)
+        } label: {
+            VStack(spacing: 1) {
+                Text(ja).font(.footnote.weight(.semibold))
+                Text(en).font(.caption2).foregroundStyle(Palette.inkSecondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Palette.surfaceMuted, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Palette.ink)
+        .accessibilityIdentifier(id)
+        .accessibilityLabel("\(en), \(ja)")
     }
 }

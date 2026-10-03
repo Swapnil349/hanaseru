@@ -47,6 +47,70 @@ public struct FeedbackNote: Equatable, Sendable {
     }
 }
 
+/// What the learner is being asked to say right now — drives the cue card and the lock screen.
+public struct FocusInfo: Equatable, Sendable {
+    public var lineID: String
+    public var level: ScaffoldLevel
+    /// The cue as spoken, e.g. "Say: No, there's no particular problem." or the intent at S3.
+    public var cueEn: String
+    /// The line's English meaning (always available on screen while the line is new or guided).
+    public var english: String
+    public var japanese: String
+    public var kana: String
+    /// Japanese shown before the answer: everything at S0, the first chunk at S1, nothing from S2.
+    public var visibleJapanese: String
+    /// Placeholder circles for the hidden part at S1 (○○○), sized to the missing morae.
+    public var hiddenPlaceholder: String
+    public var partnerJapanese: String
+    public var partnerEnglish: String
+    public var partnerName: String
+    /// Card heading when it isn't the learner's own line ("LISTEN"); empty for LEARN / YOUR LINE.
+    public var heading: String
+
+    public init(lineID: String, level: ScaffoldLevel, cueEn: String, english: String, japanese: String, kana: String,
+                visibleJapanese: String, hiddenPlaceholder: String = "", partnerJapanese: String = "",
+                partnerEnglish: String = "", partnerName: String = "", heading: String = "") {
+        self.lineID = lineID
+        self.level = level
+        self.cueEn = cueEn
+        self.english = english
+        self.japanese = japanese
+        self.kana = kana
+        self.visibleJapanese = visibleJapanese
+        self.hiddenPlaceholder = hiddenPlaceholder
+        self.partnerJapanese = partnerJapanese
+        self.partnerEnglish = partnerEnglish
+        self.partnerName = partnerName
+        self.heading = heading
+    }
+}
+
+/// The answer, shown after every turn: what was right, what was heard. Never "wrong".
+public struct RevealInfo: Equatable, Sendable {
+    public var lineID: String
+    public var japanese: String
+    public var kana: String
+    public var english: String
+    public var heard: String
+    public var outcome: TurnOutcome
+    public var matchedChunks: [String]
+    public var missingChunks: [String]
+    public var note: String
+
+    public init(lineID: String, japanese: String, kana: String, english: String, heard: String, outcome: TurnOutcome,
+                matchedChunks: [String] = [], missingChunks: [String] = [], note: String = "") {
+        self.lineID = lineID
+        self.japanese = japanese
+        self.kana = kana
+        self.english = english
+        self.heard = heard
+        self.outcome = outcome
+        self.matchedChunks = matchedChunks
+        self.missingChunks = missingChunks
+        self.note = note
+    }
+}
+
 public enum SessionActivity: Equatable, Sendable {
     case preparing
     /// The coach or partner is talking.
@@ -67,6 +131,12 @@ public enum SessionEvent: Equatable, Sendable {
     case feedback(FeedbackNote)
     /// True while the AI coach is unreachable and the offline engine is standing in.
     case aiDegraded(Bool)
+    /// The line now being taught or asked for.
+    case focus(FocusInfo)
+    /// The answer after a turn.
+    case reveal(RevealInfo)
+    /// The learner's think time for this listen, and when the nudge will come (0 = none).
+    case turnWindow(seconds: Double, nudgeAt: Double)
     case finished(SessionSummary)
 }
 

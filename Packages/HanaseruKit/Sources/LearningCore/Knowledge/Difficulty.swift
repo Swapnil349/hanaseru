@@ -24,8 +24,39 @@ public struct DifficultyProfile: Codable, Equatable, Sendable {
     /// Reasonable start for someone who lived in Japan but is rusty; the diagnostic (M2) will replace it.
     public static let starting = DifficultyProfile(level: 2, englishSupport: 0.8, speechRate: 0.85, responseWindow: 10)
 
+    /// Decodes field by field so a partly written profile keeps what it has instead of resetting everything.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = DifficultyProfile.starting
+        level = try c.decodeIfPresent(Int.self, forKey: .level) ?? defaults.level
+        englishSupport = try c.decodeIfPresent(Double.self, forKey: .englishSupport) ?? defaults.englishSupport
+        speechRate = try c.decodeIfPresent(Double.self, forKey: .speechRate) ?? defaults.speechRate
+        responseWindow = try c.decodeIfPresent(TimeInterval.self, forKey: .responseWindow) ?? defaults.responseWindow
+    }
+
+    private enum CodingKeys: String, CodingKey { case level, englishSupport, speechRate, responseWindow }
+
     public var usesEnglishGlosses: Bool { englishSupport >= 0.5 }
     public var usesEnglishPrompts: Bool { englishSupport >= 0.2 }
+
+    /// Scales every think window: responseWindow / 10, clamped 0.7–1.4.
+    public var windowScale: Double { min(1.4, max(0.7, responseWindow / 10)) }
+
+    /// Language of the coach's own instructions. The English meaning of a line being taught is spoken in every mode.
+    public var coachLanguage: CoachLanguage {
+        if englishSupport >= 0.6 { return .english }
+        if englishSupport >= 0.3 { return .bilingual }
+        return .japanese
+    }
+}
+
+public enum CoachLanguage: String, Codable, Sendable {
+    /// Instructions in English.
+    case english
+    /// Japanese instruction, with its English gloss the first time it is used in a session.
+    case bilingual
+    /// Japanese instructions only.
+    case japanese
 }
 
 public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
@@ -42,14 +73,30 @@ public struct ExerciseResult: Codable, Equatable, Sendable {
     public var verdict: ResponseVerdict
     public var latency: TimeInterval?
     public var date: Date
+    /// Scene line ("scenario#beat") or item id the turn practised.
+    public var lineID: String?
+    /// Scaffold level the turn was asked at (0–5).
+    public var level: Int?
+    /// What happened in the turn; preferred over `verdict` when present.
+    public var outcome: TurnOutcome?
 
-    public init(kind: ExerciseKind, itemID: String?, verdict: ResponseVerdict, latency: TimeInterval?, date: Date) {
+    public init(kind: ExerciseKind, itemID: String?, verdict: ResponseVerdict, latency: TimeInterval?, date: Date,
+                lineID: String? = nil, level: Int? = nil, outcome: TurnOutcome? = nil) {
         self.kind = kind
         self.itemID = itemID
         self.verdict = verdict
         self.latency = latency
         self.date = date
+        self.lineID = lineID
+        self.level = level
+        self.outcome = outcome
     }
+
+    /// Counted as a success for difficulty adaptation: a clean answer (no help) when the outcome is known.
+    public var isSuccess: Bool { outcome.map(\.isClean) ?? verdict.isSuccess }
+
+    /// Unclear or skipped turns say nothing about ability.
+    public var isScored: Bool { outcome?.isGraded ?? true }
 }
 
 /// Moves difficulty one step at a time based on recent outcomes.
@@ -61,10 +108,10 @@ public struct DifficultyAdapter: Sendable {
     }
 
     public func adapted(_ profile: DifficultyProfile, recent results: [ExerciseResult]) -> DifficultyProfile {
-        let scored = results.filter { $0.kind != .closing }
+        let scored = results.filter { $0.kind != .closing && $0.isScored }
         guard scored.count >= minimumSamples else { return profile }
 
-        let successRate = Double(scored.filter { $0.verdict.isSuccess }.count) / Double(scored.count)
+        let successRate = Double(scored.filter(\.isSuccess).count) / Double(scored.count)
         let latencies = scored.compactMap(\.latency).sorted()
         let medianLatency = latencies.isEmpty ? 0 : latencies[latencies.count / 2]
 

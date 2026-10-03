@@ -11,6 +11,8 @@ enum SettingsKey {
     static let coachServerURL = "coachServerURL"
     static let lastMinutes = "lastMinutes"
     static let lastFocus = "lastFocus"
+    /// The hands-free help words (もう一度, ゆっくり, ヒント, 答え) have been taught.
+    static let helpOnboardingDone = "helpOnboardingDone"
 }
 
 /// How much kanji to show (spec §41). Default: minimal.

@@ -1,29 +1,307 @@
 {
-  "listen": { "ja": "聞いてください。", "kana": "きいてください。", "en": "Listen." },
-  "yourTurn": { "ja": "あなたの番です。", "kana": "あなたのばんです。", "en": "Your turn." },
-  "answerInJapanese": { "ja": "日本語で答えてください。", "kana": "にほんごでこたえてください。", "en": "Answer in Japanese." },
-  "sayInJapanese": { "ja": "日本語で言ってみてください。", "kana": "にほんごでいってみてください。", "en": "How would you say this in Japanese?" },
-  "tryAgain": { "ja": "もう一度言ってみましょう。", "kana": "もういちどいってみましょう。", "en": "Let's try saying it again." },
-  "good": { "ja": "いいですね。", "kana": "いいですね。", "en": "Nice." },
-  "veryNatural": { "ja": "とても自然です。", "kana": "とてもしぜんです。", "en": "That sounded very natural." },
-  "moreDetail": { "ja": "もう少し詳しく説明してください。", "kana": "もうすこしくわしくせつめいしてください。", "en": "Please explain in a bit more detail." },
-  "meaningClear": { "ja": "意味はよく伝わります。", "kana": "いみはよくつたわります。", "en": "Your meaning comes across well." },
-  "moreNaturally": { "ja": "もっと自然に言うと……", "kana": "もっとしぜんにいうと……", "en": "To say it more naturally…" },
-  "repeatAfterMe": { "ja": "後について言ってください。", "kana": "あとについていってください。", "en": "Repeat after me." },
-  "slowly": { "ja": "ゆっくり言います。", "kana": "ゆっくりいいます。", "en": "I'll say it slowly." },
-  "naturalSpeed": { "ja": "次は自然なスピードです。", "kana": "つぎはしぜんなスピードです。", "en": "Now at natural speed." },
-  "listenAgain": { "ja": "もう一度聞いてください。", "kana": "もういちどきいてください。", "en": "Listen once more." },
-  "noProblem": { "ja": "大丈夫です。", "kana": "だいじょうぶです。", "en": "No problem." },
-  "modelAnswer": { "ja": "例えば、こう言えます。", "kana": "たとえば、こういえます。", "en": "For example, you could say:" },
-  "question": { "ja": "質問です。", "kana": "しつもんです。", "en": "Here's a question." },
-  "startConversation": { "ja": "あなたから話しかけてください。", "kana": "あなたからはなしかけてください。", "en": "You start the conversation." },
-  "conversationEnd": { "ja": "会話はここまでです。", "kana": "かいわはここまでです。", "en": "That's the end of the conversation." },
-  "nextOne": { "ja": "次に行きましょう。", "kana": "つぎにいきましょう。", "en": "Let's move on." },
-  "sessionStartWork": { "ja": "今日は仕事の日本語を練習しましょう。", "kana": "きょうはしごとのにほんごをれんしゅうしましょう。", "en": "Today let's practise work Japanese." },
-  "sessionStartEveryday": { "ja": "今日は日常の日本語を練習しましょう。", "kana": "きょうはにちじょうのにほんごをれんしゅうしましょう。", "en": "Today let's practise everyday Japanese." },
-  "sessionStartGeneral": { "ja": "では、始めましょう。", "kana": "では、はじめましょう。", "en": "Let's begin." },
-  "sessionEnd": { "ja": "今日の練習は終了です。", "kana": "きょうのれんしゅうはしゅうりょうです。", "en": "That's the end of today's practice." },
-  "onePhrase": { "ja": "今日のフレーズです。", "kana": "きょうのフレーズです。", "en": "One phrase to remember:" },
-  "wellDone": { "ja": "お疲れさまでした。", "kana": "おつかれさまでした。", "en": "Good work today." },
-  "clearlyUnderstood": { "ja": "はっきり聞き取れました。", "kana": "はっきりききとれました。", "en": "Your speech was clearly understood." }
+  "listen": {
+    "ja": "聞いてください。",
+    "kana": "きいてください。",
+    "en": "Listen."
+  },
+  "yourTurn": {
+    "ja": "あなたの番です。",
+    "kana": "あなたのばんです。",
+    "en": "Your turn."
+  },
+  "answerInJapanese": {
+    "ja": "日本語で答えてください。",
+    "kana": "にほんごでこたえてください。",
+    "en": "Answer in Japanese."
+  },
+  "sayInJapanese": {
+    "ja": "日本語で言ってみてください。",
+    "kana": "にほんごでいってみてください。",
+    "en": "How would you say this in Japanese?"
+  },
+  "tryAgain": {
+    "ja": "もう一度言ってみましょう。",
+    "kana": "もういちどいってみましょう。",
+    "en": "Let's try saying it again."
+  },
+  "good": {
+    "ja": "いいですね。",
+    "kana": "いいですね。",
+    "en": "Nice."
+  },
+  "veryNatural": {
+    "ja": "とても自然です。",
+    "kana": "とてもしぜんです。",
+    "en": "That sounded very natural."
+  },
+  "moreDetail": {
+    "ja": "もう少し詳しく説明してください。",
+    "kana": "もうすこしくわしくせつめいしてください。",
+    "en": "Please explain in a bit more detail."
+  },
+  "meaningClear": {
+    "ja": "意味はよく伝わります。",
+    "kana": "いみはよくつたわります。",
+    "en": "Your meaning comes across well."
+  },
+  "moreNaturally": {
+    "ja": "もっと自然に言うと……",
+    "kana": "もっとしぜんにいうと……",
+    "en": "To say it more naturally…"
+  },
+  "repeatAfterMe": {
+    "ja": "後について言ってください。",
+    "kana": "あとについていってください。",
+    "en": "Repeat after me."
+  },
+  "slowly": {
+    "ja": "ゆっくり言います。",
+    "kana": "ゆっくりいいます。",
+    "en": "I'll say it slowly."
+  },
+  "naturalSpeed": {
+    "ja": "次は自然なスピードです。",
+    "kana": "つぎはしぜんなスピードです。",
+    "en": "Now at natural speed."
+  },
+  "listenAgain": {
+    "ja": "もう一度聞いてください。",
+    "kana": "もういちどきいてください。",
+    "en": "Listen once more."
+  },
+  "noProblem": {
+    "ja": "大丈夫です。",
+    "kana": "だいじょうぶです。",
+    "en": "No problem."
+  },
+  "modelAnswer": {
+    "ja": "例えば、こう言えます。",
+    "kana": "たとえば、こういえます。",
+    "en": "For example, you could say:"
+  },
+  "question": {
+    "ja": "質問です。",
+    "kana": "しつもんです。",
+    "en": "Here's a question."
+  },
+  "startConversation": {
+    "ja": "あなたから話しかけてください。",
+    "kana": "あなたからはなしかけてください。",
+    "en": "You start the conversation."
+  },
+  "conversationEnd": {
+    "ja": "会話はここまでです。",
+    "kana": "かいわはここまでです。",
+    "en": "That's the end of the conversation."
+  },
+  "nextOne": {
+    "ja": "次に行きましょう。",
+    "kana": "つぎにいきましょう。",
+    "en": "Let's move on."
+  },
+  "sessionStartWork": {
+    "ja": "今日は仕事の日本語を練習しましょう。",
+    "kana": "きょうはしごとのにほんごをれんしゅうしましょう。",
+    "en": "Today let's practise work Japanese."
+  },
+  "sessionStartEveryday": {
+    "ja": "今日は日常の日本語を練習しましょう。",
+    "kana": "きょうはにちじょうのにほんごをれんしゅうしましょう。",
+    "en": "Today let's practise everyday Japanese."
+  },
+  "sessionStartGeneral": {
+    "ja": "では、始めましょう。",
+    "kana": "では、はじめましょう。",
+    "en": "Let's begin."
+  },
+  "sessionEnd": {
+    "ja": "今日の練習は終了です。",
+    "kana": "きょうのれんしゅうはしゅうりょうです。",
+    "en": "That's the end of today's practice."
+  },
+  "onePhrase": {
+    "ja": "今日のフレーズです。",
+    "kana": "きょうのフレーズです。",
+    "en": "One to keep: {english}"
+  },
+  "wellDone": {
+    "ja": "お疲れさまでした。",
+    "kana": "おつかれさまでした。",
+    "en": "Good work today."
+  },
+  "clearlyUnderstood": {
+    "ja": "はっきり聞き取れました。",
+    "kana": "はっきりききとれました。",
+    "en": "Your speech was clearly understood."
+  },
+  "say": {
+    "ja": "言ってみてください。",
+    "kana": "いってみてください。",
+    "en": "Say: {english}"
+  },
+  "ask": {
+    "ja": "聞いてみてください。",
+    "kana": "きいてみてください。",
+    "en": "Ask: {english}"
+  },
+  "youSay": {
+    "ja": "こう答えます。",
+    "kana": "こうこたえます。",
+    "en": "You say: {english}"
+  },
+  "youLine": {
+    "ja": "あなたは、",
+    "kana": "あなたは、",
+    "en": "You: {english}"
+  },
+  "youStart": {
+    "ja": "あなたから話します。",
+    "kana": "あなたからはなします。",
+    "en": "You start. You say: {english}"
+  },
+  "itStarts": {
+    "ja": "最初は…",
+    "kana": "さいしょは…",
+    "en": "It starts…"
+  },
+  "like": {
+    "ja": "例えば…",
+    "kana": "たとえば…",
+    "en": "Like: {english}"
+  },
+  "hereIsHow": {
+    "ja": "こう言います。",
+    "kana": "こういいます。",
+    "en": "Here's how to say it:"
+  },
+  "noProblemHere": {
+    "ja": "大丈夫です。こう言います。",
+    "kana": "だいじょうぶです。こういいます。",
+    "en": "No problem — here it is:"
+  },
+  "hereItIs": {
+    "ja": "こう言います。",
+    "kana": "こういいます。",
+    "en": "Here it is:"
+  },
+  "didntCatch": {
+    "ja": "よく聞き取れませんでした。こう言います。",
+    "kana": "よくききとれませんでした。こういいます。",
+    "en": "I didn't quite catch that. Here it is:"
+  },
+  "echoLater": {
+    "ja": "大丈夫です。またすぐ出てきます。",
+    "kana": "だいじょうぶです。またすぐでてきます。",
+    "en": "That's fine — it'll come back in a minute."
+  },
+  "youCouldSay": {
+    "ja": "例えば、こう言えます。",
+    "kana": "たとえば、こういえます。",
+    "en": "You could say:"
+  },
+  "close": {
+    "ja": "おしいです。",
+    "kana": "おしいです。",
+    "en": "Close —"
+  },
+  "wasRight": {
+    "ja": "は合っています。",
+    "kana": "はあっています。",
+    "en": "was right."
+  },
+  "naturalVersion": {
+    "ja": "自然に言うと…",
+    "kana": "しぜんにいうと…",
+    "en": "Natural version:"
+  },
+  "morePolite": {
+    "ja": "意味は伝わります。もう少し丁寧に言うと…",
+    "kana": "いみはつたわります。もうすこしていねいにいうと…",
+    "en": "Clear meaning. To {name}, a bit more polite:"
+  },
+  "alsoNatural": {
+    "ja": "こうも言えます。",
+    "kana": "こうもいえます。",
+    "en": "Also natural:"
+  },
+  "micCheck": {
+    "ja": "マイクを確認してください。",
+    "kana": "マイクをかくにんしてください。",
+    "en": "I keep missing you. Check that your AirPods mic is on."
+  },
+  "takeYourTime": {
+    "ja": "ゆっくりでいいですよ。",
+    "kana": "ゆっくりでいいですよ。",
+    "en": "Take your time."
+  },
+  "sayWithMe": {
+    "ja": "一緒に言いましょう。",
+    "kana": "いっしょにいいましょう。",
+    "en": "Say it with me:"
+  },
+  "sceneIntro": {
+    "ja": "今日の場面です。",
+    "kana": "きょうのばめんです。",
+    "en": "Today's scene: {title}."
+  },
+  "listenFirst": {
+    "ja": "まず、会話を聞きましょう。",
+    "kana": "まず、かいわをききましょう。",
+    "en": "First, just listen to the whole conversation."
+  },
+  "performStart": {
+    "ja": "では、本番です。",
+    "kana": "では、ほんばんです。",
+    "en": "Now the real thing. {name} starts."
+  },
+  "performYouStart": {
+    "ja": "では、本番です。あなたからどうぞ。",
+    "kana": "では、ほんばんです。あなたからどうぞ。",
+    "en": "Now the real thing. You start."
+  },
+  "listenFor": {
+    "ja": "聞いてください。",
+    "kana": "きいてください。",
+    "en": "Listen. {topic}"
+  },
+  "itWas": {
+    "ja": "答えは…",
+    "kana": "こたえは…",
+    "en": "It was: {english}"
+  },
+  "thatsRight": {
+    "ja": "そうです。",
+    "kana": "そうです。",
+    "en": "That's right."
+  },
+  "helpIntro": {
+    "ja": "助けの出し方です。",
+    "kana": "たすけのだしかたです。",
+    "en": "Before we start: how to get help, hands-free."
+  },
+  "chimeMeansTurn": {
+    "ja": "あなたの番の音です。",
+    "kana": "あなたのばんのおとです。",
+    "en": "When it's your turn, you'll hear this:"
+  },
+  "ifMissed": {
+    "ja": "聞き取れなかったら、",
+    "kana": "ききとれなかったら、",
+    "en": "If you didn't catch something, say:"
+  },
+  "toHearSlowly": {
+    "ja": "ゆっくり聞きたいときは、",
+    "kana": "ゆっくりききたいときは、",
+    "en": "To hear it slowly, say:"
+  },
+  "stuckHelp": {
+    "ja": "困ったら「ヒント」か「答え」です。",
+    "kana": "こまったら「ヒント」か「こたえ」です。",
+    "en": "Stuck? Say 「ヒント」 for a hint, 「答え」 for the answer, or 「英語で」 for English."
+  },
+  "alwaysAnswer": {
+    "ja": "答えは必ず聞けます。",
+    "kana": "こたえはかならずきけます。",
+    "en": "You'll always hear the answer. Say it once, and we move on."
+  }
 }

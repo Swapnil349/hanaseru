@@ -2,13 +2,26 @@ import Foundation
 import LearningCore
 import ConversationCore
 
-/// Runs a hands-free session: LISTEN → THINK → RESPOND → FEEDBACK → TRY AGAIN (spec §2, §24–27).
+/// Options decided by the app for one session.
+public struct SessionOptions: Sendable {
+    /// Teach the hands-free help words (もう一度, ゆっくり, ヒント, 答え) before the first exercise.
+    public var includeHelpOnboarding: Bool
+
+    public init(includeHelpOnboarding: Bool = false) {
+        self.includeHelpOnboarding = includeHelpOnboarding
+    }
+}
+
+/// Runs a hands-free session built on one rule: teach before test.
 ///
-/// Everything the learner needs is spoken, so the session works with the phone in a pocket (spec §62).
-/// The screen only mirrors state through `onEvent`.
+/// Every line the learner says is first given in English and Japanese. Then they say it, with support
+/// fading level by level (model → first chunk → English → intent → partner only). If they are stuck or
+/// wrong they hear the answer, echo it once, and the session moves on — nothing is ever asked twice in a
+/// row; a missed line comes back later, one level easier.
 ///
-/// Pause, skip and stop cancel the running task; the current exercise restarts on resume. Learning
-/// data (knowledge, mistakes) is saved as it happens so nothing is lost if the session ends early.
+/// Everything essential is spoken, so the session works with the phone in a pocket. The screen mirrors
+/// state through `onEvent`. Pause, skip and stop cancel the running task; learning data is saved as it
+/// happens.
 @MainActor
 public final class SessionRunner {
     public struct Voice {
@@ -23,50 +36,104 @@ public final class SessionRunner {
         }
     }
 
+    /// A help request from outside the microphone (help bar tap, AirPods), applied at the next chance.
+    enum PendingCommand: Equatable {
+        case voice(VoiceCommand)
+        /// AirPods "next" while it's the learner's turn: give the answer and move straight on.
+        case answerAndNext
+    }
+
+    /// A line coming back later in the session at a given level.
+    struct PendingRecall {
+        var line: PracticeLine
+        var level: ScaffoldLevel
+        /// The exercise during which it was queued: it comes back after a later one.
+        var queuedDuring: Int
+        /// Never straight after the same line (a line that was just missed, or just said, isn't re-asked at once).
+        var needsGap: Bool
+    }
+
+    /// Where the session is, so that a skip skips the right thing.
+    enum Stage {
+        case intro, onboarding, exercise, recall, closing
+    }
+
     public let plan: SessionPlan
     public var onEvent: ((SessionEvent) -> Void)?
     public private(set) var isPaused = false
     public private(set) var isFinished = false
+    /// Production turns that would have been asked before the line was taught. Always empty when the
+    /// teach-before-test rule holds; the runner teaches the line instead and records it here.
+    public internal(set) var ledgerViolations: [String] = []
 
-    private let library: ContentLibrary
-    private let voice: Voice
-    private let ai: AIProvider
-    private let repository: LearnerRepository
-    private let now: () -> Date
-    private let evaluator = ResponseEvaluator()
-    private let scheduler = ReviewScheduler()
+    let library: ContentLibrary
+    let voice: Voice
+    let ai: AIProvider
+    let repository: LearnerRepository
+    let options: SessionOptions
+    let now: () -> Date
+    let evaluator = ResponseEvaluator()
+    let scheduler = ReviewScheduler()
 
-    private var learner = LearnerSnapshot(name: "", difficulty: .starting)
-    private var task: Task<Void, Never>?
-    private var started = false
-    private var introDone = false
-    private var closingDone = false
-    private var nextExerciseIndex = 0
-    private var currentExerciseIndex = 0
-    private var pendingStartIndex: Int?
-    private var startedAt: Date?
-    private var pausedAt: Date?
-    private var pausedTotal: TimeInterval = 0
-    private var glossedCues: Set<CueKey> = []
+    var learner = LearnerSnapshot(name: "", difficulty: .starting)
+    var task: Task<Void, Never>?
+    var started = false
+    var stage: Stage = .intro
+    var learnerLoaded = false
+    var introDone = false
+    var onboardingDone = false
+    var closingDone = false
+    var nextExerciseIndex = 0
+    var currentExerciseIndex = 0
+    var pendingStartIndex: Int?
+    var startedAt: Date?
+    var pausedAt: Date?
+    var pausedTotal: TimeInterval = 0
+    var glossedCues: Set<CueKey> = []
+    var pendingCommand: PendingCommand?
+    var isListening = false
 
-    // Metrics for the summary (spec §52: meaningful metrics, not XP).
-    private var secondsListening = 0.0
-    private var secondsSpeaking = 0.0
-    private var conversationTurns = 0
-    private var results: [ExerciseResult] = []
-    private var mistakes: [MistakeObservation] = []
-    private var scenarioIDs: [String] = []
-    private var wentWell: [String] = []
-    private var toPractise: [String] = []
-    private var closingItem: LearningItem?
+    // Teaching state.
+    /// Lines whose English and Japanese have both been spoken this session (the exposure ledger).
+    var exposed: Set<String> = []
+    var introducedToday: Set<String> = []
+    var pendingRecalls: [PendingRecall] = []
+    var requeuedOnce: Set<String> = []
+    var appearances: [String: Int] = [:]
+    var glossedPartnerLines: Set<String> = []
+    /// The line practised most recently (taught, asked or heard).
+    var lastLineID: String?
+    /// The learner tapped to see the hidden Japanese during this turn: it counts as help.
+    var peekedThisTurn = false
+    var worstLines: [String: PracticeLine] = [:]
+    var worstOutcomes: [String: TurnOutcome] = [:]
+    var cleanSincePraise = 0
+    var unclearStreak = 0
+    var micCheckDone = false
+    var echoLaterSaid = false
+    var noProblemSaid = false
+    var takeYourTimeSaid = false
+
+    // Metrics for the summary (meaningful metrics, not XP).
+    var secondsListening = 0.0
+    var secondsSpeaking = 0.0
+    var conversationTurns = 0
+    var results: [ExerciseResult] = []
+    var mistakes: [MistakeObservation] = []
+    var scenarioIDs: [String] = []
+    var wentWell: [String] = []
+    var toPractise: [String] = []
+    var closingLine: PracticeLine?
 
     public init(plan: SessionPlan, library: ContentLibrary, voice: Voice, ai: AIProvider,
-                repository: LearnerRepository, now: @escaping () -> Date = { Date() }) {
+                repository: LearnerRepository, options: SessionOptions = SessionOptions(),
+                now: @escaping () -> Date = { Date() }) {
         self.plan = plan
         self.library = library
         self.voice = voice
         self.ai = ai
         self.repository = repository
+        self.options = options
         self.now = now
     }
 
@@ -100,10 +167,16 @@ public final class SessionRunner {
         isPaused ? resume() : pause()
     }
 
-    /// Skips the current exercise (AirPods "next track", or saying 「スキップ」).
+    /// Skips what is playing now: the welcome, the help lesson, the exercise, a line coming back, or the closing.
     public func skip() {
         guard started, !isFinished else { return }
-        pendingStartIndex = currentExerciseIndex + 1
+        switch stage {
+        case .intro: introDone = true
+        case .onboarding: onboardingDone = true
+        case .exercise: pendingStartIndex = currentExerciseIndex + 1
+        case .recall: break // already taken off the queue, so it just doesn't come back
+        case .closing: closingDone = true
+        }
         let previous = task
         previous?.cancel()
         silenceVoice()
@@ -128,6 +201,51 @@ public final class SessionRunner {
         }
     }
 
+    /// A help request from the help bar or the headphones. During the learner's turn it interrupts the
+    /// listen and is handled at once; otherwise it applies to the next turn.
+    public func command(_ command: VoiceCommand) {
+        guard started, !isFinished else { return }
+        switch command {
+        case .pause:
+            pause()
+            return
+        case .skip where !isListening:
+            skip()
+            return
+        default:
+            break
+        }
+        pendingCommand = .voice(command)
+        if isListening { voice.recognizer.cancelListening() }
+    }
+
+    /// Hear the prompt again (AirPods "previous track" or 「もう一度」).
+    public func replay() {
+        command(.repeatPrompt)
+    }
+
+    /// The learner looked at the hidden Japanese on screen; the current turn counts as helped.
+    public func notePeek() {
+        peekedThisTurn = true
+    }
+
+    /// AirPods "next track": during the learner's turn, give the answer and move on; otherwise skip.
+    public func answerAndNext() {
+        guard started, !isFinished else { return }
+        if isListening {
+            pendingCommand = .answerAndNext
+            voice.recognizer.cancelListening()
+        } else {
+            skip()
+        }
+    }
+
+    func takePendingCommand() -> PendingCommand? {
+        let command = pendingCommand
+        pendingCommand = nil
+        return command
+    }
+
     private func launch(after previous: Task<Void, Never>?) {
         task = Task { [weak self] in
             await previous?.value
@@ -147,15 +265,22 @@ public final class SessionRunner {
         if let pending = pendingStartIndex {
             nextExerciseIndex = max(nextExerciseIndex, pending)
             pendingStartIndex = nil
-            // Skipping during the closing phrase ends the session.
-            if pending > plan.exercises.count { closingDone = true }
         }
         do {
-            if !introDone {
+            if !learnerLoaded {
                 emit(.activity(.preparing))
                 learner = await repository.snapshot()
+                learnerLoaded = true
+            }
+            if !introDone {
+                stage = .intro
                 try await intro()
                 introDone = true
+            }
+            if options.includeHelpOnboarding && !onboardingDone {
+                stage = .onboarding
+                try await runHelpOnboarding()
+                onboardingDone = true
             }
             while nextExerciseIndex < plan.exercises.count {
                 if timeIsUp() { break }
@@ -163,12 +288,23 @@ public final class SessionRunner {
                 let exercise = plan.exercises[currentExerciseIndex]
                 emit(.exerciseStarted(index: currentExerciseIndex, total: plan.exercises.count,
                                       kind: exercise.kind, title: title(for: exercise)))
+                stage = .exercise
                 try await perform(exercise)
                 nextExerciseIndex = currentExerciseIndex + 1
+                // A line taught or missed earlier comes back after at least one other exercise.
+                if !timeIsUp() {
+                    stage = .recall
+                    try await runOnePendingRecall(queuedBefore: currentExerciseIndex)
+                }
             }
             nextExerciseIndex = plan.exercises.count
             currentExerciseIndex = plan.exercises.count
+            stage = .recall
+            while !timeIsUp(reserve: 35) {
+                guard try await runOnePendingRecall() else { break }
+            }
             if !closingDone {
+                stage = .closing
                 try await closing()
                 closingDone = true
             }
@@ -178,10 +314,10 @@ public final class SessionRunner {
         }
     }
 
-    private func timeIsUp() -> Bool {
+    func timeIsUp(reserve: TimeInterval = 20) -> Bool {
         guard let startedAt, !results.isEmpty else { return false }
         let elapsed = now().timeIntervalSince(startedAt) - pausedTotal
-        return elapsed > Double(plan.minutes * 60) - 20
+        return elapsed > Double(plan.minutes * 60) - reserve
     }
 
     private func perform(_ exercise: PlannedExercise) async throws {
@@ -199,14 +335,14 @@ public final class SessionRunner {
 
     private func title(for exercise: PlannedExercise) -> String {
         switch exercise {
-        case .listening: "What did they say?"
-        case .recall: "Say it naturally"
-        case .shadowing: "Shadowing"
+        case .listening: "Listen and answer"
+        case .recall: "Say it"
+        case .shadowing: "Say it with me"
         case .conversation(let id, _): library.scenario(id: id)?.title ?? "Conversation"
         }
     }
 
-    // MARK: - Intro and closing
+    // MARK: - Intro and finish
 
     private func intro() async throws {
         let key: CueKey = switch plan.track {
@@ -214,32 +350,10 @@ public final class SessionRunner {
         case .everyday: .sessionStartEveryday
         case nil: .sessionStartGeneral
         }
-        try await cue(key)
+        try await coach(key)
     }
 
-    /// 「今日の練習は終了です。」 + one phrase to remember, repeated once (spec §89).
-    private func closing() async throws {
-        try await cue(.sessionEnd)
-        if let id = plan.closingItemID, let item = library.item(id: id) {
-            closingItem = item
-            try await cue(.onePhrase)
-            if learner.difficulty.usesEnglishPrompts { try await speak(item.english, .english) }
-            try await sayJapanese(item.japanese, kana: item.kana, english: item.english, role: .coach, rate: 0.85)
-            try await cue(.repeatAfterMe)
-            let replay: () async throws -> Void = {
-                try await self.sayJapanese(item.japanese, kana: item.kana, english: item.english, role: .coach, rate: 0.85)
-            }
-            if let attempt = try await awaitAnswer(expecting: [item.japanese], announce: false, replay: replay),
-               JapaneseText.bestSimilarity(attempt.transcript, to: [item.japanese, item.kana]) >= 0.75 {
-                voice.feedback.play(.correct)
-                try await cue(.good)
-            }
-        }
-        try await cue(.wellDone)
-        voice.feedback.play(.sessionComplete)
-    }
-
-    private func finish(completed: Bool) async {
+    func finish(completed: Bool) async {
         guard !isFinished else { return }
         isFinished = true
         let summary = SessionSummary(
@@ -247,7 +361,7 @@ public final class SessionRunner {
             secondsListening: secondsListening, secondsSpeaking: secondsSpeaking, results: results,
             conversationTurns: conversationTurns, scenarioIDs: scenarioIDs, mistakes: mistakes,
             wentWell: Array(unique(wentWell).prefix(3)), toPractise: Array(unique(toPractise).prefix(3)),
-            phraseID: closingItem?.id, phraseJapanese: closingItem?.japanese ?? "", phraseEnglish: closingItem?.english ?? "",
+            phraseID: closingLine?.id, phraseJapanese: closingLine?.japanese ?? "", phraseEnglish: closingLine?.english ?? "",
             completedNormally: completed
         )
         let recent = await repository.recentResults(limit: 30)
@@ -258,458 +372,14 @@ public final class SessionRunner {
         emit(.finished(summary))
     }
 
-    // MARK: - Listening: "What did they say?" (spec §38, §81)
-
-    private func runListening(_ item: LearningItem) async throws {
-        guard let check = item.listening else { return }
-        let rate = learner.difficulty.speechRate
-        let partner = LineRole.partner(name: "")
-
-        try await cue(.listen)
-        try await sayJapanese(item.japanese, kana: item.kana, english: "", role: partner, rate: rate, show: false)
-        try await cue(.question)
-        try await sayJapanese(check.questionJa, kana: "", english: check.questionEn, role: .coach, rate: rate)
-        if learner.difficulty.englishSupport >= 0.6 { try await speak(check.questionEn, .english) }
-
-        let replay: () async throws -> Void = {
-            try await self.sayJapanese(item.japanese, kana: item.kana, english: "", role: partner, rate: rate, show: false)
-            try await self.sayJapanese(check.questionJa, kana: "", english: check.questionEn, role: .coach, rate: rate)
-        }
-        let expected = check.answerTerms.flatMap(\.anyOf)
-        guard let first = try await awaitAnswer(expecting: expected, announce: true, replay: replay) else { return }
-        let target = EvaluationTarget(listening: check)
-        let firstVerdict = evaluator.evaluate(first.transcript, against: target).verdict
-        var finalVerdict = firstVerdict
-        var heard = first.transcript
-
-        if !firstVerdict.isSuccess {
-            // One more listen, slower (spec §38: slow → normal → natural).
-            voice.feedback.play(.tryAgain)
-            try await cue(.listenAgain)
-            try await sayJapanese(item.japanese, kana: item.kana, english: "", role: partner, rate: max(0.7, rate - 0.15), show: false)
-            try await sayJapanese(check.questionJa, kana: "", english: check.questionEn, role: .coach, rate: rate)
-            if let second = try await awaitAnswer(expecting: expected, announce: false, replay: replay) {
-                finalVerdict = evaluator.evaluate(second.transcript, against: target).verdict
-                heard = second.transcript
-            }
-        }
-
-        if finalVerdict.isSuccess {
-            voice.feedback.play(.correct)
-            emit(.feedback(FeedbackNote(verdict: finalVerdict, headline: "You caught it", suggestion: check.modelAnswer, heard: heard)))
-            try await cue(.good)
-        } else {
-            emit(.feedback(FeedbackNote(verdict: finalVerdict, headline: "Here's the answer", detail: check.questionEn,
-                                        suggestion: check.modelAnswer, heard: heard)))
-            try await cue(.modelAnswer)
-            try await sayJapanese(check.modelAnswer, kana: "", english: "", role: .coach, rate: rate)
-        }
-        // Reveal the sentence only after the attempt (spec §81).
-        emit(.line(ScriptLine(role: partner, japanese: item.japanese, kana: item.kana, english: item.english)))
-        if learner.difficulty.usesEnglishPrompts { try await speak(item.english, .english) }
-
-        await updateKnowledge(item, .listening, verdict: firstVerdict, latency: first.latency)
-        if firstVerdict.isSuccess { await updateKnowledge(item, .recognition, verdict: firstVerdict, latency: nil) }
-        recordResult(.listening, item: item, verdict: firstVerdict, latency: first.latency)
+    func emit(_ event: SessionEvent) {
+        onEvent?(event)
     }
 
-    // MARK: - Recall: "Say it naturally" (spec §39, §80)
-
-    private func runRecall(_ item: LearningItem) async throws {
-        guard let prompt = item.promptEn else { return }
-        try await cue(.sayInJapanese)
-        emit(.line(ScriptLine(role: .instruction, japanese: "", english: prompt)))
-        try await speak(prompt, .english)
-
-        let replay: () async throws -> Void = { try await self.speak(prompt, .english) }
-        let expected = item.keyTerms.flatMap(\.anyOf)
-        guard let first = try await awaitAnswer(expecting: expected, announce: true, replay: replay) else { return }
-
-        let evaluation = await evaluateRecall(first.transcript, item: item, prompt: prompt)
-        await recordMistakes(evaluation.mistakes, itemID: item.id)
-        let model = evaluation.naturalVersion.isEmpty ? item.japanese : evaluation.naturalVersion
-        let needsRetry = try await deliverFeedback(evaluation, heard: first.transcript, model: model, item: item)
-
-        if needsRetry {
-            let retryReplay: () async throws -> Void = {
-                try await self.sayJapanese(model, kana: "", english: item.english, role: .coach, rate: self.learner.difficulty.speechRate)
-            }
-            if let retry = try await awaitAnswer(expecting: expected, announce: false, replay: retryReplay) {
-                if JapaneseText.bestSimilarity(retry.transcript, to: [model] + item.referenceResponses) >= 0.75 {
-                    voice.feedback.play(.correct)
-                    try await cue(.good)
-                } else {
-                    try await cue(.noProblem)
-                }
-            }
-        }
-
-        await updateKnowledge(item, .spokenRecall, verdict: evaluation.verdict, latency: first.latency)
-        await updateKnowledge(item, .context, verdict: evaluation.verdict, latency: nil)
-        if JapaneseText.bestSimilarity(first.transcript, to: item.referenceResponses) >= 0.75 {
-            await updateKnowledge(item, .pronunciation, verdict: .natural, latency: nil)
-        }
-        recordResult(.recall, item: item, verdict: evaluation.verdict, latency: first.latency)
-    }
-
-    /// Local evaluation first; ask the AI only when the heuristic isn't sure (spec §40).
-    private func evaluateRecall(_ transcript: String, item: LearningItem, prompt: String) async -> TurnEvaluation {
-        let local = evaluator.evaluate(transcript, against: EvaluationTarget(item: item))
-        guard !local.isConfident else { return TurnEvaluation(local: local, said: transcript) }
-        emit(.activity(.thinking))
-        let request = EvaluationRequest(mode: .recall, prompt: prompt, examples: item.referenceResponses,
-                                        learnerUtterance: transcript, learnerLevel: learner.difficulty.level,
-                                        politeness: item.politeness)
-        do {
-            let remote = try await ai.evaluateResponse(request)
-            reportAIHealth()
-            return remote
-        } catch {
-            return TurnEvaluation(local: local, said: transcript)
-        }
-    }
-
-    /// Speaks feedback, communication first (spec §75). Returns true when the learner should try again.
-    private func deliverFeedback(_ evaluation: TurnEvaluation, heard: String, model: String, item: LearningItem) async throws -> Bool {
-        let rate = learner.difficulty.speechRate
-        let explain = learner.difficulty.usesEnglishPrompts && !evaluation.feedbackEn.isEmpty
-        switch evaluation.verdict {
-        case .natural:
-            voice.feedback.play(.correct)
-            emit(.feedback(FeedbackNote(verdict: .natural, headline: "Natural", suggestion: model, heard: heard)))
-            try await cue(.veryNatural)
-            return false
-
-        case .acceptable:
-            voice.feedback.play(.correct)
-            let differs = JapaneseText.similarity(heard, model) < 0.85
-            emit(.feedback(FeedbackNote(verdict: .acceptable, headline: "Correct",
-                                        detail: differs ? "A colleague might also say:" : "",
-                                        suggestion: model, heard: heard)))
-            try await cue(.good)
-            if differs {
-                try await cue(.moreNaturally)
-                try await sayJapanese(model, kana: "", english: item.english, role: .coach, rate: rate)
-            }
-            return false
-
-        case .understandable, .contextuallyInappropriate:
-            voice.feedback.play(.tryAgain)
-            emit(.feedback(FeedbackNote(verdict: evaluation.verdict, headline: "Meaning comes across",
-                                        detail: evaluation.feedbackEn, suggestion: model, heard: heard)))
-            try await cue(.meaningClear)
-            if explain { try await speak(evaluation.feedbackEn, .english) }
-            try await cue(.moreNaturally)
-            try await sayJapanese(model, kana: "", english: item.english, role: .coach, rate: rate)
-            try await cue(.repeatAfterMe)
-            return true
-
-        case .incorrect:
-            voice.feedback.play(.tryAgain)
-            emit(.feedback(FeedbackNote(verdict: .incorrect, headline: "Almost",
-                                        detail: evaluation.feedbackEn, suggestion: model, heard: heard)))
-            if explain { try await speak(evaluation.feedbackEn, .english) }
-            try await cue(.modelAnswer)
-            try await sayJapanese(model, kana: "", english: item.english, role: .coach, rate: rate)
-            try await cue(.tryAgain)
-            return true
-
-        case .unclear, .noResponse:
-            emit(.feedback(FeedbackNote(verdict: evaluation.verdict, headline: "Let's hear it together",
-                                        suggestion: model, heard: heard)))
-            try await cue(.noProblem)
-            try await cue(.modelAnswer)
-            try await sayJapanese(model, kana: "", english: item.english, role: .coach, rate: max(0.7, rate - 0.1))
-            try await cue(.repeatAfterMe)
-            return true
-        }
-    }
-
-    // MARK: - Shadowing (spec §37)
-
-    private func runShadowing(_ item: LearningItem) async throws {
-        let references = [item.japanese, item.kana]
-        let slow = 0.75
-        let natural = learner.difficulty.level >= 5 ? 1.25 : 1.0
-        let replaySlow: () async throws -> Void = {
-            try await self.sayJapanese(item.japanese, kana: item.kana, english: item.english, role: .coach, rate: slow)
-        }
-
-        try await cue(.repeatAfterMe)
-        try await cue(.slowly)
-        try await replaySlow()
-        guard var attempt = try await awaitAnswer(expecting: [item.japanese], announce: false, replay: replaySlow) else { return }
-        if JapaneseText.bestSimilarity(attempt.transcript, to: references) < 0.8 {
-            try await cue(.tryAgain)
-            try await replaySlow()
-            if let retry = try await awaitAnswer(expecting: [item.japanese], announce: false, replay: replaySlow) {
-                attempt = retry
-            }
-        }
-
-        try await cue(.naturalSpeed)
-        let replayNatural: () async throws -> Void = {
-            try await self.sayJapanese(item.japanese, kana: item.kana, english: item.english, role: .coach, rate: natural)
-        }
-        try await replayNatural()
-        let lastAttempt = try await awaitAnswer(expecting: [item.japanese], announce: false, replay: replayNatural) ?? attempt
-        let similarity = JapaneseText.bestSimilarity(lastAttempt.transcript, to: references)
-
-        // Honest feedback: we can only say whether the words were recognised (spec §36).
-        let verdict: ResponseVerdict
-        if lastAttempt.transcript.isEmpty {
-            verdict = .noResponse
-            emit(.feedback(FeedbackNote(verdict: verdict, headline: "Let's try this one again another time", suggestion: item.japanese)))
-        } else if similarity >= 0.8 {
-            verdict = .natural
-            voice.feedback.play(.correct)
-            emit(.feedback(FeedbackNote(verdict: verdict, headline: "Clearly understood", suggestion: item.japanese, heard: lastAttempt.transcript)))
-            try await cue(.clearlyUnderstood)
-        } else {
-            verdict = similarity >= 0.6 ? .understandable : .unclear
-            let missed = JapaneseText.unrecognizedSegments(heard: lastAttempt.transcript, reference: item.japanese)
-            let detail = missed.isEmpty ? "Some sounds weren't recognised clearly." : "Not recognised clearly: " + missed.joined(separator: "、")
-            emit(.feedback(FeedbackNote(verdict: verdict, headline: "Keep practising this one", detail: detail,
-                                        suggestion: item.japanese, heard: lastAttempt.transcript)))
-            if learner.difficulty.usesEnglishPrompts { try await speak("Some words weren't recognised clearly. We'll come back to this one.", .english) }
-        }
-        await updateKnowledge(item, .pronunciation, verdict: verdict, latency: nil)
-        recordResult(.shadowing, item: item, verdict: verdict, latency: lastAttempt.latency)
-    }
-
-    // MARK: - Conversation / role-play (spec §6–8, §27–28, §82)
-
-    private func runConversation(scenarioID: String, maxTurns: Int) async throws {
-        guard let scenario = library.scenario(id: scenarioID), !scenario.beats.isEmpty,
-              let persona = library.persona(id: scenario.personaID) else { return }
-        if !scenarioIDs.contains(scenario.id) { scenarioIDs.append(scenario.id) }
-        let partnerRole = LineRole.partner(name: persona.nameJa)
-        let partnerRate = learner.difficulty.speechRate * persona.speakingRate
-        let recurring = await repository.recurringMistakes(limit: 5).map(\.type.rawValue)
-
-        emit(.line(ScriptLine(role: .instruction, japanese: scenario.titleJa, english: scenario.situationEn)))
-        if learner.difficulty.usesEnglishPrompts { try await speak(scenario.situationEn, .english) }
-
-        var history: [DialogueTurn] = []
-        var partnerLine: CoachLine?
-        if scenario.roleReversal {
-            try await cue(.startConversation)
-            if learner.difficulty.usesEnglishPrompts { try await speak(scenario.beats[0].hintEn, .english) }
-        } else {
-            let opening = scenario.beats[0]
-            let line = CoachLine(japanese: opening.line, kana: opening.kana, english: opening.english)
-            partnerLine = line
-            try await sayJapanese(line.japanese, kana: line.kana, english: line.english, role: partnerRole, rate: partnerRate)
-            history.append(DialogueTurn(speaker: .partner, japanese: line.japanese, english: line.english))
-        }
-
-        var turnIndex = 0
-        while turnIndex < maxTurns {
-            let beat = scenario.beats[min(turnIndex, scenario.beats.count - 1)]
-            let replay: () async throws -> Void = {
-                if let line = partnerLine {
-                    try await self.sayJapanese(line.japanese, kana: line.kana, english: line.english, role: partnerRole, rate: partnerRate)
-                } else {
-                    try await self.speak(beat.hintEn, .english)
-                }
-            }
-            let expected = beat.keyTerms.flatMap(\.anyOf)
-            guard var answer = try await awaitAnswer(expecting: expected, announce: turnIndex == 0, replay: replay) else { break }
-
-            if answer.transcript.isEmpty {
-                // Help once with an example, then let them try (spec §34: simplify when struggling).
-                let example = (beat.exampleResponses.first ?? "").replacingOccurrences(of: "{name}", with: learner.name)
-                try await cue(.noProblem)
-                if learner.difficulty.usesEnglishPrompts { try await speak(beat.hintEn, .english) }
-                if !example.isEmpty {
-                    try await cue(.modelAnswer)
-                    try await sayJapanese(example, kana: "", english: "", role: .coach, rate: max(0.7, learner.difficulty.speechRate - 0.1))
-                }
-                guard let retry = try await awaitAnswer(expecting: expected, announce: false, replay: replay),
-                      !retry.transcript.isEmpty else {
-                    recordResult(.conversation, item: nil, verdict: .noResponse, latency: nil)
-                    break
-                }
-                answer = retry
-            }
-
-            conversationTurns += 1
-            history.append(DialogueTurn(speaker: .learner, japanese: answer.transcript))
-            let context = ConversationContext(
-                scenarioID: scenario.id, scenarioTitle: scenario.title, situation: scenario.situationEn,
-                persona: PersonaBrief(persona), learnerName: learner.name, learnerLevel: learner.difficulty.level,
-                englishSupport: learner.difficulty.englishSupport, targetTerms: targetWords(for: scenario),
-                recurringMistakeTypes: recurring, history: history, turnIndex: turnIndex, maxTurns: maxTurns
-            )
-            emit(.activity(.thinking))
-            let response: TurnResponse
-            do {
-                response = try await ai.generateResponse(TurnRequest(context: context, learnerUtterance: answer.transcript,
-                                                                     asrConfidence: answer.confidence))
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                break
-            }
-            reportAIHealth()
-            try Task.checkCancellation()
-
-            await recordMistakes(response.evaluation.mistakes, itemID: nil)
-            try await conversationFeedback(response.evaluation, heard: answer.transcript)
-            recordResult(.conversation, item: nil, verdict: response.evaluation.verdict, latency: answer.latency)
-
-            partnerLine = response.reply
-            history.append(DialogueTurn(speaker: .partner, japanese: response.reply.japanese, english: response.reply.english))
-            try await sayJapanese(response.reply.japanese, kana: response.reply.kana, english: response.reply.english,
-                                  role: partnerRole, rate: partnerRate)
-            turnIndex += 1
-            if response.shouldEnd { break }
-        }
-        try await cue(.conversationEnd)
-    }
-
-    /// In conversation, keep the flow: only interrupt for real mistakes (spec §75).
-    private func conversationFeedback(_ evaluation: TurnEvaluation, heard: String) async throws {
-        let hasIssue = !evaluation.mistakes.isEmpty || evaluation.verdict == .incorrect || evaluation.verdict == .contextuallyInappropriate
-        guard hasIssue else {
-            if evaluation.verdict == .natural { voice.feedback.play(.correct) }
-            if !evaluation.naturalVersion.isEmpty && evaluation.verdict != .natural {
-                emit(.feedback(FeedbackNote(verdict: evaluation.verdict, headline: "Good — another way to say it",
-                                            suggestion: evaluation.naturalVersion, heard: heard)))
-            }
-            return
-        }
-        emit(.feedback(FeedbackNote(verdict: evaluation.verdict, headline: evaluation.understood ? "Meaning comes across" : "Let's fix one thing",
-                                    detail: evaluation.feedbackEn, suggestion: evaluation.naturalVersion, heard: heard)))
-        if evaluation.understood { try await cue(.meaningClear) }
-        if learner.difficulty.usesEnglishPrompts && !evaluation.feedbackEn.isEmpty {
-            try await speak(evaluation.feedbackEn, .english)
-        }
-        if !evaluation.naturalVersion.isEmpty {
-            try await cue(.moreNaturally)
-            try await sayJapanese(evaluation.naturalVersion, kana: "", english: "", role: .coach, rate: learner.difficulty.speechRate)
-        }
-    }
-
-    private func targetWords(for scenario: Scenario) -> [String] {
-        scenario.targetTerms.compactMap { library.term(id: $0)?.japanese }
-    }
-
-    // MARK: - Turn-taking
-
-    /// Hands the turn to the learner and handles spoken commands. Returns nil if the learner asked to skip.
-    /// 「わかりません」 is returned as an empty answer so the exercise gives the model answer.
-    private func awaitAnswer(expecting expected: [String], announce: Bool,
-                             replay: () async throws -> Void) async throws -> ListenResult? {
-        var shouldAnnounce = announce
-        for _ in 0..<3 {
-            let result = try await listen(expecting: expected, announce: shouldAnnounce)
-            switch VoiceCommand.detect(in: result.transcript) {
-            case .repeatPrompt?:
-                try await replay()
-                shouldAnnounce = false
-            case .skip?:
-                return nil
-            case .pause?:
-                pause()
-                throw CancellationError()
-            case .dontKnow?:
-                return ListenResult(transcript: "", latency: result.latency, outcome: .noSpeech)
-            case nil:
-                return result
-            }
-        }
-        return .silence
-    }
-
-    private func listen(expecting expected: [String], announce: Bool) async throws -> ListenResult {
-        if announce { try await cue(.yourTurn) }
-        try Task.checkCancellation()
-        voice.feedback.play(.yourTurn)
-        emit(.activity(.listening))
-        let options = ListenOptions(startTimeout: learner.difficulty.responseWindow, endSilence: 1.4,
-                                    maxDuration: 25, contextualStrings: expected)
-        let result = await voice.recognizer.listen(options) { [weak self] partial in
-            self?.emit(.partialTranscript(partial))
-        }
-        try Task.checkCancellation()
-        secondsSpeaking += result.speakingDuration
-        if !result.transcript.isEmpty {
-            emit(.line(ScriptLine(role: .learner, japanese: result.transcript)))
-        }
-        emit(.activity(.thinking))
-        return result
-    }
-
-    // MARK: - Speech output
-
-    /// Speaks a coach cue in Japanese, with an English gloss the first time it's used while English support is high.
-    private func cue(_ key: CueKey) async throws {
-        let cue = library.cue(key)
-        emit(.line(ScriptLine(role: .coach, japanese: cue.ja, kana: cue.kana, english: cue.en)))
-        try await speak(cue.ja, .japanese, rate: learner.difficulty.speechRate)
-        if learner.difficulty.usesEnglishGlosses && !glossedCues.contains(key) {
-            glossedCues.insert(key)
-            try await speak(cue.en, .english)
-        }
-    }
-
-    /// `show: false` speaks without putting the text on screen (listening items are revealed after the attempt).
-    private func sayJapanese(_ text: String, kana: String, english: String, role: LineRole, rate: Double, show: Bool = true) async throws {
-        guard !text.isEmpty else { return }
-        if show { emit(.line(ScriptLine(role: role, japanese: text, kana: kana, english: english))) }
-        try await speak(text, .japanese, rate: rate)
-    }
-
-    private func speak(_ text: String, _ language: SpeechLanguage, rate: Double = 1.0) async throws {
-        guard !text.isEmpty else { return }
-        try Task.checkCancellation()
-        emit(.activity(.speaking))
-        let began = now()
-        await voice.synthesizer.speak(SpeechRequest(text: text, language: language, rate: rate))
-        if language == .japanese { secondsListening += now().timeIntervalSince(began) }
-        try Task.checkCancellation()
-    }
-
-    // MARK: - Learning records
-
-    private func updateKnowledge(_ item: LearningItem, _ dimension: SkillDimension, verdict: ResponseVerdict, latency: TimeInterval?) async {
-        let date = now()
-        let stored = await repository.knowledge(for: [item.id])
-        let existing = stored[item.id] ?? KnowledgeState(itemID: item.id, introducedAt: date)
-        let grade = ReviewGrade(verdict: verdict, latency: latency)
-        let updated = scheduler.record(existing, dimension: dimension, grade: grade,
-                                       latency: dimension == .spokenRecall ? latency : nil, at: date)
-        await repository.save(updated)
-    }
-
-    private func recordMistakes(_ detected: [DetectedMistake], itemID: String?) async {
-        for mistake in detected {
-            let observation = MistakeObservation(type: mistake.type, itemID: itemID, said: mistake.said,
-                                                 correction: mistake.correction, explanation: mistake.explanation, date: now())
-            mistakes.append(observation)
-            await repository.record(observation)
-        }
-    }
-
-    private func recordResult(_ kind: ExerciseKind, item: LearningItem?, verdict: ResponseVerdict, latency: TimeInterval?) {
-        results.append(ExerciseResult(kind: kind, itemID: item?.id, verdict: verdict, latency: latency, date: now()))
-        guard let item else { return }
-        if verdict == .natural || (verdict == .acceptable && (latency ?? 0) < 5) {
-            wentWell.append(item.japanese)
-        } else if !verdict.isSuccess {
-            toPractise.append(item.japanese)
-        }
-    }
-
-    private func reportAIHealth() {
+    func reportAIHealth() {
         if let resilient = ai as? ResilientAIProvider {
             emit(.aiDegraded(resilient.lastFailure != nil))
         }
-    }
-
-    private func emit(_ event: SessionEvent) {
-        onEvent?(event)
     }
 
     private func unique(_ values: [String]) -> [String] {
