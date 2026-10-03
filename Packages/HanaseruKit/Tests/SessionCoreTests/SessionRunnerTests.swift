@@ -67,9 +67,11 @@ struct Harness {
     var events: [SessionEvent] { eventLog.events }
     private let eventLog = EventLog()
 
+    // The repository default is made inside: a default argument can't call a main-actor initializer.
     init(plan: SessionPlan, answers: [String], library: ContentLibrary? = nil,
-         repository: InMemoryLearnerRepository = InMemoryLearnerRepository(), options: SessionOptions = SessionOptions()) {
+         repository: InMemoryLearnerRepository? = nil, options: SessionOptions = SessionOptions()) {
         let content = library ?? (try! ContentLibrary.bundled())
+        let repository = repository ?? InMemoryLearnerRepository()
         self.library = content
         self.repository = repository
         recognizer = ScriptedRecognizer(answers)
