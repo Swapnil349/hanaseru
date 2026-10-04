@@ -67,7 +67,16 @@ struct HandsFreeSessionView: View {
                     if showTranscript { transcript }
                 }
                 .padding(Metrics.padding)
+                .frame(maxWidth: 760)
+                .frame(maxWidth: .infinity)
                 .animation(.easeOut(duration: 0.25), value: model.feedback)
+            }
+            if let writing = model.writing, writing.isEnabled {
+                WritingAnswerPanel(model: model, writing: writing)
+                    .padding(.horizontal, Metrics.padding)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: 760)
+                    .frame(maxWidth: .infinity)
             }
             footer
         }
@@ -272,6 +281,13 @@ struct HandsFreeSessionView: View {
             HStack {
                 Toggle("English", isOn: $showEnglish).toggleStyle(.button).font(.caption)
                 Toggle("Transcript", isOn: $showTranscript).toggleStyle(.button).font(.caption)
+                if let writing = model.writing {
+                    Toggle(isOn: Binding(get: { writing.isEnabled }, set: { writing.isEnabled = $0 })) {
+                        Label("Write", systemImage: "pencil.tip")
+                    }
+                    .toggleStyle(.button).font(.caption)
+                    .accessibilityIdentifier("writing-toggle")
+                }
                 Spacer()
             }
         }

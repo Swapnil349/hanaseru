@@ -40,6 +40,8 @@ struct HomeView: View {
                     myJapaneseCard
                 }
                 .padding(Metrics.padding)
+                .frame(maxWidth: 760)
+                .frame(maxWidth: .infinity)
             }
             .background(Palette.background)
             .navigationTitle("")

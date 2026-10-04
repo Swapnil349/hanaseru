@@ -95,13 +95,15 @@ final class VoiceEngine {
     let recognizer: AppleSpeechRecognitionProvider
     let cues: CueFeedbackController
     let remote = RemoteCommandBridge()
+    /// Writing instead of speaking (Apple Pencil on iPad, or a finger).
+    let writing = WritingInput()
 
     /// Microphone level 0...1, delivered on the main actor while a session is running.
     var onMicLevel: ((Float) -> Void)?
 
     init() {
         synthesizer = AppleSpeechSynthesisProvider()
-        recognizer = AppleSpeechRecognitionProvider(engine: engineHost)
+        recognizer = AppleSpeechRecognitionProvider(engine: engineHost, writing: writing)
         cues = CueFeedbackController(engine: engineHost)
     }
 

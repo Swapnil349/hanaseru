@@ -60,6 +60,8 @@ final class SessionViewModel {
     }
 
     var usesCoach: Bool { app.isCoachConfigured }
+    /// Writing instead of speaking; unavailable with the scripted demo voice.
+    var writing: WritingInput? { demo ? nil : app.voice.writing }
     var processingDescription: String { demo ? "Demo voice" : app.voice.recognizer.processingDescription }
 
     // MARK: - Lifecycle

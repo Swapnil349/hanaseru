@@ -10,6 +10,8 @@ public enum SkillDimension: String, Codable, CaseIterable, Sendable, CodingKeyRe
     case pronunciation
     case grammar
     case context
+    /// Writing the line by hand (iPad / Apple Pencil practice).
+    case writing
 
     /// Dimensions a session can deliberately practise.
     public static let practisable: [SkillDimension] = [.listening, .spokenRecall, .context]

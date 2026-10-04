@@ -18,6 +18,8 @@ enum SettingsKey {
     static let helpOnboardingDone = "helpOnboardingDone"
     /// When the learner last saved a backup file (seconds since 1970; 0 = never).
     static let lastBackupAt = "lastBackupAt"
+    /// Answers are written (Apple Pencil or finger) instead of spoken.
+    static let writingMode = "writingMode"
 }
 
 /// How much kanji to show (spec §41). Default: minimal.

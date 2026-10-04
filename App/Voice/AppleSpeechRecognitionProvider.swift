@@ -13,13 +13,15 @@ import SessionCore
 @MainActor
 final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
     private let engine: AudioEngineHost
+    private let writing: WritingInput
     private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "ja-JP"))
     private var task: SFSpeechRecognitionTask?
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var cancelled = false
 
-    init(engine: AudioEngineHost) {
+    init(engine: AudioEngineHost, writing: WritingInput) {
         self.engine = engine
+        self.writing = writing
     }
 
     var isOnDevice: Bool { recognizer?.supportsOnDeviceRecognition ?? false }
@@ -29,6 +31,8 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
     }
 
     func listen(_ options: ListenOptions, onPartial: @escaping @MainActor (String) -> Void) async -> ListenResult {
+        cancelled = false
+        if writing.isEnabled { return await waitForWriting(options) }
         guard let recognizer, recognizer.isAvailable else {
             VoiceLog.add("listen: Japanese recogniser unavailable")
             return ListenResult(transcript: "", outcome: .failed("Japanese speech recognition isn't available right now."))
@@ -115,6 +119,26 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
             speakingDuration: max(0, state.lastChangeAt.timeIntervalSince(firstSpeechAt)),
             outcome: .speech
         )
+    }
+
+    /// Writing mode: the microphone stays off and the turn waits (up to 90 s) for the written answer.
+    private func waitForWriting(_ options: ListenOptions) async -> ListenResult {
+        let startedAt = Date()
+        writing.begin(expected: options.contextualStrings)
+        defer { writing.end() }
+        let limit = max(options.startTimeout, 90)
+        while Date().timeIntervalSince(startedAt) < limit {
+            if Task.isCancelled || cancelled { return .silence }
+            if let text = writing.take() {
+                VoiceLog.add("written answer: \(text.count) characters")
+                guard !text.isEmpty else { return ListenResult(transcript: "", outcome: .noSpeech) }
+                return ListenResult(transcript: text, confidence: 1, latency: Date().timeIntervalSince(startedAt),
+                                    speakingDuration: 0, outcome: .speech)
+            }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        VoiceLog.add("writing: nothing written in \(Int(limit)) s")
+        return ListenResult(transcript: "", outcome: .noSpeech)
     }
 
     func cancelListening() {

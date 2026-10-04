@@ -124,6 +124,7 @@ struct SettingsView: View {
                         privacyRow("mic", "The microphone is only transcribed during your turn. The indicator on screen shows when.")
                         privacyRow("iphone", app.voice.recognizer.processingDescription + ".")
                         privacyRow("waveform.slash", "Audio is never recorded or saved.")
+                        privacyRow("pencil.tip", "Handwriting is read on this device and never leaves it.")
                         privacyRow("text.quote", "Only the text of mistakes is kept, to help you practise them.")
                         privacyRow("server.rack", "With an AI coach, the text of your answers (never audio) is sent to your coach server and Anthropic.")
                     }

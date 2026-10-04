@@ -77,6 +77,8 @@ struct RootView: View {
         TabView {
             HomeView()
                 .tabItem { Label("Practice", systemImage: "waveform") }
+            WritingPracticeView()
+                .tabItem { Label("Write", systemImage: "pencil.and.scribble") }
             MyJapaneseView()
                 .tabItem { Label("My Japanese", systemImage: "text.book.closed") }
             ProgressDashboardView()
