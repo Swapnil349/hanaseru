@@ -118,6 +118,17 @@ final class VoiceEngine {
         remote.activate()
     }
 
+    /// Brings audio back after an interruption or route change: the session and the mic engine restart.
+    func recover() {
+        do {
+            try audioSession.activate()
+            try engineHost.start()
+            VoiceLog.add("audio recovered")
+        } catch {
+            VoiceLog.add("audio recovery failed: \(error.localizedDescription)")
+        }
+    }
+
     func endSession() {
         synthesizer.stopSpeaking()
         recognizer.cancelListening()

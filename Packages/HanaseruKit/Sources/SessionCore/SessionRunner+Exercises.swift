@@ -193,8 +193,10 @@ extension SessionRunner {
         emit(.line(ScriptLine(role: .instruction, japanese: scenario.titleJa, english: scenario.situationEn)))
         try await coach(.sceneIntro, ["title": scenario.title])
         try await speakMixed(scenario.situationEn)
+        try await coach(.sceneSteps)
 
-        // Screenplay: every line of both roles, with the learner's lines given in English and Japanese.
+        // Step 1 — screenplay: every line of both roles, with the learner's lines given in English and Japanese.
+        emit(.step("Step 1 of 3 · Listen to the conversation"))
         try await coach(.listenFirst)
         for (index, line) in lines.enumerated() {
             if let partner = line.partner {
@@ -210,7 +212,19 @@ extension SessionRunner {
             exposed.insert(line.id)
         }
 
-        // Perform: the partner speaks, a whispered English cue, the learner says the line.
+        // Step 2 — practise each of the learner's lines: the partner's line, the meaning, the model, one echo.
+        emit(.step("Step 2 of 3 · Practise your lines"))
+        try await coach(.rehearseStart)
+        for line in lines {
+            emit(.focus(focusInfo(line, level: .model)))
+            if let partner = line.partner { try await partnerSays(partner, rate: 0.9) }
+            try await coach(.youSay, ["english": line.english])
+            try await sayModel(line, rate: 0.85)
+            _ = try await runEcho(line, window: 5, silentNote: false)
+        }
+
+        // Step 3 — perform: the partner speaks, a whispered English cue, the learner says the line.
+        emit(.step("Step 3 of 3 · The real conversation"))
         if lines.first?.partner == nil {
             try await coach(.performYouStart)
         } else {

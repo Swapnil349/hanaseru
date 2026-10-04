@@ -1,3 +1,4 @@
+import AVFoundation
 import ConversationCore
 import SessionCore
 import SwiftData
@@ -11,7 +12,9 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.kanjiIntensity) private var kanjiIntensity = KanjiIntensity.minimal.rawValue
     @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
     @AppStorage(SettingsKey.showEnglish) private var showEnglish = true
-    @AppStorage(SettingsKey.englishVoice) private var englishVoice = "en-IN"
+    @AppStorage(SettingsKey.englishVoice) private var englishVoice = ""
+    @AppStorage(SettingsKey.japaneseVoice) private var japaneseVoice = ""
+    @State private var logFile: URL?
     @AppStorage(SettingsKey.coachServerURL) private var coachServerURL = ""
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = true
     @AppStorage(SettingsKey.lastBackupAt) private var lastBackupAt = 0.0
@@ -49,17 +52,26 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Picker("English voice", selection: $englishVoice) {
-                        Text("Indian English").tag("en-IN")
-                        Text("US English").tag("en-US")
-                        Text("British English").tag("en-GB")
-                    }
-                    .onChange(of: englishVoice) { AppleSpeechSynthesisProvider.resetVoiceCache() }
-                    LabeledContent("Japanese voice quality", value: AppleSpeechSynthesisProvider.japaneseVoiceQuality)
+                    voicePicker("English voice", selection: $englishVoice, language: .english,
+                                sample: "Say: No, there's no particular problem.")
+                    voicePicker("Japanese voice", selection: $japaneseVoice, language: .japanese,
+                                sample: "いいえ、特に問題はありません。")
                 } header: {
                     Text("Voice")
                 } footer: {
-                    Text("For a more natural Japanese voice, download “Japanese – Premium” in iOS Settings › Accessibility › Spoken Content › Voices.")
+                    Text("Basic voices sound robotic. For natural speech, download voices marked Enhanced or Premium in the iPhone's Settings › Accessibility › Spoken Content (Read & Speak) › Voices — under English (any accent) and Japanese. Hanaseru then uses the best one automatically.")
+                }
+
+                Section {
+                    if let logFile {
+                        ShareLink(item: logFile) { Label("Send the voice log", systemImage: "square.and.arrow.up") }
+                    } else {
+                        Button("Prepare the voice log") { logFile = VoiceLog.shared.exportFile() }
+                    }
+                } header: {
+                    Text("Diagnostics")
+                } footer: {
+                    Text("If a session goes quiet, this log shows what the voice engine was doing. It contains timings and the coach's words, never what you said.")
                 }
 
                 Section {
@@ -125,6 +137,8 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .onAppear {
                 name = profiles.first?.name ?? ""
+                // Older builds stored an accent ("en-IN") rather than a voice: switch to the best installed voice.
+                if englishVoice.hasPrefix("en-") && englishVoice.count <= 6 { englishVoice = "" }
                 token = CoachTokenStore.read() ?? ""
             }
             .confirmationDialog("Delete the stored text of everything you've said?", isPresented: $confirmVoiceDelete, titleVisibility: .visible) {
@@ -187,6 +201,32 @@ struct SettingsView: View {
         name = backup.profile.name
         pendingRestore = nil
         backupStatus = "Restored: \(backup.overview)."
+    }
+
+    /// A list of installed voices, best first, with "Best installed" as the default and a preview button.
+    @ViewBuilder
+    private func voicePicker(_ title: String, selection: Binding<String>, language: SpeechLanguage, sample: String) -> some View {
+        let voices = AppleSpeechSynthesisProvider.candidates(for: language)
+            .sorted { ($0.quality.rawValue, $0.name) > ($1.quality.rawValue, $1.name) }
+        let best = AppleSpeechSynthesisProvider.bestVoice(for: language)
+        Picker(title, selection: selection) {
+            Text("Best installed" + (best.map { " (\($0.name), \(AppleSpeechSynthesisProvider.qualityName($0)))" } ?? ""))
+                .tag("")
+            ForEach(voices, id: \.identifier) { voice in
+                Text("\(voice.name) — \(accentName(voice.language)) · \(AppleSpeechSynthesisProvider.qualityName(voice))")
+                    .tag(voice.identifier)
+            }
+        }
+        .onChange(of: selection.wrappedValue) { AppleSpeechSynthesisProvider.resetVoiceCache() }
+        Button {
+            VoicePreview.shared.play(sample, voice: AppleSpeechSynthesisProvider.voice(for: language))
+        } label: {
+            Label("Hear the \(language == .japanese ? "Japanese" : "English") voice", systemImage: "play.circle")
+        }
+    }
+
+    private func accentName(_ code: String) -> String {
+        Locale.current.localizedString(forIdentifier: code) ?? code
     }
 
     private func privacyRow(_ symbol: String, _ text: String) -> some View {

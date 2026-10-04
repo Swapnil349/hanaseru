@@ -628,6 +628,12 @@ public enum CueKey: String, CaseIterable, Codable, Sendable {
     case listenFirst
     case performStart
     case performYouStart
+    // Session and scene structure.
+    case agenda
+    case part
+    case comeBack
+    case sceneSteps
+    case rehearseStart
     case listenFor
     case itWas
     case thatsRight

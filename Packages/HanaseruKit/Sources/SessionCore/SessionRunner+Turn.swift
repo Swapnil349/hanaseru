@@ -552,6 +552,8 @@ extension SessionRunner {
         let next = pendingRecalls.remove(at: position)
         let previousLine = lastLineID
         do {
+            emit(.step("An earlier line, once more"))
+            try await coach(.comeBack)
             if next.level == .model {
                 try await runIntroduce(next.line)
                 if (appearances[next.line.id] ?? 0) < 4 {

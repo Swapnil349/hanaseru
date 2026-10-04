@@ -6,8 +6,14 @@ import AVFoundation
 /// music rather than stopping it. Haptics are explicitly allowed during recording — iOS silences them otherwise.
 @MainActor
 final class AudioSessionController {
-    /// Called with `true` when an interruption (e.g. a phone call) begins, `false` when it ends.
-    var onInterruption: ((Bool) -> Void)?
+    /// An interruption (a phone call, Siri, an alarm) began, or ended — `shouldResume` says iOS expects
+    /// the app to carry on by itself.
+    enum Interruption {
+        case began
+        case ended(shouldResume: Bool)
+    }
+
+    var onInterruption: ((Interruption) -> Void)?
     /// Called when the current output route disappears (AirPods taken out, headphones unplugged).
     var onRouteLost: (() -> Void)?
 
@@ -44,12 +50,18 @@ final class AudioSessionController {
         observers.append(center.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
             guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
-            let began = type == .began
-            Task { @MainActor in self?.onInterruption?(began) }
+            let optionsRaw = note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let shouldResume = AVAudioSession.InterruptionOptions(rawValue: optionsRaw).contains(.shouldResume)
+            let event: Interruption = type == .began ? .began : .ended(shouldResume: shouldResume)
+            VoiceLog.add(type == .began ? "audio interruption began" : "audio interruption ended (resume: \(shouldResume))")
+            Task { @MainActor in self?.onInterruption?(event) }
         })
         observers.append(center.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] note in
             guard let raw = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
-                  AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
+                  let reason = AVAudioSession.RouteChangeReason(rawValue: raw) else { return }
+            let outputs = AVAudioSession.sharedInstance().currentRoute.outputs.map(\.portType.rawValue).joined(separator: ",")
+            VoiceLog.add("audio route changed (reason \(reason.rawValue)) → \(outputs)")
+            guard reason == .oldDeviceUnavailable else { return }
             Task { @MainActor in self?.onRouteLost?() }
         })
     }

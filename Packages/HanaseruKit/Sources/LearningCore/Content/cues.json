@@ -245,19 +245,19 @@
     "en": "Today's scene: {title}."
   },
   "listenFirst": {
-    "ja": "まず、会話を聞きましょう。",
-    "kana": "まず、かいわをききましょう。",
-    "en": "First, just listen to the whole conversation."
+    "ja": "ステップ１。まず、会話を聞きましょう。",
+    "kana": "すてっぷいち。まず、かいわをききましょう。",
+    "en": "Step 1 of 3: just listen to the whole conversation."
   },
   "performStart": {
-    "ja": "では、本番です。",
-    "kana": "では、ほんばんです。",
-    "en": "Now the real thing. {name} starts."
+    "ja": "ステップ３。では、本番です。",
+    "kana": "すてっぷさん。では、ほんばんです。",
+    "en": "Step 3 of 3: the real conversation. {name} starts. I'll whisper your cue."
   },
   "performYouStart": {
-    "ja": "では、本番です。あなたからどうぞ。",
-    "kana": "では、ほんばんです。あなたからどうぞ。",
-    "en": "Now the real thing. You start."
+    "ja": "ステップ３。では、本番です。あなたからどうぞ。",
+    "kana": "すてっぷさん。では、ほんばんです。あなたからどうぞ。",
+    "en": "Step 3 of 3: the real conversation. You start. I'll whisper your cue."
   },
   "listenFor": {
     "ja": "聞いてください。",
@@ -303,5 +303,30 @@
     "ja": "答えは必ず聞けます。",
     "kana": "こたえはかならずきけます。",
     "en": "You'll always hear the answer. Say it once, and we move on."
+  },
+  "agenda": {
+    "ja": "今日の内容です。",
+    "kana": "きょうのないようです。",
+    "en": "Today: {agenda}."
+  },
+  "part": {
+    "ja": "次です。",
+    "kana": "つぎです。",
+    "en": "Part {n} of {k}: {title}."
+  },
+  "comeBack": {
+    "ja": "さっきのフレーズです。",
+    "kana": "さっきのふれーずです。",
+    "en": "Back to an earlier line."
+  },
+  "sceneSteps": {
+    "ja": "三つのステップです。聞く、練習する、本番です。",
+    "kana": "みっつのすてっぷです。きく、れんしゅうする、ほんばんです。",
+    "en": "Three steps: listen, practise your lines, then the real conversation."
+  },
+  "rehearseStart": {
+    "ja": "ステップ２。あなたのせりふを練習しましょう。",
+    "kana": "すてっぷに。あなたのせりふをれんしゅうしましょう。",
+    "en": "Step 2 of 3: practise your lines. Repeat each one after me."
   }
 }

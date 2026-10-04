@@ -137,6 +137,8 @@ public enum SessionEvent: Equatable, Sendable {
     case reveal(RevealInfo)
     /// The learner's think time for this listen, and when the nudge will come (0 = none).
     case turnWindow(seconds: Double, nudgeAt: Double)
+    /// Where the learner is inside the current part, e.g. "Step 2 of 3 · Practise your lines". Empty clears it.
+    case step(String)
     case finished(SessionSummary)
 }
 

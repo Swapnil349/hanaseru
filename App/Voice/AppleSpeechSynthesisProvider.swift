@@ -4,23 +4,57 @@ import SessionCore
 
 /// Japanese and English speech via `AVSpeechSynthesizer` (spec §61).
 ///
-/// Picks the best installed Japanese voice. Download "Japanese — Premium" or "Enhanced" in
-/// Settings › Accessibility › Spoken Content › Voices for noticeably more natural speech.
+/// Picks the most natural installed voice (Premium, then Enhanced) unless the learner chose one in Settings.
+/// Download "Premium" or "Enhanced" voices in iOS Settings › Accessibility › Spoken Content › Voices.
+///
+/// A watchdog guards every utterance: iOS occasionally drops an utterance (right after a stop, or when the
+/// audio route changes) without ever reporting that it finished. Without the watchdog the session would wait
+/// in silence forever; with it, the utterance is retried once on a fresh synthesizer and the session goes on.
 @MainActor
 final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
-    private let synthesizer = AVSpeechSynthesizer()
-    private var continuation: CheckedContinuation<Void, Never>?
+    private enum Outcome {
+        case finished, cancelled, neverStarted, stalled
+    }
+
+    private var synthesizer = AVSpeechSynthesizer()
+    private var continuation: CheckedContinuation<Outcome, Never>?
     private var currentUtterance: ObjectIdentifier?
+    private var started = false
 
     override init() {
         super.init()
+        configure(synthesizer)
+    }
+
+    private func configure(_ synthesizer: AVSpeechSynthesizer) {
         synthesizer.delegate = self
         synthesizer.usesApplicationAudioSession = true
     }
 
     func speak(_ request: SpeechRequest) async {
-        guard !Task.isCancelled, !request.text.isEmpty else { return }
-        finishCurrent(stop: true)
+        guard !request.text.isEmpty else { return }
+        for attempt in 1...2 {
+            guard !Task.isCancelled else { return }
+            switch await speakOnce(request) {
+            case .finished, .cancelled:
+                return
+            case .neverStarted:
+                VoiceLog.add("speech never started (try \(attempt)): \(request.text.prefix(40))")
+                resetSynthesizer()
+            case .stalled:
+                VoiceLog.add("speech stalled, skipped: \(request.text.prefix(40))")
+                resetSynthesizer()
+                return
+            }
+        }
+    }
+
+    func stopSpeaking() {
+        finishCurrent(stop: true, outcome: .cancelled)
+    }
+
+    private func speakOnce(_ request: SpeechRequest) async -> Outcome {
+        finishCurrent(stop: true, outcome: .cancelled)
 
         let utterance = AVSpeechUtterance(string: request.text)
         let choice = Self.voice(for: request.voice, language: request.language)
@@ -31,53 +65,103 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         // Whispered cues are quieter on headphones only; through the speaker they'd be lost.
         utterance.volume = Float(request.volume < 1 && !Self.isUsingHeadphones ? 1 : request.volume)
         let id = ObjectIdentifier(utterance)
+        let expected = Self.expectedDuration(of: request)
+        VoiceLog.add("say \(request.language == .japanese ? "ja" : "en"): \(request.text.prefix(50))")
 
-        await withTaskCancellationHandler {
-            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Outcome, Never>) in
                 self.continuation = continuation
                 self.currentUtterance = id
+                self.started = false
                 self.synthesizer.speak(utterance)
+                self.watch(id, expected: expected)
             }
         } onCancel: {
-            Task { @MainActor in self.finishCurrent(stop: true) }
+            Task { @MainActor in self.finishCurrent(stop: true, outcome: .cancelled) }
         }
     }
 
-    func stopSpeaking() {
-        finishCurrent(stop: true)
+    /// Ends the utterance if it never starts (4 s) or runs far beyond its expected length.
+    private func watch(_ id: ObjectIdentifier, expected: TimeInterval) {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard let self, self.currentUtterance == id else { return }
+            if !self.started {
+                self.finishCurrent(stop: true, outcome: .neverStarted)
+                return
+            }
+            try? await Task.sleep(nanoseconds: UInt64((expected * 2 + 4) * 1_000_000_000))
+            guard self.currentUtterance == id else { return }
+            self.finishCurrent(stop: true, outcome: .stalled)
+        }
     }
 
-    private func finishCurrent(stop: Bool) {
+    private func resetSynthesizer() {
+        synthesizer.delegate = nil
+        synthesizer.stopSpeaking(at: .immediate)
+        synthesizer = AVSpeechSynthesizer()
+        configure(synthesizer)
+    }
+
+    private func finishCurrent(stop: Bool, outcome: Outcome) {
         if stop && synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
         currentUtterance = nil
-        continuation?.resume()
+        continuation?.resume(returning: outcome)
         continuation = nil
+    }
+
+    fileprivate func utteranceStarted(_ id: ObjectIdentifier) {
+        if id == currentUtterance { started = true }
     }
 
     fileprivate func utteranceEnded(_ id: ObjectIdentifier) {
         guard id == currentUtterance else { return }
-        finishCurrent(stop: false)
+        finishCurrent(stop: false, outcome: .finished)
+    }
+
+    /// A generous estimate of how long an utterance takes, for the watchdog.
+    static func expectedDuration(of request: SpeechRequest) -> TimeInterval {
+        let charactersPerSecond = request.language == .japanese ? 6.0 : 12.0
+        return Double(request.text.count) / charactersPerSecond / max(request.rate, 0.5) + request.pauseAfter
     }
 
     // MARK: - Voices
 
     private static var voiceCache: [String: AVSpeechSynthesisVoice] = [:]
 
+    /// The voice for a language: the one chosen in Settings, otherwise the most natural one installed.
     static func voice(for language: SpeechLanguage) -> AVSpeechSynthesisVoice? {
-        let code: String
-        switch language {
-        case .japanese: code = "ja-JP"
-        case .english: code = UserDefaults.standard.string(forKey: SettingsKey.englishVoice) ?? "en-IN"
+        let key = language == .japanese ? SettingsKey.japaneseVoice : SettingsKey.englishVoice
+        let choice = UserDefaults.standard.string(forKey: key) ?? ""
+        let cacheKey = "\(language)|\(choice)"
+        if let cached = voiceCache[cacheKey] { return cached }
+        let voice = AVSpeechSynthesisVoice(identifier: choice)
+            ?? bestVoice(for: language, preferredLocale: choice.hasPrefix("en-") ? choice : nil)
+            ?? AVSpeechSynthesisVoice(language: language == .japanese ? "ja-JP" : "en-US")
+        voiceCache[cacheKey] = voice
+        return voice
+    }
+
+    /// Installed voices for a language, without novelty voices or the learner's Personal Voice.
+    static func candidates(for language: SpeechLanguage) -> [AVSpeechSynthesisVoice] {
+        AVSpeechSynthesisVoice.speechVoices().filter { voice in
+            let matches = language == .japanese ? voice.language == "ja-JP" : voice.language.hasPrefix("en")
+            return matches && !voice.voiceTraits.contains(.isNoveltyVoice)
+                && !voice.voiceTraits.contains(.isPersonalVoice)
+                && !voice.identifier.lowercased().contains("eloquence")
         }
-        if let cached = voiceCache[code] { return cached }
-        let candidates = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == code }
-        let best = candidates.max { $0.quality.rawValue < $1.quality.rawValue }
-            ?? AVSpeechSynthesisVoice(language: code)
-            ?? (language == .english ? AVSpeechSynthesisVoice(language: "en-US") : nil)
-        voiceCache[code] = best
-        return best
+    }
+
+    /// Quality first (Premium, Enhanced, then default), then accent: the preferred one, then Indian, British, US.
+    static func bestVoice(for language: SpeechLanguage, preferredLocale: String? = nil) -> AVSpeechSynthesisVoice? {
+        let accents = ["en-IN", "en-GB", "en-US", "en-AU", "en-IE", "en-ZA"]
+        func rank(_ voice: AVSpeechSynthesisVoice) -> (Int, Int) {
+            let accent = voice.language == preferredLocale ? 100 : 50 - (accents.firstIndex(of: voice.language) ?? 40)
+            return (voice.quality.rawValue, accent)
+        }
+        return candidates(for: language).max { rank($0) < rank($1) }
     }
 
     /// The voice for a speaking role. The partner gets a different Japanese voice of their gender when one is
@@ -92,8 +176,8 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
             let coach = voice(for: .japanese)
             // Another quality of the coach's own speaker ("Kyoko" vs "Kyoko (Enhanced)") would sound the same.
             let coachSpeaker = coach.map(speakerName)
-            let others = AVSpeechSynthesisVoice.speechVoices().filter {
-                $0.language == "ja-JP" && $0.identifier != coach?.identifier && speakerName($0) != coachSpeaker
+            let others = candidates(for: .japanese).filter {
+                $0.identifier != coach?.identifier && speakerName($0) != coachSpeaker
             }
             let wanted: AVSpeechSynthesisVoiceGender? = switch gender {
             case .male?: .male
@@ -133,18 +217,30 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         voiceCache.removeAll()
     }
 
-    /// Quality of the installed Japanese voice, shown in Settings.
-    static var japaneseVoiceQuality: String {
-        switch voice(for: .japanese)?.quality {
+    static func qualityName(_ voice: AVSpeechSynthesisVoice?) -> String {
+        switch voice?.quality {
         case .premium?: "Premium"
         case .enhanced?: "Enhanced"
-        case .some: "Default"
+        case .some: "Basic"
         case nil: "Not installed"
         }
+    }
+
+    /// Quality of the Japanese voice in use, shown in Settings.
+    static var japaneseVoiceQuality: String { qualityName(voice(for: .japanese)) }
+
+    /// True when only a basic (robotic-sounding) English voice is installed.
+    static var englishVoiceIsBasic: Bool {
+        (voice(for: .english)?.quality ?? .default) == .default
     }
 }
 
 extension AppleSpeechSynthesisProvider: AVSpeechSynthesizerDelegate {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        let id = ObjectIdentifier(utterance)
+        Task { @MainActor in self.utteranceStarted(id) }
+    }
+
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         let id = ObjectIdentifier(utterance)
         Task { @MainActor in self.utteranceEnded(id) }
@@ -153,5 +249,23 @@ extension AppleSpeechSynthesisProvider: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         let id = ObjectIdentifier(utterance)
         Task { @MainActor in self.utteranceEnded(id) }
+    }
+}
+
+/// Speaks a sample in Settings, outside a session.
+@MainActor
+final class VoicePreview {
+    static let shared = VoicePreview()
+    private let synthesizer: AVSpeechSynthesizer = {
+        let synthesizer = AVSpeechSynthesizer()
+        synthesizer.usesApplicationAudioSession = false
+        return synthesizer
+    }()
+
+    func play(_ text: String, voice: AVSpeechSynthesisVoice?) {
+        synthesizer.stopSpeaking(at: .immediate)
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = voice
+        synthesizer.speak(utterance)
     }
 }

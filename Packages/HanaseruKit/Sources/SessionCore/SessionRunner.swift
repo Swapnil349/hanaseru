@@ -289,6 +289,11 @@ public final class SessionRunner {
                 emit(.exerciseStarted(index: currentExerciseIndex, total: plan.exercises.count,
                                       kind: exercise.kind, title: title(for: exercise)))
                 stage = .exercise
+                emit(.step(""))
+                if plan.exercises.count > 1 {
+                    try await coach(.part, ["n": "\(currentExerciseIndex + 1)", "k": "\(plan.exercises.count)",
+                                            "title": spokenTitle(for: exercise)])
+                }
                 try await perform(exercise)
                 nextExerciseIndex = currentExerciseIndex + 1
                 // A line taught or missed earlier comes back after at least one other exercise.
@@ -342,6 +347,47 @@ public final class SessionRunner {
         }
     }
 
+    /// How a part is announced: "Part 2 of 4: a listening check."
+    private func spokenTitle(for exercise: PlannedExercise) -> String {
+        switch exercise {
+        case .listening: "a listening check"
+        case .recall: "a phrase"
+        case .shadowing: "say it with me"
+        case .conversation(let id, _): "a scene, " + (library.scenario(id: id)?.title ?? "a conversation")
+        }
+    }
+
+    /// "3 phrases, a listening check and a scene, Inspection at the pier"
+    func agenda() -> String {
+        var order: [String] = []
+        var counts: [String: Int] = [:]
+        var scenes: [String] = []
+        for exercise in plan.exercises {
+            let key: String
+            switch exercise {
+            case .listening: key = "listening"
+            case .recall: key = "recall"
+            case .shadowing: key = "shadowing"
+            case .conversation(let id, _):
+                key = "scene"
+                scenes.append(library.scenario(id: id)?.title ?? "a conversation")
+            }
+            if counts[key] == nil { order.append(key) }
+            counts[key, default: 0] += 1
+        }
+        let parts = order.map { key -> String in
+            let count = counts[key] ?? 1
+            switch key {
+            case "listening": return count == 1 ? "a listening check" : "\(count) listening checks"
+            case "recall": return count == 1 ? "a phrase" : "\(count) phrases"
+            case "shadowing": return count == 1 ? "one line to say with me" : "\(count) lines to say with me"
+            default: return (scenes.count == 1 ? "a scene, " : "scenes: ") + scenes.joined(separator: " and ")
+            }
+        }
+        guard parts.count > 1 else { return parts.first ?? "" }
+        return parts.dropLast().joined(separator: ", ") + " and " + (parts.last ?? "")
+    }
+
     // MARK: - Intro and finish
 
     private func intro() async throws {
@@ -351,6 +397,11 @@ public final class SessionRunner {
         case nil: .sessionStartGeneral
         }
         try await coach(key)
+        let agenda = agenda()
+        if !agenda.isEmpty {
+            emit(.line(ScriptLine(role: .instruction, japanese: "", english: "Today: " + agenda)))
+            try await coach(.agenda, ["agenda": agenda])
+        }
     }
 
     func finish(completed: Bool) async {

@@ -30,9 +30,19 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
 
     func listen(_ options: ListenOptions, onPartial: @escaping @MainActor (String) -> Void) async -> ListenResult {
         guard let recognizer, recognizer.isAvailable else {
+            VoiceLog.add("listen: Japanese recogniser unavailable")
             return ListenResult(transcript: "", outcome: .failed("Japanese speech recognition isn't available right now."))
         }
         cancelled = false
+        // After a call, Siri or an AirPods switch the engine may have stopped: without it the mic hears nothing.
+        if !engine.isRunning {
+            do {
+                try engine.start()
+                VoiceLog.add("microphone engine restarted")
+            } catch {
+                VoiceLog.add("microphone engine could not restart: \(error.localizedDescription)")
+            }
+        }
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
@@ -87,11 +97,17 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
         task = nil
         self.request = nil
 
-        if Task.isCancelled || cancelled { return .silence }
+        let waited = String(format: "%.1f", Date().timeIntervalSince(startedAt))
+        if Task.isCancelled || cancelled {
+            VoiceLog.add("listen \(waited)s of \(options.startTimeout)s: interrupted")
+            return .silence
+        }
         let transcript = state.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !transcript.isEmpty, let firstSpeechAt = state.firstSpeechAt else {
+            VoiceLog.add("listen \(waited)s of \(options.startTimeout)s: nothing heard\(state.failed ? " (recogniser error)" : "")")
             return ListenResult(transcript: "", outcome: .noSpeech)
         }
+        VoiceLog.add("listen \(waited)s: heard \(transcript.count) characters")
         return ListenResult(
             transcript: transcript,
             confidence: state.confidence,

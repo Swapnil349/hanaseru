@@ -13,6 +13,7 @@ struct HomeView: View {
     @AppStorage(SettingsKey.lastFocus) private var focusRaw = SessionFocus.surprise.rawValue
     @State private var activeSession: SessionRequest?
     @State private var showCapture = false
+    @AppStorage("voiceTipDismissed") private var voiceTipDismissed = false
 
     private let timeOptions = [2, 5, 10, 20, 30]
     private var focus: SessionFocus { SessionFocus(rawValue: focusRaw) ?? .surprise }
@@ -23,6 +24,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     greeting
                     expiryBanner
+                    voiceTip
                     timePicker
                     focusPicker
                     PrimaryButton(title: "Start \(minutes)-minute session", systemImage: "headphones") {
@@ -70,6 +72,30 @@ struct HomeView: View {
                 .foregroundStyle(Palette.ink)
         }
         .padding(.top, 12)
+    }
+
+    /// Basic iOS voices sound robotic; the natural ones are a free download the app can't do by itself.
+    @ViewBuilder
+    private var voiceTip: some View {
+        if !voiceTipDismissed && AppleSpeechSynthesisProvider.englishVoiceIsBasic {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Label("Get a natural English voice", systemImage: "waveform.badge.plus")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Palette.ink)
+                    Spacer()
+                    Button { voiceTipDismissed = true } label: { Image(systemName: "xmark") }
+                        .foregroundStyle(Palette.inkSecondary)
+                        .accessibilityLabel("Dismiss")
+                }
+                Text("Your iPhone only has a basic English voice, which sounds robotic. In the iPhone's Settings › Accessibility › Spoken Content (Read & Speak) › Voices › English, download a voice marked Enhanced or Premium. Hanaseru will use it automatically.")
+                    .font(.footnote)
+                    .foregroundStyle(Palette.inkSecondary)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.line.opacity(0.06), in: RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous))
+        }
     }
 
     /// A free Apple ID signs the app for 7 days; warn two days ahead so practice isn't cut off.

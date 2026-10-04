@@ -22,6 +22,8 @@ final class SessionViewModel {
     private(set) var exerciseTitle = ""
     private(set) var exerciseIndex = 0
     private(set) var exerciseTotal = 0
+    /// The step inside the current part ("Step 2 of 3 · Practise your lines").
+    private(set) var stepTitle = ""
     /// The latest Japanese the learner heard (partner or coach).
     private(set) var spokenLine: ScriptLine?
     /// The English task or scene, when there is one.
@@ -47,6 +49,7 @@ final class SessionViewModel {
     private let app: AppEnvironment
     private var runner: SessionRunner?
     private var tornDown = false
+    private var pausedByInterruption = false
     /// Scripted voice for Simulator/CI runs (see `DemoVoice`).
     private let demo = DemoVoice.isEnabled
 
@@ -99,9 +102,12 @@ final class SessionViewModel {
         }
     }
 
-    func togglePause() {
+    func togglePause(reason: String = "pause button") {
+        // Coming back from a call or an AirPods switch: make sure the audio session and mic run again.
+        if isPaused && !demo { app.voice.recover() }
         runner?.togglePause()
         isPaused = runner?.isPaused ?? false
+        VoiceLog.add("\(isPaused ? "paused" : "resumed") by \(reason)")
         updateNowPlaying()
     }
 
@@ -157,6 +163,8 @@ final class SessionViewModel {
             exerciseIndex = index
             exerciseTotal = total
             exerciseTitle = title
+            stepTitle = ""
+            VoiceLog.add("part \(index + 1) of \(total): \(title)")
             feedback = nil
             instruction = nil
             focusInfo = nil
@@ -194,6 +202,9 @@ final class SessionViewModel {
         case .turnWindow(let seconds, _):
             thinkSeconds = seconds
             listenStartedAt = Date()
+        case .step(let title):
+            stepTitle = title
+            if !title.isEmpty { VoiceLog.add("step: \(title)") }
         case .finished(let summary):
             if summary.completedNormally && minutes >= 5 {
                 UserDefaults.standard.set(true, forKey: SettingsKey.helpOnboardingDone)
@@ -209,25 +220,35 @@ final class SessionViewModel {
             self.micLevel = level
         }
         let remote = app.voice.remote
-        remote.onToggle = { [weak self] in self?.togglePause() }
+        remote.onToggle = { [weak self] in self?.togglePause(reason: "headphone play/pause") }
         remote.onPause = { [weak self] in
             guard let self, !self.isPaused else { return }
-            self.togglePause()
+            self.togglePause(reason: "headphone pause")
         }
         remote.onResume = { [weak self] in
             guard let self, self.isPaused else { return }
-            self.togglePause()
+            self.togglePause(reason: "headphone play")
         }
         remote.onSkip = { [weak self] in self?.answerAndNext() }
         remote.onPrevious = { [weak self] in self?.command(.repeatPrompt) }
-        // A phone call or AirPods coming out pauses the session; resuming is the learner's choice.
-        app.voice.audioSession.onInterruption = { [weak self] began in
-            guard let self, began, !self.isPaused else { return }
-            self.togglePause()
+        // A call or Siri pauses the session and it carries on by itself afterwards when iOS says so.
+        // AirPods coming out pauses it until the learner presses play.
+        app.voice.audioSession.onInterruption = { [weak self] event in
+            guard let self else { return }
+            switch event {
+            case .began:
+                guard !self.isPaused else { return }
+                self.pausedByInterruption = true
+                self.togglePause(reason: "audio interruption")
+            case .ended(let shouldResume):
+                guard self.isPaused, self.pausedByInterruption else { return }
+                self.pausedByInterruption = false
+                if shouldResume { self.togglePause(reason: "end of interruption") }
+            }
         }
         app.voice.audioSession.onRouteLost = { [weak self] in
             guard let self, !self.isPaused else { return }
-            self.togglePause()
+            self.togglePause(reason: "headphones disconnected")
         }
     }
 

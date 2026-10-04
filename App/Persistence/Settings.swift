@@ -7,7 +7,10 @@ enum SettingsKey {
     static let kanjiIntensity = "kanjiIntensity"
     static let showRomaji = "showRomaji"
     static let showEnglish = "showEnglish"
+    /// A voice identifier, or empty for the most natural installed voice. (Older builds stored an accent: "en-IN".)
     static let englishVoice = "englishVoice"
+    /// A voice identifier, or empty for the most natural installed Japanese voice.
+    static let japaneseVoice = "japaneseVoice"
     static let coachServerURL = "coachServerURL"
     static let lastMinutes = "lastMinutes"
     static let lastFocus = "lastFocus"

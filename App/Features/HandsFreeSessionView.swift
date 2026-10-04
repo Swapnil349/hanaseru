@@ -84,8 +84,16 @@ struct HandsFreeSessionView: View {
             .accessibilityLabel("End session")
 
             VStack(alignment: .leading, spacing: 2) {
+                if model.exerciseTotal > 1 && !model.exerciseTitle.isEmpty {
+                    Text("Part \(model.exerciseIndex + 1) of \(model.exerciseTotal)")
+                        .font(.caption.weight(.semibold)).foregroundStyle(Palette.line)
+                }
                 Text(model.exerciseTitle.isEmpty ? "Getting ready" : model.exerciseTitle)
                     .font(.headline).foregroundStyle(Palette.ink)
+                if !model.stepTitle.isEmpty {
+                    Text(model.stepTitle).font(.caption).foregroundStyle(Palette.inkSecondary)
+                        .accessibilityIdentifier("step-title")
+                }
                 SessionTimerView(startedAt: model.startedAt, plannedMinutes: model.minutes)
             }
             Spacer()

@@ -373,11 +373,13 @@ struct SessionRunnerTests {
         let scenario = try #require(library.scenario(id: "s.weekend.chat"))
         let lines = library.lines(in: scenario, learnerName: "Swapnil")
         let texts = harness.synthesizer.texts
-        // Every partner line is heard once in the screenplay and once in the performance — never re-asked.
-        for line in lines { #expect(harness.synthesizer.count(line.partner?.japanese ?? "") == 2) }
-        // The learner's own lines are given in English and Japanese before the first chance to speak.
-        #expect(inOrder(texts, ["First, just listen to the whole conversation.", "You: " + lines[0].english, lines[0].japanese,
-                                "Now the real thing. Nakamura-san starts."]))
+        // Every partner line is heard in the screenplay, in practice and in the performance — never re-asked.
+        for line in lines { #expect(harness.synthesizer.count(line.partner?.japanese ?? "") == 3) }
+        // Three announced steps; the learner's own lines are given in English and Japanese before any turn.
+        #expect(inOrder(texts, ["Three steps: listen, practise your lines, then the real conversation.",
+                                "Step 1 of 3: just listen to the whole conversation.", "You: " + lines[0].english, lines[0].japanese,
+                                "Step 2 of 3: practise your lines. Repeat each one after me.", "You say: " + lines[0].english,
+                                "Step 3 of 3: the real conversation. Nakamura-san starts. I'll whisper your cue."]))
         #expect(harness.runner.ledgerViolations.isEmpty)
     }
 
@@ -388,7 +390,8 @@ struct SessionRunnerTests {
             "昨日、東京に行きました。",                             // e.past.tokyo comes back at S1 (guided)
             "確認しておきます。", "確認しておきます。",               // shadowing echoes
             "昨日、東京に行きました。",                             // and once more at S2 (cued)
-            "友達と出かけました。", "はい、楽しかったです。", "まだ決めていません。", // performance
+            "友達と出かけました。", "はい、楽しかったです。", "まだ決めていません。", // scene step 2: echoes
+            "友達と出かけました。", "はい、楽しかったです。", "まだ決めていません。", // scene step 3: performance
         ]
         let harness = Harness(plan: plan, answers: answers)
         let summary = try #require(await harness.runToCompletion())

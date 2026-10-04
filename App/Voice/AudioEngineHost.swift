@@ -103,9 +103,14 @@ final class AudioEngineHost: @unchecked Sendable {
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
         ) { [weak self] _ in
             guard let self else { return }
+            VoiceLog.add("audio engine configuration changed; restarting the microphone")
             try? self.installTap()
             self.engine.prepare()
-            try? self.engine.start()
+            do {
+                try self.engine.start()
+            } catch {
+                VoiceLog.add("microphone restart failed: \(error.localizedDescription)")
+            }
         }
     }
 
