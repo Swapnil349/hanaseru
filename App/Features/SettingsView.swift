@@ -14,6 +14,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.showEnglish) private var showEnglish = true
     @AppStorage(SettingsKey.englishVoice) private var englishVoice = ""
     @AppStorage(SettingsKey.japaneseVoice) private var japaneseVoice = ""
+    @AppStorage(SettingsKey.naturalEnglish) private var naturalEnglish = true
     @State private var logFile: URL?
     @AppStorage(SettingsKey.coachServerURL) private var coachServerURL = ""
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = true
@@ -52,14 +53,20 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    voicePicker("English voice", selection: $englishVoice, language: .english,
+                    if NaturalEnglishVoice.shared.isAvailable {
+                        Toggle("Natural English voice", isOn: $naturalEnglish)
+                    }
+                    voicePicker(naturalEnglish && NaturalEnglishVoice.shared.isAvailable ? "Other English" : "English voice",
+                                selection: $englishVoice, language: .english,
                                 sample: "Say: No, there's no particular problem.")
                     voicePicker("Japanese voice", selection: $japaneseVoice, language: .japanese,
                                 sample: "いいえ、特に問題はありません。")
                 } header: {
                     Text("Voice")
                 } footer: {
-                    Text("Basic voices sound robotic. For natural speech, download voices marked Enhanced or Premium in the iPhone's Settings › Accessibility › Spoken Content (Read & Speak) › Voices — under English (any accent) and Japanese. Hanaseru then uses the best one automatically.")
+                    Text((NaturalEnglishVoice.shared.isAvailable
+                          ? "The natural English voice is recorded in the app (\(NaturalEnglishVoice.shared.count) coach sentences, \(NaturalEnglishVoice.shared.voiceName)); anything else, like your own phrases, uses the iPhone voice below. "
+                          : "") + "Basic voices sound robotic. For natural speech, download voices marked Enhanced or Premium in the iPhone's Settings › Accessibility › Spoken Content (Read & Speak) › Voices — under English (any accent) and Japanese. Hanaseru then uses the best one automatically.")
                 }
 
                 Section {

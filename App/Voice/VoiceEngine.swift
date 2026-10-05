@@ -102,7 +102,7 @@ final class VoiceEngine {
     var onMicLevel: ((Float) -> Void)?
 
     init() {
-        synthesizer = AppleSpeechSynthesisProvider()
+        synthesizer = AppleSpeechSynthesisProvider(engine: engineHost)
         recognizer = AppleSpeechRecognitionProvider(engine: engineHost, writing: writing)
         cues = CueFeedbackController(engine: engineHost)
     }

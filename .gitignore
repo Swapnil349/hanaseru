@@ -16,3 +16,6 @@ backend/.env
 # OS
 .DS_Store
 Thumbs.db
+
+# Natural English voice clips, recorded in CI by tools/voice/build_clips.py
+App/EnglishVoice/

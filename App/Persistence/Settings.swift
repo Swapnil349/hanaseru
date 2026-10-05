@@ -20,6 +20,8 @@ enum SettingsKey {
     static let lastBackupAt = "lastBackupAt"
     /// Answers are written (Apple Pencil or finger) instead of spoken.
     static let writingMode = "writingMode"
+    /// The coach's English uses the bundled natural recordings (default on).
+    static let naturalEnglish = "naturalEnglish"
 }
 
 /// How much kanji to show (spec §41). Default: minimal.

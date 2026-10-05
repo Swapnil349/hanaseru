@@ -20,8 +20,11 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
     private var continuation: CheckedContinuation<Outcome, Never>?
     private var currentUtterance: ObjectIdentifier?
     private var started = false
+    /// Plays the pre-recorded natural English (nil: always the iOS voice).
+    private let engine: AudioEngineHost?
 
-    override init() {
+    init(engine: AudioEngineHost? = nil) {
+        self.engine = engine
         super.init()
         configure(synthesizer)
     }
@@ -33,6 +36,7 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
 
     func speak(_ request: SpeechRequest) async {
         guard !request.text.isEmpty else { return }
+        if request.language == .english, request.voice == .coachEnglish, await speakRecorded(request) { return }
         for attempt in 1...2 {
             guard !Task.isCancelled else { return }
             switch await speakOnce(request) {
@@ -50,7 +54,33 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
     }
 
     func stopSpeaking() {
+        engine?.stopClip()
         finishCurrent(stop: true, outcome: .cancelled)
+    }
+
+    /// The natural pre-recorded English, when every part of the sentence was recorded. False: use iOS speech.
+    private func speakRecorded(_ request: SpeechRequest) async -> Bool {
+        guard NaturalEnglishVoice.isEnabled, let engine, engine.isRunning,
+              let clips = NaturalEnglishVoice.shared.recordings(for: request.text), !clips.isEmpty else {
+            if NaturalEnglishVoice.shared.isAvailable { VoiceLog.add("not recorded, iPhone voice: \(request.text.prefix(50))") }
+            return false
+        }
+        finishCurrent(stop: true, outcome: .cancelled)
+        VoiceLog.add("say en (natural): \(request.text.prefix(50))")
+        let volume = Float(request.volume < 1 && !Self.isUsingHeadphones ? 1 : request.volume)
+        for clip in clips {
+            guard !Task.isCancelled else { return true }
+            let played = await withTaskCancellationHandler {
+                await engine.playClip(clip, volume: volume)
+            } onCancel: {
+                engine.stopClip()
+            }
+            if !played { return false }
+        }
+        if request.pauseAfter > 0 && !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: UInt64(request.pauseAfter * 1_000_000_000))
+        }
+        return true
     }
 
     private func speakOnce(_ request: SpeechRequest) async -> Outcome {

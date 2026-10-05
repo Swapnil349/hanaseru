@@ -27,6 +27,9 @@ final class AudioEngineHost: @unchecked Sendable {
 
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
+    /// Plays the pre-recorded natural English voice.
+    private let voicePlayer = AVAudioPlayerNode()
+    private var voiceFormat: AVAudioFormat?
     private let chimeFormat = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
     private let lock = NSLock()
     // @Sendable: these run on the audio thread and must never be inferred as main-actor closures.
@@ -65,6 +68,35 @@ final class AudioEngineHost: @unchecked Sendable {
         engine.inputNode.removeTap(onBus: 0)
         player.stop()
         engine.stop()
+    }
+
+    /// Plays a recorded clip to the end, or until `stopClip()`. Returns false when it can't play.
+    func playClip(_ url: URL, volume: Float) async -> Bool {
+        guard engine.isRunning, let file = try? AVAudioFile(forReading: url) else { return false }
+        let format = file.processingFormat
+        lock.withLock {
+            if voicePlayer.engine == nil { engine.attach(voicePlayer) }
+            if voiceFormat != format {
+                engine.connect(voicePlayer, to: engine.mainMixerNode, format: format)
+                voiceFormat = format
+            }
+        }
+        voicePlayer.volume = volume
+        let duration = Double(file.length) / max(format.sampleRate, 1)
+        let once = ResumeOnce()
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            once.set(continuation)
+            voicePlayer.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in
+                once.resume(true)
+            }
+            if !voicePlayer.isPlaying { voicePlayer.play() }
+            // If the engine stalls (route change), don't wait forever.
+            DispatchQueue.global().asyncAfter(deadline: .now() + duration + 3) { once.resume(true) }
+        }
+    }
+
+    func stopClip() {
+        voicePlayer.stop()
     }
 
     func playChime(_ chime: Chime) {
@@ -140,5 +172,23 @@ final class AudioEngineHost: @unchecked Sendable {
             }
         }
         return buffer
+    }
+}
+
+/// Resumes a continuation exactly once, whichever thread gets there first.
+private final class ResumeOnce: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+
+    func set(_ continuation: CheckedContinuation<Bool, Never>) {
+        lock.withLock { self.continuation = continuation }
+    }
+
+    func resume(_ value: Bool) {
+        let pending = lock.withLock { () -> CheckedContinuation<Bool, Never>? in
+            defer { continuation = nil }
+            return continuation
+        }
+        pending?.resume(returning: value)
     }
 }

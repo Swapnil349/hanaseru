@@ -79,7 +79,7 @@ struct HomeView: View {
     /// Basic iOS voices sound robotic; the natural ones are a free download the app can't do by itself.
     @ViewBuilder
     private var voiceTip: some View {
-        if !voiceTipDismissed && AppleSpeechSynthesisProvider.englishVoiceIsBasic {
+        if !voiceTipDismissed && AppleSpeechSynthesisProvider.englishVoiceIsBasic && !NaturalEnglishVoice.shared.isAvailable {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Label("Get a natural English voice", systemImage: "waveform.badge.plus")
