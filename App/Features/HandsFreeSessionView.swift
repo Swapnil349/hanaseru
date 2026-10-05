@@ -8,6 +8,7 @@ struct SessionContainerView: View {
     @Environment(\.dismiss) private var dismiss
     let minutes: Int
     let focus: SessionFocus
+    var scene: SceneStart?
     @State private var model: SessionViewModel?
 
     var body: some View {
@@ -27,7 +28,7 @@ struct SessionContainerView: View {
             }
         }
         .task {
-            let model = SessionViewModel(app: app, minutes: minutes, focus: focus)
+            let model = SessionViewModel(app: app, minutes: minutes, focus: focus, scene: scene)
             self.model = model
             await model.start()
         }

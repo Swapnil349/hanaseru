@@ -185,54 +185,71 @@ extension SessionRunner {
 
     func runConversation(scenarioID: String, maxTurns: Int) async throws {
         guard let scenario = library.scenario(id: scenarioID), let persona = library.persona(id: scenario.personaID) else { return }
-        let lines = Array(library.lines(in: scenario, learnerName: learner.name).prefix(max(1, maxTurns)))
-        guard !lines.isEmpty else { return }
+        let all = library.lines(in: scenario, learnerName: learner.name)
+        guard !all.isEmpty else { return }
+        let start = min(max(0, options.sceneStartBeat), all.count - 1)
+        let lines = Array(all.dropFirst(start).prefix(max(1, maxTurns)))
         if !scenarioIDs.contains(scenario.id) { scenarioIDs.append(scenario.id) }
 
-        // Brief.
+        // A scene already practised goes straight to the conversation: no explanations.
+        var mode = options.sceneMode
+        if mode == .automatic {
+            let known = await repository.knowledge(for: all.map(\.id))
+            mode = known.values.contains { $0.state(.spokenRecall).reviews > 0 } ? .conversationOnly : .fullLesson
+        }
         emit(.line(ScriptLine(role: .instruction, japanese: scenario.titleJa, english: scenario.situationEn)))
         try await coach(.sceneIntro, ["title": scenario.title])
-        try await speakMixed(scenario.situationEn)
-        try await coach(.sceneSteps)
 
-        // Step 1 — screenplay: every line of both roles, with the learner's lines given in English and Japanese.
-        emit(.step("Step 1 of 3 · Listen to the conversation"))
-        try await coach(.listenFirst)
-        for (index, line) in lines.enumerated() {
-            if let partner = line.partner {
-                try await partnerSays(partner, rate: 0.9)
-                try await speak(partner.english, .english, pauseAfter: 0.3)
+        if mode == .fullLesson {
+            try await speakMixed(scenario.situationEn)
+            try await coach(.sceneSteps)
+
+            // Step 1 — screenplay: every line of both roles, with the learner's lines given in English and Japanese.
+            emit(.step("Step 1 of 3 · Listen to the conversation"))
+            try await coach(.listenFirst)
+            for (index, line) in lines.enumerated() {
+                if let partner = line.partner {
+                    try await partnerSays(partner, rate: 0.9)
+                    try await speak(partner.english, .english, pauseAfter: 0.3)
+                }
+                if index == 0 && start == 0 && scenario.roleReversal {
+                    try await coach(.youStart, ["english": line.english])
+                } else {
+                    try await coach(.youLine, ["english": line.english])
+                }
+                try await sayModel(line, rate: 0.9, pauseAfter: 0.6)
+                exposed.insert(line.id)
             }
-            if index == 0 && scenario.roleReversal {
-                try await coach(.youStart, ["english": line.english])
-            } else {
-                try await coach(.youLine, ["english": line.english])
-            }
-            try await sayModel(line, rate: 0.9, pauseAfter: 0.6)
-            exposed.insert(line.id)
         }
 
-        // Step 2 — practise each of the learner's lines: the partner's line, the meaning, the model, one echo.
-        emit(.step("Step 2 of 3 · Practise your lines"))
-        try await coach(.rehearseStart)
-        for line in lines {
-            emit(.focus(focusInfo(line, level: .model)))
-            if let partner = line.partner { try await partnerSays(partner, rate: 0.9) }
-            try await coach(.youSay, ["english": line.english])
-            try await sayModel(line, rate: 0.85)
-            _ = try await runEcho(line, window: 5, silentNote: false)
+        if mode == .fullLesson || mode == .practiseLines {
+            // Practise each of the learner's lines: the partner's line, the meaning, the model, one echo.
+            emit(.step(mode == .fullLesson ? "Step 2 of 3 · Practise your lines" : "Practise your lines"))
+            try await coach(mode == .fullLesson ? .rehearseStart : .rehearseShort)
+            for line in lines {
+                emit(.focus(focusInfo(line, level: .model)))
+                if let partner = line.partner { try await partnerSays(partner, rate: 0.9) }
+                try await coach(.youSay, ["english": line.english])
+                try await sayModel(line, rate: 0.85)
+                _ = try await runEcho(line, window: 5, silentNote: false)
+                exposed.insert(line.id)
+            }
         }
 
-        // Step 3 — perform: the partner speaks, a whispered English cue, the learner says the line.
-        emit(.step("Step 3 of 3 · The real conversation"))
-        if lines.first?.partner == nil {
-            try await coach(.performYouStart)
+        // The conversation: the partner speaks, a whispered cue, the learner says the line.
+        emit(.step(mode == .fullLesson ? "Step 3 of 3 · The real conversation" : "The conversation"))
+        let youStart = lines.first?.partner == nil
+        if mode == .fullLesson {
+            try await coach(youStart ? .performYouStart : .performStart, youStart ? [:] : ["name": persona.nameEn])
         } else {
-            try await coach(.performStart, ["name": persona.nameEn])
+            try await coach(youStart ? .goYouShort : .goShort, ["name": persona.nameEn])
         }
         var previous: TurnOutcome?
         for (index, line) in lines.enumerated() {
-            let rate = TurnTiming.partnerRate(level: .cued, profile: learner.difficulty, personaRate: persona.speakingRate)
+            // A practised learner gets as little help as their history allows; the first time, the English cue.
+            let stored = await entryLevel(for: line)
+            let level: ScaffoldLevel = mode == .fullLesson ? .cued : max(.cued, stored ?? .cued)
+            let rate = TurnTiming.partnerRate(level: level, profile: learner.difficulty, personaRate: persona.speakingRate)
             if let partner = line.partner {
                 var prefix = ""
                 if index > 0, previous?.communicated ?? false {
@@ -240,7 +257,13 @@ extension SessionRunner {
                 }
                 try await partnerSays(partner, rate: rate, prefix: prefix)
             }
-            previous = try await runSayIt(line, level: .cued, mode: .perform, contextSpoken: true, kind: .conversation)
+            if stored == nil && !exposed.contains(line.id) {
+                // Never practised and skipped the lesson: teach it here rather than ask for it.
+                try await runIntroduce(line, contextSpoken: true)
+                previous = nil
+            } else {
+                previous = try await runSayIt(line, level: level, mode: .perform, contextSpoken: true, kind: .conversation)
+            }
             conversationTurns += 1
         }
         if !scenario.closingLine.isEmpty {

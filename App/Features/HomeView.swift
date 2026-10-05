@@ -36,6 +36,7 @@ struct HomeView: View {
                         .foregroundStyle(Palette.inkSecondary)
                         .padding(.top, -16)
 
+                    scenesCard
                     heardThisCard
                     myJapaneseCard
                 }
@@ -146,6 +147,39 @@ struct HomeView: View {
             }
             .scrollClipDisabled()
         }
+    }
+
+    /// Every conversation, to start from any line — and the words used so far.
+    private var scenesCard: some View {
+        VStack(spacing: 10) {
+            NavigationLink { ScenesView() } label: {
+                linkRow("bubble.left.and.bubble.right", "Scenes", "Start any conversation from any line")
+            }
+            .accessibilityIdentifier("open-scenes")
+            NavigationLink { VocabularyView() } label: {
+                linkRow("character.book.closed.ja", "My vocabulary", "Every word and line you've practised")
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func linkRow(_ symbol: String, _ title: String, _ detail: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.title2)
+                .foregroundStyle(Palette.line)
+                .frame(width: 44, height: 44)
+                .background(Palette.line.opacity(0.1), in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline).foregroundStyle(Palette.ink)
+                Text(detail).font(.footnote).foregroundStyle(Palette.inkSecondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right").foregroundStyle(Palette.inkSecondary)
+        }
+        .padding(16)
+        .background(Palette.surface, in: RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous).stroke(Palette.hairline, lineWidth: 1))
     }
 
     private var heardThisCard: some View {

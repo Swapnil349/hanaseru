@@ -4,6 +4,7 @@ import SwiftUI
 
 /// End of session: meaningful metrics, what went well, what to practise, one phrase (spec §9, §52, §89).
 struct SessionSummaryView: View {
+    @Environment(AppEnvironment.self) private var app
     let summary: SessionSummary
     let onDone: () -> Void
 
@@ -28,6 +29,20 @@ struct SessionSummaryView: View {
                     PracticeCard {
                         SectionLabel(ja: "今日のフレーズ", en: "One phrase to remember")
                         JapaneseTextView(japanese: summary.phraseJapanese, english: summary.phraseEnglish, style: .title2)
+                    }
+                }
+
+                ForEach(summary.scenarioIDs, id: \.self) { id in
+                    if let scenario = app.library.scenario(id: id) {
+                        let words = app.library.vocabulary(in: scenario)
+                        if !words.isEmpty {
+                            PracticeCard {
+                                SectionLabel(ja: "この会話の言葉", en: "Words in “\(scenario.title)”")
+                                ForEach(words) { term in
+                                    WordRow(term: term)
+                                }
+                            }
+                        }
                     }
                 }
 

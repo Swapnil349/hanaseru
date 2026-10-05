@@ -53,10 +53,14 @@ final class SessionViewModel {
     /// Scripted voice for Simulator/CI runs (see `DemoVoice`).
     private let demo = DemoVoice.isEnabled
 
-    init(app: AppEnvironment, minutes: Int, focus: SessionFocus) {
+    /// Set when the session is one scene, started from the Scenes screen.
+    let scene: SceneStart?
+
+    init(app: AppEnvironment, minutes: Int, focus: SessionFocus, scene: SceneStart? = nil) {
         self.app = app
         self.minutes = minutes
         self.focus = focus
+        self.scene = scene
     }
 
     var usesCoach: Bool { app.isCoachConfigured }
@@ -70,14 +74,28 @@ final class SessionViewModel {
         guard runner == nil, phase == .preparing else { return }
         if !demo { guard await startRealVoice() else { return } }
 
-        let prepared = await SessionPreparer(library: app.library, repository: app.repository)
-            .prepare(minutes: minutes, focus: focus)
+        let plan: SessionPlan
+        let library: ContentLibrary
+        if let scene, let scenario = app.library.scenario(id: scene.scenarioID) {
+            plan = SessionPlan(minutes: max(minutes, 10), focus: .conversation, track: scenario.track,
+                               exercises: [.conversation(scenarioID: scenario.id, turns: scenario.beats.count)],
+                               closingItemID: nil)
+            library = app.library
+        } else {
+            let prepared = await SessionPreparer(library: app.library, repository: app.repository)
+                .prepare(minutes: minutes, focus: focus)
+            plan = prepared.plan
+            library = prepared.library
+        }
         let voice = demo ? DemoVoice.makeVoice() : app.voice.runnerVoice
+        let defaults = UserDefaults.standard
         // The hands-free help words are taught once, in the first session of 5 minutes or more.
-        let teachHelp = minutes >= 5 && !UserDefaults.standard.bool(forKey: SettingsKey.helpOnboardingDone)
-        let runner = SessionRunner(plan: prepared.plan, library: prepared.library, voice: voice,
-                                   ai: app.makeAIProvider(), repository: app.repository,
-                                   options: SessionOptions(includeHelpOnboarding: teachHelp))
+        let teachHelp = scene == nil && minutes >= 5 && !defaults.bool(forKey: SettingsKey.helpOnboardingDone)
+        let options = SessionOptions(includeHelpOnboarding: teachHelp, sceneMode: scene?.mode ?? .automatic,
+                                     sceneStartBeat: scene?.startBeat ?? 0,
+                                     briefIntro: scene != nil || defaults.integer(forKey: SettingsKey.completedSessions) >= 3)
+        let runner = SessionRunner(plan: plan, library: library, voice: voice,
+                                   ai: app.makeAIProvider(), repository: app.repository, options: options)
         runner.onEvent = { [weak self] event in self?.handle(event) }
         self.runner = runner
         if !demo { wireVoiceControls(to: runner) }
@@ -208,7 +226,11 @@ final class SessionViewModel {
             stepTitle = title
             if !title.isEmpty { VoiceLog.add("step: \(title)") }
         case .finished(let summary):
-            if summary.completedNormally && minutes >= 5 {
+            if summary.completedNormally {
+                let defaults = UserDefaults.standard
+                defaults.set(defaults.integer(forKey: SettingsKey.completedSessions) + 1, forKey: SettingsKey.completedSessions)
+            }
+            if summary.completedNormally && minutes >= 5 && scene == nil {
                 UserDefaults.standard.set(true, forKey: SettingsKey.helpOnboardingDone)
             }
             phase = .finished(summary)

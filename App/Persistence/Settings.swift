@@ -22,6 +22,8 @@ enum SettingsKey {
     static let writingMode = "writingMode"
     /// The coach's English uses the bundled natural recordings (default on).
     static let naturalEnglish = "naturalEnglish"
+    /// Sessions finished so far; after a few, the spoken plan at the start is skipped.
+    static let completedSessions = "completedSessions"
 }
 
 /// How much kanji to show (spec §41). Default: minimal.

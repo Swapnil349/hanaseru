@@ -2,13 +2,34 @@ import Foundation
 import LearningCore
 import ConversationCore
 
+/// How much of a scene lesson to play.
+public enum SceneMode: String, CaseIterable, Sendable {
+    /// The full lesson the first time; straight to the conversation once the scene has been practised.
+    case automatic
+    /// Brief, listen to the whole conversation, practise each line, then the conversation.
+    case fullLesson
+    /// Practise each line, then the conversation.
+    case practiseLines
+    /// Just the conversation: no explanations.
+    case conversationOnly
+}
+
 /// Options decided by the app for one session.
 public struct SessionOptions: Sendable {
     /// Teach the hands-free help words (もう一度, ゆっくり, ヒント, 答え) before the first exercise.
     public var includeHelpOnboarding: Bool
+    public var sceneMode: SceneMode
+    /// Start scenes at this beat (0 = the beginning).
+    public var sceneStartBeat: Int
+    /// A practised learner: skip the spoken plan at the start.
+    public var briefIntro: Bool
 
-    public init(includeHelpOnboarding: Bool = false) {
+    public init(includeHelpOnboarding: Bool = false, sceneMode: SceneMode = .automatic, sceneStartBeat: Int = 0,
+                briefIntro: Bool = false) {
         self.includeHelpOnboarding = includeHelpOnboarding
+        self.sceneMode = sceneMode
+        self.sceneStartBeat = sceneStartBeat
+        self.briefIntro = briefIntro
     }
 }
 
@@ -398,7 +419,7 @@ public final class SessionRunner {
         }
         try await coach(key)
         let agenda = agenda()
-        if !agenda.isEmpty {
+        if !agenda.isEmpty && !options.briefIntro {
             emit(.line(ScriptLine(role: .instruction, japanese: "", english: "Today: " + agenda)))
             try await coach(.agenda, ["agenda": agenda])
         }

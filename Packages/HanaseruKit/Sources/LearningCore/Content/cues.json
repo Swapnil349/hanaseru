@@ -328,5 +328,20 @@
     "ja": "ステップ２。あなたのせりふを練習しましょう。",
     "kana": "すてっぷに。あなたのせりふをれんしゅうしましょう。",
     "en": "Step 2 of 3: practise your lines. Repeat each one after me."
+  },
+  "rehearseShort": {
+    "ja": "まず、せりふの練習です。",
+    "kana": "まず、せりふのれんしゅうです。",
+    "en": "Your lines first. Repeat each one after me."
+  },
+  "goShort": {
+    "ja": "始めましょう。",
+    "kana": "はじめましょう。",
+    "en": "{name} starts."
+  },
+  "goYouShort": {
+    "ja": "あなたからどうぞ。",
+    "kana": "あなたからどうぞ。",
+    "en": "You start."
   }
 }
