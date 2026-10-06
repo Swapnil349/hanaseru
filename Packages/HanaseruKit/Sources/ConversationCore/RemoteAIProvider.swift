@@ -33,9 +33,9 @@ public struct RemoteAIProvider: AIProvider {
         try await post("v1/translate", body: request)
     }
 
-    /// Cheap reachability + auth check for the settings screen.
-    public func checkHealth() async throws {
-        var request = URLRequest(url: baseURL.appendingPathComponent("health"), timeoutInterval: 5)
+    /// Cheap reachability + auth check. A free host may need up to a minute to wake the server.
+    public func checkHealth(timeout: TimeInterval = 5) async throws {
+        var request = URLRequest(url: baseURL.appendingPathComponent("health"), timeoutInterval: timeout)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (_, response) = try await data(for: request)
         try Self.validate(response, data: Data())

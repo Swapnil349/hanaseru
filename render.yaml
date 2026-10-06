@@ -1,0 +1,23 @@
+# One-click hosting of the AI coach proxy (backend/) on Render: Dashboard › New › Blueprint › this repo.
+# The free plan sleeps after 15 minutes without requests; the app wakes it when it opens.
+services:
+  - type: web
+    name: hanaseru-coach
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      # Your Anthropic API key (Claude Console › API keys). Entered in Render, never in the app.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # A passphrase of at least 16 characters that you also type into the app (Settings › AI coach).
+      - key: APP_TOKEN
+        sync: false
+      - key: COACH_MODEL
+        value: claude-opus-5-5

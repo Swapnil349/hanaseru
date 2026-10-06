@@ -49,7 +49,7 @@ export interface ClaudeCoachOptions {
  */
 export function createClaudeCoach(options: ClaudeCoachOptions = {}): Coach {
   const client = options.client ?? new Anthropic({ timeout: 30_000, maxRetries: 1 });
-  const model = options.model ?? "claude-opus-5";
+  const model = options.model || "claude-opus-5-5";
   const effort = options.effort ?? "low";
 
   async function structured<T>(system: string, content: string, schema: Record<string, unknown>): Promise<T> {

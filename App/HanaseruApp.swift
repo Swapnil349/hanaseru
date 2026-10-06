@@ -59,11 +59,22 @@ final class AppEnvironment {
         return ResilientAIProvider(primary: remote, fallback: offline)
     }
 
-    func makeRemoteProvider() -> RemoteAIProvider? {
+    func makeRemoteProvider(timeout: TimeInterval = 12) -> RemoteAIProvider? {
         let raw = UserDefaults.standard.string(forKey: SettingsKey.coachServerURL) ?? ""
         guard let url = URL(string: raw.trimmingCharacters(in: .whitespaces)), url.scheme?.hasPrefix("http") == true,
               let token = CoachTokenStore.read() else { return nil }
-        return RemoteAIProvider(baseURL: url, token: token)
+        return RemoteAIProvider(baseURL: url, token: token, timeout: timeout)
+    }
+
+    private var lastWake: Date?
+
+    /// A free host puts the coach server to sleep after 15 idle minutes and takes up to a minute to wake it.
+    /// Knock early (app opened, session or translation starting) so it's awake by the time it's needed.
+    func wakeCoach() {
+        guard let remote = makeRemoteProvider() else { return }
+        if let lastWake, Date().timeIntervalSince(lastWake) < 300 { return }
+        lastWake = Date()
+        Task { try? await remote.checkHealth(timeout: 75) }
     }
 
     var isCoachConfigured: Bool { makeRemoteProvider() != nil }

@@ -67,6 +67,7 @@ struct TranslateView: View {
                 message = error ?? "Couldn't translate that."
             }
         })
+        .task { app.wakeCoach() }
         .onDisappear { dictation.stop() }
     }
 
@@ -164,13 +165,20 @@ struct TranslateView: View {
         translating = true
         message = ""
         saved = false
-        if let coach = app.makeRemoteProvider() {
+        if let coach = app.makeRemoteProvider(timeout: 75) {
             let request = TranslationRequest(english: text, politeness: politeness,
                                              situation: situation.isEmpty ? nil : situation)
             Task {
+                // A sleeping free server takes up to a minute to wake: say so rather than look stuck.
+                let notice = Task {
+                    try? await Task.sleep(nanoseconds: 6_000_000_000)
+                    if !Task.isCancelled && translating { message = "Waking up the AI coach — up to a minute after a break…" }
+                }
+                defer { notice.cancel() }
                 do {
                     let answer = try await coach.translate(request)
                     translating = false
+                    message = ""
                     show(answer, engine: "AI coach (Claude): natural phrasing for the situation")
                 } catch {
                     // Coach unreachable: Apple's translator still works.
@@ -183,6 +191,7 @@ struct TranslateView: View {
     }
 
     private func useApple(_ text: String) {
+        message = ""
         if #available(iOS 18.0, *) {
             appleRequest = text
         } else {

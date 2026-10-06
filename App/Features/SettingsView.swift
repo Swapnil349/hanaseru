@@ -243,14 +243,14 @@ struct SettingsView: View {
 
     private func testConnection() async {
         CoachTokenStore.save(token.trimmingCharacters(in: .whitespacesAndNewlines))
-        guard let provider = app.makeRemoteProvider() else {
+        guard let provider = app.makeRemoteProvider(timeout: 75) else {
             connectionStatus = "Enter a server URL (https://…) and a token."
             return
         }
-        connectionStatus = "Testing…"
+        connectionStatus = "Connecting… a free server can take up to a minute to wake up."
         do {
-            try await provider.checkHealth()
-            connectionStatus = "Connected. Conversations will use the AI coach."
+            try await provider.checkHealth(timeout: 75)
+            connectionStatus = "Connected. Translations and conversations will use the AI coach."
         } catch {
             connectionStatus = "Couldn't connect: \(error)"
         }

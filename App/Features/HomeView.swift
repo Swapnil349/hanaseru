@@ -48,6 +48,7 @@ struct HomeView: View {
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
         }
+        .task { app.wakeCoach() }
         .fullScreenCover(item: $activeSession) { request in
             SessionContainerView(minutes: request.minutes, focus: request.focus)
         }

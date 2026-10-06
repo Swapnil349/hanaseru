@@ -61,7 +61,7 @@ npm test                                   # proxy tests (mock coach, no network
 
 Deploy it anywhere that runs Node 22.18+ over HTTPS (Fly.io, Render, Railway, a small VPS). For a quick test on the same Wi-Fi, use your laptop's IP. Then in the app: *Settings › AI coach* → server URL + the same `APP_TOKEN` → *Save and test connection*.
 
-Defaults: model `claude-opus-5`, `effort: low` (conversational latency), server-side refusal fallback enabled. Override with `COACH_MODEL` / `COACH_EFFORT`.
+Defaults: model `claude-opus-5-5`, `effort: low` (conversational latency), server-side refusal fallback enabled. Override with `COACH_MODEL` / `COACH_EFFORT`.
 
 ## The hands-free test (spec §62)
 

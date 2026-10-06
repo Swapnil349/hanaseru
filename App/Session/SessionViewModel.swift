@@ -73,6 +73,7 @@ final class SessionViewModel {
     func start() async {
         guard runner == nil, phase == .preparing else { return }
         if !demo { guard await startRealVoice() else { return } }
+        app.wakeCoach()
 
         let plan: SessionPlan
         let library: ContentLibrary
