@@ -1,9 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { buildEvaluationMessage, buildTurnMessage, EVALUATE_SYSTEM_PROMPT, TURN_SYSTEM_PROMPT } from "./prompts.ts";
+import {
+  buildEvaluationMessage,
+  buildTranslationMessage,
+  buildTurnMessage,
+  EVALUATE_SYSTEM_PROMPT,
+  TRANSLATE_SYSTEM_PROMPT,
+  TURN_SYSTEM_PROMPT,
+} from "./prompts.ts";
 import {
   evaluationSchema,
+  translationSchema,
   turnSchema,
   type EvaluationRequest,
+  type TranslationRequest,
+  type TranslationResult,
   type TurnEvaluation,
   type TurnRequest,
   type TurnResponse,
@@ -22,6 +32,7 @@ export interface Coach {
   readonly model: string;
   turn(request: TurnRequest): Promise<TurnResponse>;
   evaluate(request: EvaluationRequest): Promise<TurnEvaluation>;
+  translate(request: TranslationRequest): Promise<TranslationResult>;
 }
 
 type Effort = "low" | "medium" | "high" | "xhigh" | "max";
@@ -78,6 +89,8 @@ export function createClaudeCoach(options: ClaudeCoachOptions = {}): Coach {
     model,
     turn: (request) => structured<TurnResponse>(TURN_SYSTEM_PROMPT, buildTurnMessage(request), turnSchema),
     evaluate: (request) => structured<TurnEvaluation>(EVALUATE_SYSTEM_PROMPT, buildEvaluationMessage(request), evaluationSchema),
+    translate: (request) =>
+      structured<TranslationResult>(TRANSLATE_SYSTEM_PROMPT, buildTranslationMessage(request), translationSchema),
   };
 }
 
@@ -112,6 +125,15 @@ export function createMockCoach(): Coach {
         feedbackEn: "",
         naturalVersion: exact ? "" : (request.examples[0] ?? ""),
         mistakes: [],
+      };
+    },
+    async translate(request) {
+      return {
+        japanese: "確認しておきます。",
+        kana: "かくにんしておきます。",
+        backTranslation: `I'll check it in advance. (mock for: ${request.english})`,
+        notes: "",
+        alternatives: [],
       };
     },
   };

@@ -124,6 +124,51 @@ export const turnSchema = {
   additionalProperties: false,
 };
 
+export interface TranslationRequest {
+  english: string;
+  /** How polite the Japanese should be. */
+  politeness: Politeness;
+  /** Optional: who it's said to and where ("to my senior engineer at the site"). */
+  situation?: string;
+}
+
+export interface TranslationAlternative {
+  japanese: string;
+  kana: string;
+  whenToUse: string;
+}
+
+export interface TranslationResult {
+  japanese: string;
+  kana: string;
+  /** What the Japanese literally says, back in English, so the learner can see how it's built. */
+  backTranslation: string;
+  /** One or two short English sentences on the phrasing choices. */
+  notes: string;
+  alternatives: TranslationAlternative[];
+}
+
+export const translationSchema = {
+  type: "object",
+  properties: {
+    japanese: { type: "string" },
+    kana: { type: "string" },
+    backTranslation: { type: "string" },
+    notes: { type: "string" },
+    alternatives: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { japanese: { type: "string" }, kana: { type: "string" }, whenToUse: { type: "string" } },
+        required: ["japanese", "kana", "whenToUse"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["japanese", "kana", "backTranslation", "notes", "alternatives"],
+  additionalProperties: false,
+};
+
 // Request validation. The app is the only client, but the proxy is on the internet, so bound every input.
 
 export class ValidationError extends Error {}
@@ -214,5 +259,14 @@ export function parseEvaluationRequest(body: unknown): EvaluationRequest {
     learnerUtterance: text(root.learnerUtterance, "learnerUtterance", { optional: true }),
     learnerLevel: Math.round(number(root.learnerLevel, "learnerLevel", 1, 8)),
     politeness: root.politeness === undefined ? "professional" : politeness(root.politeness, "politeness"),
+  };
+}
+
+export function parseTranslationRequest(body: unknown): TranslationRequest {
+  const root = object(body, "body");
+  return {
+    english: text(root.english, "english"),
+    politeness: root.politeness === undefined ? "professional" : politeness(root.politeness, "politeness"),
+    situation: text(root.situation, "situation", { optional: true }) || undefined,
   };
 }

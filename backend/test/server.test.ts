@@ -85,6 +85,16 @@ describe("coach proxy", () => {
     assert.equal((await response.json()).verdict, "natural");
   });
 
+  it("translates English into natural Japanese", async () => {
+    const response = await post("/v1/translate", { english: "I'll check that", politeness: "professional" });
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.equal(typeof json.japanese, "string");
+    assert.ok(Array.isArray(json.alternatives));
+    assert.equal((await post("/v1/translate", { english: "hi", politeness: "rude" })).status, 400);
+    assert.equal((await post("/v1/translate", {})).status, 400);
+  });
+
   it("rejects malformed bodies with 400", async () => {
     assert.equal((await post("/v1/turn", "{not json")).status, 400);
     assert.equal((await post("/v1/turn", { context: {} })).status, 400);

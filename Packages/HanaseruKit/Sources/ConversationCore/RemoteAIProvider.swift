@@ -28,6 +28,11 @@ public struct RemoteAIProvider: AIProvider {
         try await post("v1/evaluate", body: request)
     }
 
+    /// English into the Japanese a Japanese colleague would actually say (not word for word).
+    public func translate(_ request: TranslationRequest) async throws -> TranslationResult {
+        try await post("v1/translate", body: request)
+    }
+
     /// Cheap reachability + auth check for the settings screen.
     public func checkHealth() async throws {
         var request = URLRequest(url: baseURL.appendingPathComponent("health"), timeoutInterval: 5)
@@ -140,5 +145,43 @@ public func withTimeout<T: Sendable>(_ seconds: TimeInterval, _ operation: @esca
         guard let first = try await group.next() else { throw AIProviderError.timedOut }
         group.cancelAll()
         return first
+    }
+}
+
+/// What the learner wants to say, and how politely (see backend /v1/translate).
+public struct TranslationRequest: Codable, Equatable, Sendable {
+    public var english: String
+    public var politeness: Politeness
+    /// Optional: who it's said to and where, e.g. "to my senior engineer at the site".
+    public var situation: String?
+
+    public init(english: String, politeness: Politeness, situation: String? = nil) {
+        self.english = english
+        self.politeness = politeness
+        self.situation = situation
+    }
+}
+
+public struct TranslationResult: Codable, Equatable, Sendable {
+    public struct Alternative: Codable, Equatable, Sendable {
+        public var japanese: String
+        public var kana: String
+        public var whenToUse: String
+    }
+
+    public var japanese: String
+    public var kana: String
+    /// What the Japanese literally says, back in English.
+    public var backTranslation: String
+    public var notes: String
+    public var alternatives: [Alternative]
+
+    public init(japanese: String, kana: String, backTranslation: String = "", notes: String = "",
+                alternatives: [Alternative] = []) {
+        self.japanese = japanese
+        self.kana = kana
+        self.backTranslation = backTranslation
+        self.notes = notes
+        self.alternatives = alternatives
     }
 }

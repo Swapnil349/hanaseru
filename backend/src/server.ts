@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { CoachError, type Coach } from "./coach.ts";
-import { parseEvaluationRequest, parseTurnRequest, ValidationError } from "./schemas.ts";
+import { parseEvaluationRequest, parseTranslationRequest, parseTurnRequest, ValidationError } from "./schemas.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -59,6 +59,8 @@ export function createCoachServer(options: ServerOptions): Server {
         return coach.turn(parseTurnRequest(await readJSON(request)));
       case "/v1/evaluate":
         return coach.evaluate(parseEvaluationRequest(await readJSON(request)));
+      case "/v1/translate":
+        return coach.translate(parseTranslationRequest(await readJSON(request)));
       default:
         throw new HttpError(404, "Not found");
     }

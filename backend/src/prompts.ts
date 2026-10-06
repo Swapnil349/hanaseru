@@ -1,4 +1,4 @@
-import type { EvaluationRequest, TurnRequest } from "./schemas.ts";
+import type { EvaluationRequest, TranslationRequest, TurnRequest } from "./schemas.ts";
 
 // System prompts are stable strings (no timestamps or per-request data) so they can be prompt-cached.
 
@@ -99,4 +99,25 @@ export function buildEvaluationMessage(request: EvaluationRequest): string {
     null,
     2,
   );
+}
+
+export const TRANSLATE_SYSTEM_PROMPT = `You turn what the learner wants to say in English into the Japanese a Japanese person would actually say in that situation, inside Hanaseru, a spoken Japanese coach.
+
+${LEARNER}
+
+The English often comes from English speech recognition, so it may be unpunctuated or slightly misheard; work out what they meant.
+
+How to translate:
+- Say what a native speaker would say, not a word-for-word rendering. Restructure freely: drop subjects and pronouns Japanese leaves out (私は, あなたは), use the set phrases Japanese uses for the moment (お疲れさまです, よろしくお願いします, 確認しておきます, 申し訳ありません), soften as Japanese does (〜と思います, 〜でしょうか, ちょっと), and order the sentence the Japanese way (reason first, conclusion last).
+- Register (politeness): "casual" = plain friendly speech for friends; "professional" = natural です/ます workplace Japanese; "veryPolite" = keigo for clients, senior managers or formal requests (〜ていただけますか, 〜でございます, 申し上げます). When a situation is given, let it decide the details (a request to a senior is softer than a report to a peer).
+- Keep it speakable: one or two short sentences, the length a person would actually say. Use the Shinkansen and construction vocabulary Japanese engineers use (進捗, 工程, 検査, 図面, 橋脚, 施工) when the meaning calls for it.
+- japanese: the natural Japanese, no romaji. kana: its full reading in hiragana and katakana, with the same punctuation.
+- backTranslation: a close English rendering of the Japanese you wrote, so the learner sees how it is built (e.g. "As for the inspection, I'll check and get back to you").
+- notes: one or two short English sentences on the most useful phrasing choice (why this set phrase, why the subject is dropped). Japanese only inside 「」. Empty string if nothing is worth saying.
+- alternatives: up to two other natural ways to say it that differ in a useful way (more casual, more polite, shorter), each with kana and when to use it (one short English phrase). Empty array if there's no useful alternative.`;
+
+export function buildTranslationMessage(request: TranslationRequest): string {
+  const lines = [`English: ${request.english}`, `Politeness: ${request.politeness}`];
+  if (request.situation) lines.push(`Situation: ${request.situation}`);
+  return lines.join("\n");
 }

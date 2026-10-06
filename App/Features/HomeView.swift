@@ -156,6 +156,10 @@ struct HomeView: View {
                 linkRow("bubble.left.and.bubble.right", "Scenes", "Start any conversation from any line")
             }
             .accessibilityIdentifier("open-scenes")
+            NavigationLink { TranslateView() } label: {
+                linkRow("character.bubble", "Translate", "Say it in English, hear natural Japanese")
+            }
+            .accessibilityIdentifier("open-translate")
             NavigationLink { VocabularyView() } label: {
                 linkRow("character.book.closed.ja", "My vocabulary", "Every word and line you've practised")
             }
