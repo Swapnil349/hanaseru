@@ -639,6 +639,8 @@ public enum CueKey: String, CaseIterable, Codable, Sendable {
     case rehearseShort
     case goShort
     case goYouShort
+    case watchScene
+    case lineByLine
     case listenFor
     case itWas
     case thatsRight

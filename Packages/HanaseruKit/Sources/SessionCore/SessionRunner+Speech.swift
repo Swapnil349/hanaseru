@@ -10,16 +10,19 @@ extension SessionRunner {
     ]
 
     /// Speaks text and returns when finished (or when the session is paused/stopped).
+    /// `stageVoice`: whose mouth moves on stage while this is said (the coach is off stage).
     func speak(_ text: String, _ language: SpeechLanguage, rate: Double = 1.0, voiceRole: VoiceRole? = nil,
-               volume: Double = 1, pauseAfter: TimeInterval = 0.15) async throws {
+               volume: Double = 1, pauseAfter: TimeInterval = 0.15, stageVoice: StageVoice = .narrator) async throws {
         let spoken = language == .english ? JapaneseText.speakableEnglish(text) : text
         guard !spoken.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         try Task.checkCancellation()
         emit(.activity(.speaking))
+        emit(.voice(stageVoice))
         let began = now()
         await voice.synthesizer.speak(SpeechRequest(text: spoken, language: language, rate: rate, pauseAfter: pauseAfter,
                                                     voice: voiceRole, volume: volume))
         if language == .japanese { secondsListening += now().timeIntervalSince(began) }
+        emit(.voice(nil))
         try Task.checkCancellation()
     }
 
@@ -71,14 +74,15 @@ extension SessionRunner {
     /// The model of one of the learner's own lines, in the coach's Japanese voice.
     func sayModel(_ line: PracticeLine, rate: Double, show: Bool = true, pauseAfter: TimeInterval = 0.2) async throws {
         if show { emit(.line(ScriptLine(role: .coach, japanese: line.japanese, kana: line.kana, english: line.english))) }
-        try await speak(line.japanese, .japanese, rate: rate, voiceRole: .coachJapanese, pauseAfter: pauseAfter)
+        try await speak(line.japanese, .japanese, rate: rate, voiceRole: .coachJapanese, pauseAfter: pauseAfter,
+                        stageVoice: .you)
     }
 
     /// A line from the role-play partner, in the partner's voice.
     func partnerSays(_ japanese: String, kana: String = "", english: String = "", name: String = "",
                      gender: VoiceGender?, rate: Double, show: Bool = true) async throws {
         if show { emit(.line(ScriptLine(role: .partner(name: name), japanese: japanese, kana: kana, english: english))) }
-        try await speak(japanese, .japanese, rate: rate, voiceRole: .partner(gender), pauseAfter: 0.4)
+        try await speak(japanese, .japanese, rate: rate, voiceRole: .partner(gender), pauseAfter: 0.4, stageVoice: .partner)
     }
 
     /// The partner line before one of the learner's lines.

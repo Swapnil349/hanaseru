@@ -158,6 +158,37 @@ public struct SessionTimeline: Equatable, Sendable {
     }
 }
 
+/// The scene being acted out on screen: where it is and who is in it.
+public struct StageInfo: Equatable, Sendable {
+    public var scenarioID: String
+    /// Where the scene happens, e.g. "at the pier".
+    public var place: String
+    public var partnerID: String
+    public var partnerName: String
+    public var partnerGender: VoiceGender?
+    public var learnerName: String
+
+    public init(scenarioID: String, place: String, partnerID: String, partnerName: String,
+                partnerGender: VoiceGender?, learnerName: String) {
+        self.scenarioID = scenarioID
+        self.place = place
+        self.partnerID = partnerID
+        self.partnerName = partnerName
+        self.partnerGender = partnerGender
+        self.learnerName = learnerName
+    }
+}
+
+/// Who is speaking, so the right character's mouth moves.
+public enum StageVoice: Equatable, Sendable {
+    /// The other person in the scene.
+    case partner
+    /// The learner's character: the model of their line.
+    case you
+    /// The coach, off stage.
+    case narrator
+}
+
 public enum SessionActivity: Equatable, Sendable {
     case preparing
     /// The coach or partner is talking.
@@ -188,6 +219,10 @@ public enum SessionEvent: Equatable, Sendable {
     case step(String)
     /// Where the session is in the scene being played, for the scrubber; nil outside a scene.
     case timeline(SessionTimeline?)
+    /// The scene now on stage; nil outside a scene.
+    case stage(StageInfo?)
+    /// Who is speaking right now; nil between utterances.
+    case voice(StageVoice?)
     case finished(SessionSummary)
 }
 

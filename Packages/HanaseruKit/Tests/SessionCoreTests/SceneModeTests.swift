@@ -56,6 +56,30 @@ struct SceneModeTests {
         #expect(harness.runner.ledgerViolations.isEmpty)
     }
 
+    @Test func watchingActsOutTheConversationWithoutAskingAnything() async throws {
+        let library = try ContentLibrary.bundled()
+        let scenario = try #require(library.scenario(id: "s.weekend.chat"))
+        let lines = library.lines(in: scenario, learnerName: "")
+        let harness = Harness(plan: scene, answers: [], library: library, options: SessionOptions(sceneMode: .watch))
+        let summary = try #require(await harness.runToCompletion())
+        #expect(harness.recognizer.listenCount == 0)
+        #expect(summary.conversationTurns == 0)
+        for line in lines {
+            #expect(harness.synthesizer.count(line.partner?.japanese ?? "-") == 1)
+            #expect(harness.synthesizer.count(line.japanese) == 1)
+        }
+        // The two characters take turns: the colleague, then you, line after line.
+        let voices = harness.events.compactMap { event -> StageVoice? in
+            if case .voice(let voice?) = event, voice != .narrator { return voice }
+            return nil
+        }
+        #expect(voices == Array(repeating: [StageVoice.partner, .you], count: lines.count).flatMap { $0 } + [.partner])
+        #expect(harness.events.contains { event in
+            if case .stage(let info?) = event { return info.partnerName == "Nakamura-san" }
+            return false
+        })
+    }
+
     @Test func scenesListTheirVocabulary() throws {
         let library = try ContentLibrary.bundled()
         let scenario = try #require(library.scenario(id: "s.site.pier"))

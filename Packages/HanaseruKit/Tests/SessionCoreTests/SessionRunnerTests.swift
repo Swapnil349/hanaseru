@@ -373,8 +373,9 @@ struct SessionRunnerTests {
         let scenario = try #require(library.scenario(id: "s.weekend.chat"))
         let lines = library.lines(in: scenario, learnerName: "Swapnil")
         let texts = harness.synthesizer.texts
-        // Every partner line is heard in the screenplay, in practice and in the performance — never re-asked.
-        for line in lines { #expect(harness.synthesizer.count(line.partner?.japanese ?? "") == 3) }
+        // Every partner line is acted out first, then heard with its meaning, in practice and in the
+        // performance — never re-asked.
+        for line in lines { #expect(harness.synthesizer.count(line.partner?.japanese ?? "") == 4) }
         // Three announced steps; the learner's own lines are given in English and Japanese before any turn.
         #expect(inOrder(texts, ["Three steps: listen, practise your lines, then the real conversation.",
                                 "Step 1 of 3: just listen to the whole conversation.", "You: " + lines[0].english, lines[0].japanese,

@@ -343,5 +343,15 @@
     "ja": "あなたからどうぞ。",
     "kana": "あなたからどうぞ。",
     "en": "You start."
+  },
+  "watchScene": {
+    "ja": "まず、会話を見てみましょう。",
+    "kana": "まず、かいわをみてみましょう。",
+    "en": "First, watch the whole conversation."
+  },
+  "lineByLine": {
+    "ja": "次は、一つずつ意味を確認しましょう。",
+    "kana": "つぎは、ひとつずついみをかくにんしましょう。",
+    "en": "Now line by line, with the meaning."
   }
 }

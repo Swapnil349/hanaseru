@@ -17,15 +17,17 @@ extension SceneMode {
         case .fullLesson: "Full lesson"
         case .practiseLines: "Practise my lines"
         case .conversationOnly: "Just the conversation"
+        case .watch: "Just watch"
         }
     }
 
     var detail: String {
         switch self {
         case .automatic: "The full lesson the first time; after that, straight to the conversation."
-        case .fullLesson: "Explanation, listen to the whole conversation, practise each line, then the conversation."
-        case .practiseLines: "Repeat each of your lines after the model, then the conversation."
+        case .fullLesson: "Watch the whole conversation, go through it line by line with the meaning, practise each line, then the conversation."
+        case .practiseLines: "Watch the conversation, repeat each of your lines after the model, then the conversation."
         case .conversationOnly: "No explanations: the colleague speaks and you answer."
+        case .watch: "The characters act out the whole conversation; nothing is asked."
         }
     }
 }
@@ -122,6 +124,12 @@ struct SceneDetailView: View {
                     Label("Start from the beginning", systemImage: "play.fill")
                 }
                 .accessibilityIdentifier("scene-start")
+                Button {
+                    session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: 0, mode: .watch))
+                } label: {
+                    Label("Watch the scene", systemImage: "theatermasks")
+                }
+                .accessibilityIdentifier("scene-watch")
                 Button { showScript = true } label: {
                     Label("Read the script", systemImage: "doc.plaintext")
                 }

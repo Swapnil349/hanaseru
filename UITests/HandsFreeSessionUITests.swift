@@ -58,6 +58,24 @@ final class HandsFreeSessionUITests: XCTestCase {
     }
 
     @MainActor
+    func testWatchingASceneShowsTheCharacters() throws {
+        let app = launch(onboarded: true)
+        app.buttons["open-scenes"].tap()
+        let scene = app.staticTexts["Monday small talk"]
+        XCTAssertTrue(scene.waitForExistence(timeout: 10))
+        scene.tap()
+        let watch = app.buttons["scene-watch"]
+        XCTAssertTrue(watch.waitForExistence(timeout: 10))
+        screenshot(app, "30-scene-detail")
+        watch.tap()
+        for shot in 1...3 {
+            sleep(4)
+            screenshot(app, "31-scene-stage-\(shot)")
+        }
+        XCTAssertTrue(app.buttons["summary-done"].waitForExistence(timeout: 120), "Watching the scene never finished")
+    }
+
+    @MainActor
     func testTabsAndOnboardingRender() throws {
         let first = launch(onboarded: false)
         screenshot(first, "20-onboarding")

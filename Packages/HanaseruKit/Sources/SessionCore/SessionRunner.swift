@@ -12,6 +12,8 @@ public enum SceneMode: String, CaseIterable, Sendable {
     case practiseLines
     /// Just the conversation: no explanations.
     case conversationOnly
+    /// Watch the characters act out the whole conversation; nothing is asked.
+    case watch
 }
 
 /// When the Japanese of the learner's own line is on screen before they say it.
@@ -459,6 +461,7 @@ public final class SessionRunner {
                 }
                 pendingLine = nil
                 emit(.timeline(nil))
+                emit(.stage(nil))
                 let exercise = plan.exercises[currentExerciseIndex]
                 emit(.exerciseStarted(index: currentExerciseIndex, total: plan.exercises.count,
                                       kind: exercise.kind, title: title(for: exercise)))

@@ -47,6 +47,10 @@ final class SessionViewModel {
     private(set) var peekedLineID: String?
     /// Where the session is in the scene being played (the scrubber); nil outside a scene.
     private(set) var timeline: SessionTimeline?
+    /// The scene on stage, who is speaking, and the other person's latest line (for their speech bubble).
+    private(set) var stage: StageInfo?
+    private(set) var stageVoice: StageVoice?
+    private(set) var partnerLine: ScriptLine?
 
     private let app: AppEnvironment
     private var runner: SessionRunner?
@@ -212,6 +216,7 @@ final class SessionViewModel {
         case .activity(let activity):
             self.activity = activity
             isPaused = activity == .paused
+            if activity != .speaking { stageVoice = nil }
             if activity == .listening { partialTranscript = "" }
             updateNowPlaying()
         case .exerciseStarted(let index, let total, _, let title):
@@ -231,6 +236,7 @@ final class SessionViewModel {
                 spokenLine = line
             case .partner:
                 spokenLine = line
+                partnerLine = line
                 transcript.append(line)
             case .learner:
                 partialTranscript = ""
@@ -259,6 +265,11 @@ final class SessionViewModel {
             listenStartedAt = Date()
         case .timeline(let place):
             timeline = place
+        case .stage(let info):
+            if info != stage { partnerLine = nil }
+            stage = info
+        case .voice(let voice):
+            stageVoice = voice
         case .step(let title):
             stepTitle = title
             if !title.isEmpty { VoiceLog.add("step: \(title)") }

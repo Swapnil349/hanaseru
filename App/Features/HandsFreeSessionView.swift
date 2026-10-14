@@ -61,7 +61,22 @@ struct HandsFreeSessionView: View {
             LineStripe()
             ScrollView {
                 VStack(spacing: 24) {
-                    statusVisual
+                    if let stage = model.stage {
+                        SceneStageView(stage: stage, voice: model.stageVoice, activity: model.activity,
+                                       micLevel: model.micLevel, focus: model.focusInfo, reveal: model.reveal,
+                                       partnerLine: model.partnerLine, showEnglish: showEnglish,
+                                       onHearPartner: {
+                                           guard let line = model.partnerLine else { return }
+                                           model.listen(to: [SpeechRequest(text: line.japanese, language: .japanese, rate: 0.9,
+                                                                           voice: .partner(stage.partnerGender))])
+                                       },
+                                       onHearYou: {
+                                           if let focus = model.focusInfo { model.listen(to: focus.answerAudio) }
+                                       })
+                        compactStatus
+                    } else {
+                        statusVisual
+                    }
                     currentLine
                     if let feedback = model.feedback {
                         FeedbackCard(note: feedback)
@@ -168,6 +183,41 @@ struct HandsFreeSessionView: View {
         .accessibilityIdentifier("status-\(statusName)")
     }
 
+    /// Under the stage: whose turn it is, in one line.
+    private var compactStatus: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                switch model.activity {
+                case .listening:
+                    Image(systemName: "mic.fill").foregroundStyle(Palette.signal)
+                    Text("あなたの番です · Your turn").font(.subheadline.weight(.semibold)).foregroundStyle(Palette.signal)
+                case .speaking, .preparing:
+                    Image(systemName: "ear").foregroundStyle(Palette.line)
+                    Text("聞いてください · Listen").font(.subheadline.weight(.semibold)).foregroundStyle(Palette.line)
+                case .thinking:
+                    ProgressView()
+                    Text("Thinking…").font(.subheadline).foregroundStyle(Palette.inkSecondary)
+                case .paused:
+                    Image(systemName: "pause.circle.fill").foregroundStyle(Palette.inkSecondary)
+                    Text("Paused. Tap a bubble or a speaker button to hear a line.")
+                        .font(.subheadline).foregroundStyle(Palette.inkSecondary)
+                case .finished:
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.go)
+                }
+                Spacer(minLength: 0)
+            }
+            if model.activity == .listening && !model.partialTranscript.isEmpty {
+                Text(model.partialTranscript)
+                    .font(.title3)
+                    .foregroundStyle(Palette.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            privacyChip.frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("status-\(statusName)")
+    }
+
     private var statusName: String {
         switch model.activity {
         case .preparing: "preparing"
@@ -205,7 +255,8 @@ struct HandsFreeSessionView: View {
                     .foregroundStyle(Palette.inkSecondary)
             }
             if let focus = model.focusInfo {
-                if !focus.partnerJapanese.isEmpty {
+                // On a stage, the other person's line is in their speech bubble.
+                if !focus.partnerJapanese.isEmpty && model.stage == nil {
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 4) {
                             if !focus.partnerName.isEmpty {

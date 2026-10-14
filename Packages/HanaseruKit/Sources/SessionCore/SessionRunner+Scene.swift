@@ -9,6 +9,8 @@ struct SceneState {
     enum Segment: Equatable {
         /// The scene's title (in a full lesson also the situation and the three steps).
         case intro
+        /// Both characters act out one exchange at a natural pace, with nothing explained.
+        case watch(Int)
         /// Step 1: one exchange of the screenplay, with the learner's line in English and Japanese.
         case listen(Int)
         /// Step 2: one of the learner's lines, repeated after the model.
@@ -46,13 +48,19 @@ struct SceneState {
         self.start = start
         self.mode = mode
         var segments: [Segment] = [.intro]
+        // Before any practice, the characters act out the whole conversation.
+        if mode == .fullLesson || mode == .practiseLines || mode == .watch {
+            segments += lines.indices.map { Segment.watch($0) }
+        }
         if mode == .fullLesson {
             segments += lines.indices.map { Segment.listen($0) }
         }
         if mode == .fullLesson || mode == .practiseLines {
             segments += lines.indices.map { Segment.practise($0) }
         }
-        segments += lines.indices.map { Segment.perform($0) }
+        if mode != .watch {
+            segments += lines.indices.map { Segment.perform($0) }
+        }
         segments.append(.ending)
         self.segments = segments
 
@@ -63,7 +71,7 @@ struct SceneState {
             case .intro:
                 stops.append(SessionTimeline.Stop(step: "Start", line: nil, isAnswer: false, japanese: scenario.titleJa))
                 targets.append(StopTarget(segment: position, answer: false))
-            case .listen(let index), .practise(let index), .perform(let index):
+            case .watch(let index), .listen(let index), .practise(let index), .perform(let index):
                 let line = lines[index]
                 let step = Self.stepName(segment)
                 stops.append(SessionTimeline.Stop(step: step, line: start + index + 1, isAnswer: false,
@@ -83,6 +91,7 @@ struct SceneState {
     static func stepName(_ segment: Segment) -> String {
         switch segment {
         case .intro: "Start"
+        case .watch: "Watch"
         case .listen: "Listen"
         case .practise: "Practise"
         case .perform: "Conversation"
@@ -104,9 +113,10 @@ struct SceneState {
         let current = segments.indices.contains(cursor) ? segments[cursor] : .intro
         let wanted: [Segment]
         switch current {
-        case .intro, .listen: wanted = [.listen(index), .practise(index), .perform(index)]
+        case .watch: wanted = [.watch(index), .listen(index), .practise(index), .perform(index)]
+        case .intro, .listen: wanted = [.listen(index), .practise(index), .perform(index), .watch(index)]
         case .practise: wanted = [.practise(index), .perform(index)]
-        case .perform, .ending: wanted = [.perform(index)]
+        case .perform, .ending: wanted = [.perform(index), .watch(index)]
         }
         for segment in wanted {
             if let found = segments.firstIndex(of: segment) { return found }
@@ -126,6 +136,11 @@ extension SessionRunner {
             segmentCount = state.segments.count
             cursor = startLine.flatMap { state.segmentIndex(forLine: $0, near: 0) } ?? 0
             if !scenarioIDs.contains(state.scenario.id) { scenarioIDs.append(state.scenario.id) }
+        }
+        if let state = sceneState {
+            emit(.stage(StageInfo(scenarioID: state.scenario.id, place: state.scenario.placeEn ?? "",
+                                  partnerID: state.persona.id, partnerName: state.persona.nameEn,
+                                  partnerGender: state.persona.voiceGender, learnerName: learner.name)))
         }
         while let state = sceneState, cursor < state.segments.count {
             try await playSegment(state.segments[cursor], of: state, fromAnswer: answerFirst)
@@ -170,13 +185,29 @@ extension SessionRunner {
                 try await coach(.sceneSteps)
             }
 
+        case .watch(let index):
+            // Both characters act out the exchange at a natural pace; the bubbles carry the meaning.
+            let line = state.lines[index]
+            emit(.step(full ? "Step 1 of 3 · Watch the conversation" : "Watch the conversation"))
+            emit(.focus(focusInfo(line, level: .model)))
+            if !fromAnswer {
+                if index == 0 { try await coach(full ? .listenFirst : .watchScene) }
+                if let partner = line.partner {
+                    let rate = TurnTiming.partnerRate(level: .intent, profile: learner.difficulty,
+                                                      personaRate: state.persona.speakingRate)
+                    try await partnerSays(partner, rate: rate)
+                }
+            }
+            showPlace(answer: true)
+            try await sayModel(line, rate: 0.95, pauseAfter: 0.7)
+
         case .listen(let index):
             // Step 1 — screenplay: both roles, with the learner's line given in English and Japanese.
             let line = state.lines[index]
-            emit(.step("Step 1 of 3 · Listen to the conversation"))
+            emit(.step("Step 1 of 3 · Line by line, with the meaning"))
             emit(.focus(focusInfo(line, level: .model)))
             if !fromAnswer {
-                if index == 0 { try await coach(.listenFirst) }
+                if index == 0 { try await coach(.lineByLine) }
                 if let partner = line.partner {
                     try await partnerSays(partner, rate: 0.9)
                     try await speak(partner.english, .english, pauseAfter: 0.3)
