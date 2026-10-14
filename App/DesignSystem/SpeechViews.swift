@@ -187,24 +187,61 @@ struct FeedbackCard: View {
     }
 }
 
-/// Session transport controls (spec §73: AudioControl).
+/// Session transport controls (spec §73: AudioControl): the line before, this line again, pause/play
+/// (carrying on from the same line), the next line.
 struct AudioControl: View {
     let isPaused: Bool
+    let onPrevious: () -> Void
+    let onAgain: () -> Void
     let onTogglePause: () -> Void
-    let onSkip: () -> Void
+    let onNext: () -> Void
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 8) {
+            stepButton("backward.end.fill", "Back", "前へ", id: "transport-back", action: onPrevious)
+            stepButton("arrow.counterclockwise", "Again", "もう一度", id: "transport-again", action: onAgain)
             Button(action: onTogglePause) {
-                Label(isPaused ? "Resume" : "Pause", systemImage: isPaused ? "play.fill" : "pause.fill")
+                Label(isPaused ? "Play" : "Pause", systemImage: isPaused ? "play.fill" : "pause.fill")
             }
             .buttonStyle(PrimaryButtonStyle(tint: isPaused ? Palette.go : Palette.line))
-
-            Button(action: onSkip) {
-                Label("Skip", systemImage: "forward.end.fill")
-            }
-            .buttonStyle(SecondaryButtonStyle())
-            .frame(maxWidth: 120)
+            .accessibilityIdentifier("transport-pause")
+            stepButton("forward.end.fill", "Next", "次へ", id: "transport-next", action: onNext)
         }
+    }
+
+    private func stepButton(_ symbol: String, _ title: String, _ japanese: String, id: String,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: symbol).font(.body.weight(.semibold))
+                Text(title).font(.caption2)
+            }
+            .frame(width: 60, height: 56)
+            .background(Palette.surfaceMuted, in: RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Palette.ink)
+        .accessibilityLabel("\(title), \(japanese)")
+        .accessibilityIdentifier(id)
+    }
+}
+
+/// A small speaker button that plays a line (the session pauses while it plays).
+struct HearButton: View {
+    let title: String
+    var systemImage = "speaker.wave.2.fill"
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Palette.surface, in: Capsule())
+                .overlay(Capsule().stroke(Palette.line.opacity(0.3), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Palette.line)
     }
 }

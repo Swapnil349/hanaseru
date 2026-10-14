@@ -24,6 +24,8 @@ enum SettingsKey {
     static let naturalEnglish = "naturalEnglish"
     /// Sessions finished so far; after a few, the spoken plan at the start is skipped.
     static let completedSessions = "completedSessions"
+    /// When the Japanese of the learner's own line is on screen (`AnswerDisplay`; default: while learning it).
+    static let answerDisplay = "answerDisplay"
 }
 
 /// How much kanji to show (spec §41). Default: minimal.

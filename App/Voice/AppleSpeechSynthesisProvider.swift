@@ -292,10 +292,12 @@ final class VoicePreview {
         return synthesizer
     }()
 
-    func play(_ text: String, voice: AVSpeechSynthesisVoice?) {
+    func play(_ text: String, voice: AVSpeechSynthesisVoice?, rate: Double = 1, pitch: Float = 1) {
         synthesizer.stopSpeaking(at: .immediate)
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = voice
+        utterance.rate = AppleSpeechSynthesisProvider.rate(for: rate)
+        utterance.pitchMultiplier = pitch
         synthesizer.speak(utterance)
     }
 }

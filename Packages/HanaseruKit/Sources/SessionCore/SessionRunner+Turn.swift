@@ -48,7 +48,8 @@ extension SessionRunner {
         let partnerRate = TurnTiming.partnerRate(level: level, profile: learner.difficulty,
                                                  personaRate: line.partner?.speakingRate ?? 1)
         emit(.focus(focusInfo(line, level: level)))
-        peekedThisTurn = false
+        // A line the learner already knows, with its answer on screen, counts as helped.
+        peekedThisTurn = level >= .intent && answerShown(at: level)
 
         if !contextSpoken { try await speakContext(line, rate: partnerRate) }
         if mode == .drill, let partner = line.partner, !glossedPartnerLines.contains(line.id),
@@ -110,9 +111,9 @@ extension SessionRunner {
             try await deliver(outcome, line: line, level: level, mode: mode, transcript: transcript,
                               local: local, silent: silent, echoWindow: echoWindow, mistakes: detected, kind: kind)
         } catch {
-            // Skipped or stopped during the feedback: the turn was already judged, so keep it.
-            // Paused: nothing is kept, because the line is asked again on resume.
-            if !isPaused {
+            // Skipped, moved on or stopped during the feedback: the turn was already judged, so keep it.
+            // Paused or ↺: nothing is kept, because the line is asked again.
+            if !redoesCurrentLine {
                 await record(line, level: level, outcome: outcome, transcript: transcript, onset: onset, kind: kind)
                 if mode == .drill { requeue(line, level: level, outcome: outcome) }
             }
@@ -563,10 +564,11 @@ extension SessionRunner {
                 try await runSayIt(next.line, level: next.level, mode: .drill)
             }
         } catch {
-            // Paused: it plays again after resuming. Skipped or stopped: it doesn't come back.
-            if isPaused {
+            // Paused or ↺: it plays again. Skipped or stopped: it doesn't come back.
+            if redoesCurrentLine {
                 pendingRecalls.insert(next, at: 0)
                 lastLineID = previousLine
+                interruptedRecall = true
             }
             throw error
         }

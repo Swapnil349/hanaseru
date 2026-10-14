@@ -36,6 +36,13 @@ enum SayJapanese {
     static func play(_ text: String) {
         VoicePreview.shared.play(text, voice: AppleSpeechSynthesisProvider.voice(for: .japanese))
     }
+
+    /// A line of a script, in its speaker's voice (`slowly`: at a slower speed).
+    static func play(_ requests: [SpeechRequest], slowly: Bool) {
+        guard let request = requests.first else { return }
+        let choice = AppleSpeechSynthesisProvider.voice(for: request.voice, language: request.language)
+        VoicePreview.shared.play(request.text, voice: choice.voice, rate: slowly ? 0.7 : request.rate, pitch: choice.pitch)
+    }
 }
 
 /// Every conversation, ready to start from any line.
@@ -88,6 +95,9 @@ struct SceneDetailView: View {
     @Query private var profiles: [LearnerProfileRecord]
     let scenario: Scenario
     @State private var session: SceneSession?
+    @State private var showScript = false
+    /// A start chosen in the script, opened once the script has closed.
+    @State private var startAfterScript: SceneSession?
 
     private struct SceneSession: Identifiable {
         let id = UUID()
@@ -112,6 +122,10 @@ struct SceneDetailView: View {
                     Label("Start from the beginning", systemImage: "play.fill")
                 }
                 .accessibilityIdentifier("scene-start")
+                Button { showScript = true } label: {
+                    Label("Read the script", systemImage: "doc.plaintext")
+                }
+                .accessibilityIdentifier("scene-script")
             }
 
             Section {
@@ -159,6 +173,26 @@ struct SceneDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(item: $session) { session in
             SessionContainerView(minutes: 10, focus: .conversation, scene: session.start)
+        }
+        .sheet(isPresented: $showScript, onDismiss: {
+            session = startAfterScript
+            startAfterScript = nil
+        }) {
+            NavigationStack {
+                ScriptView(parts: [app.library.script(of: scenario, learnerName: profiles.first?.name ?? "")],
+                           onPlay: { requests, slowly in SayJapanese.play(requests, slowly: slowly) },
+                           onStart: { _, line in
+                               startAfterScript = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: line ?? 0,
+                                                                                 mode: mode))
+                               showScript = false
+                           },
+                           title: scenario.title)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showScript = false }
+                        }
+                    }
+            }
         }
     }
 }

@@ -5,6 +5,16 @@ import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension AnswerDisplay {
+    var title: String {
+        switch self {
+        case .whileLearning: "While I'm learning it"
+        case .always: "Always"
+        case .afterTurn: "Only after I answer"
+        }
+    }
+}
+
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var app
     @Query private var profiles: [LearnerProfileRecord]
@@ -12,6 +22,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.kanjiIntensity) private var kanjiIntensity = KanjiIntensity.minimal.rawValue
     @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
     @AppStorage(SettingsKey.showEnglish) private var showEnglish = true
+    @AppStorage(SettingsKey.answerDisplay) private var answerDisplay = AnswerDisplay.whileLearning.rawValue
     @AppStorage(SettingsKey.englishVoice) private var englishVoice = ""
     @AppStorage(SettingsKey.japaneseVoice) private var japaneseVoice = ""
     @AppStorage(SettingsKey.naturalEnglish) private var naturalEnglish = true
@@ -46,10 +57,15 @@ struct SettingsView: View {
                     }
                     Toggle("Show romaji", isOn: $showRomaji)
                     Toggle("Show English on screen", isOn: $showEnglish)
+                    Picker("Your line in Japanese", selection: $answerDisplay) {
+                        ForEach(AnswerDisplay.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+                    }
                 } header: {
                     Text("Display")
                 } footer: {
-                    Text("Minimal shows kana first with kanji as a small hint. Kanji is never the focus.")
+                    Text("Minimal shows kana first with kanji as a small hint. Kanji is never the focus. "
+                         + "Your line in Japanese: while you're learning a line it's on screen to read; once you know it, "
+                         + "it's hidden until you've answered (tap to see it).")
                 }
 
                 Section {

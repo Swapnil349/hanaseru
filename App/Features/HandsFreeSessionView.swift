@@ -52,6 +52,7 @@ struct HandsFreeSessionView: View {
 
     @AppStorage(SettingsKey.showEnglish) private var showEnglish = true
     @State private var showTranscript = false
+    @State private var scriptParts: [ScriptPart]?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -82,6 +83,22 @@ struct HandsFreeSessionView: View {
             footer
         }
         .background(Palette.background)
+        .sheet(isPresented: Binding(get: { scriptParts != nil }, set: { if !$0 { scriptParts = nil } })) {
+            NavigationStack {
+                ScriptView(parts: scriptParts ?? [], currentLineID: model.focusInfo?.lineID, currentPart: model.exerciseIndex,
+                           onPlay: { requests, slowly in model.listen(to: requests, slowly: slowly) },
+                           onStart: { part, line in
+                               scriptParts = nil
+                               model.move(.to(part: part, line: line))
+                           })
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { scriptParts = nil }
+                                .accessibilityIdentifier("script-done")
+                        }
+                    }
+            }
+        }
     }
 
     // MARK: - Header
@@ -138,6 +155,8 @@ struct HandsFreeSessionView: View {
             case .paused:
                 Image(systemName: "pause.circle.fill").font(.system(size: 56)).foregroundStyle(Palette.inkSecondary)
                 Text("Paused").font(.headline).foregroundStyle(Palette.inkSecondary)
+                Text("Tap a speaker button to hear a line as often as you like. Play carries on from this line.")
+                    .font(.footnote).foregroundStyle(Palette.inkSecondary).multilineTextAlignment(.center)
             case .finished:
                 Image(systemName: "checkmark.circle.fill").font(.system(size: 56)).foregroundStyle(Palette.go)
             }
@@ -186,12 +205,21 @@ struct HandsFreeSessionView: View {
             }
             if let focus = model.focusInfo {
                 if !focus.partnerJapanese.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        if !focus.partnerName.isEmpty {
-                            Text(focus.partnerName).font(.caption.weight(.semibold)).foregroundStyle(Palette.inkSecondary)
+                    HStack(alignment: .top, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            if !focus.partnerName.isEmpty {
+                                Text(focus.partnerName).font(.caption.weight(.semibold)).foregroundStyle(Palette.inkSecondary)
+                            }
+                            JapaneseTextView(japanese: focus.partnerJapanese, english: focus.partnerEnglish, style: .body,
+                                             showEnglish: showEnglish)
                         }
-                        JapaneseTextView(japanese: focus.partnerJapanese, english: focus.partnerEnglish, style: .body,
-                                         showEnglish: showEnglish)
+                        Spacer(minLength: 0)
+                        Button { model.listen(to: focus.promptAudio) } label: {
+                            Image(systemName: "speaker.wave.2.fill").font(.body).frame(width: 40, height: 40)
+                        }
+                        .foregroundStyle(Palette.line)
+                        .accessibilityLabel("Hear the question again")
+                        .accessibilityIdentifier("hear-question")
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -226,7 +254,7 @@ struct HandsFreeSessionView: View {
 
             if let reveal = model.reveal, reveal.lineID == focus.lineID {
                 revealView(reveal)
-            } else if focus.level == .model {
+            } else if focus.answerShown {
                 JapaneseTextView(japanese: focus.japanese, kana: focus.kana, style: .title2, showEnglish: false)
             } else if !focus.visibleJapanese.isEmpty {
                 Text(focus.visibleJapanese + " " + focus.hiddenPlaceholder)
@@ -239,11 +267,27 @@ struct HandsFreeSessionView: View {
                     .font(.footnote)
                     .foregroundStyle(Palette.line)
             }
+            hearButtons(focus)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Palette.line.opacity(0.06), in: RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous).stroke(Palette.line.opacity(0.25), lineWidth: 1))
+    }
+
+    /// Hear the question (when there is no partner card) and the answer, at natural speed or slowly.
+    private func hearButtons(_ focus: FocusInfo) -> some View {
+        HStack(spacing: 8) {
+            if focus.partnerJapanese.isEmpty && !focus.promptAudio.isEmpty {
+                HearButton(title: "Question") { model.listen(to: focus.promptAudio) }
+            }
+            if !focus.answerAudio.isEmpty {
+                HearButton(title: "Answer") { model.listen(to: focus.answerAudio) }
+                    .accessibilityIdentifier("hear-answer")
+                HearButton(title: "Slowly", systemImage: "tortoise.fill") { model.listen(to: focus.answerAudio, slowly: true) }
+            }
+        }
+        .padding(.top, 2)
     }
 
     /// After the turn: the full line, what was heard, and which parts were right. No red, no "wrong".
@@ -278,7 +322,8 @@ struct HandsFreeSessionView: View {
     private var footer: some View {
         VStack(spacing: 10) {
             helpBar
-            AudioControl(isPaused: model.isPaused, onTogglePause: { model.togglePause() }, onSkip: { model.skip() })
+            AudioControl(isPaused: model.isPaused, onPrevious: { model.move(.previous) }, onAgain: { model.again() },
+                         onTogglePause: { model.togglePause() }, onNext: { model.move(.next) })
             HStack {
                 Toggle("English", isOn: $showEnglish).toggleStyle(.button).font(.caption)
                 Toggle("Transcript", isOn: $showTranscript).toggleStyle(.button).font(.caption)
@@ -290,6 +335,11 @@ struct HandsFreeSessionView: View {
                     .accessibilityIdentifier("writing-toggle")
                 }
                 Spacer()
+                Button { scriptParts = model.script() } label: {
+                    Label("Script", systemImage: "doc.plaintext")
+                }
+                .buttonStyle(.bordered).font(.caption)
+                .accessibilityIdentifier("open-script")
             }
         }
         .padding(.horizontal, Metrics.padding)
@@ -297,16 +347,16 @@ struct HandsFreeSessionView: View {
         .background(Palette.surface.shadow(.drop(color: .black.opacity(0.06), radius: 8, y: -2)))
     }
 
-    /// Tappable help, each chip showing the Japanese you can also just say.
+    /// Tappable help, each chip showing the Japanese you can also just say (もう一度 and 次へ are on the
+    /// buttons below).
     private var helpBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 helpChip("ヒント", "Hint", .hint, id: "help-chip-hint")
                 helpChip("答え", "Answer", .answer, id: "help-chip-answer")
-                helpChip("もう一度", "Again", .repeatPrompt, id: "help-chip-again")
                 helpChip("ゆっくり", "Slower", .slower, id: "help-chip-slower")
                 helpChip("英語で", "English", .english, id: "help-chip-english")
-                helpChip("スキップ", "Skip", .skip, id: "help-chip-skip")
+                helpChip("ちょっと待って", "More time", .moreTime, id: "help-chip-wait")
             }
         }
         .scrollClipDisabled()

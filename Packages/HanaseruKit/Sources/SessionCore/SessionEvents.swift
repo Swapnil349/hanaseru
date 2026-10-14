@@ -66,10 +66,16 @@ public struct FocusInfo: Equatable, Sendable {
     public var partnerName: String
     /// Card heading when it isn't the learner's own line ("LISTEN"); empty for LEARN / YOUR LINE.
     public var heading: String
+    /// The whole Japanese of the line is on screen to read (always at S0; while learning, up to S2).
+    public var answerShown: Bool
+    /// What the speaker buttons play: the question (the partner's line, or the situation) and the answer.
+    public var promptAudio: [SpeechRequest]
+    public var answerAudio: [SpeechRequest]
 
     public init(lineID: String, level: ScaffoldLevel, cueEn: String, english: String, japanese: String, kana: String,
                 visibleJapanese: String, hiddenPlaceholder: String = "", partnerJapanese: String = "",
-                partnerEnglish: String = "", partnerName: String = "", heading: String = "") {
+                partnerEnglish: String = "", partnerName: String = "", heading: String = "", answerShown: Bool = false,
+                promptAudio: [SpeechRequest] = [], answerAudio: [SpeechRequest] = []) {
         self.lineID = lineID
         self.level = level
         self.cueEn = cueEn
@@ -82,6 +88,9 @@ public struct FocusInfo: Equatable, Sendable {
         self.partnerEnglish = partnerEnglish
         self.partnerName = partnerName
         self.heading = heading
+        self.answerShown = answerShown || level == .model
+        self.promptAudio = promptAudio
+        self.answerAudio = answerAudio
     }
 }
 

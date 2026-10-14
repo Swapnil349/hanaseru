@@ -14,6 +14,29 @@ public enum SceneMode: String, CaseIterable, Sendable {
     case conversationOnly
 }
 
+/// When the Japanese of the learner's own line is on screen before they say it.
+public enum AnswerDisplay: String, CaseIterable, Sendable {
+    /// While the line is being learned (S0–S2) it is there to read; once it's known (S3 on) it is hidden
+    /// until the turn is over, and can be tapped to see.
+    case whileLearning
+    /// Always on screen. From S3 on, a turn with the answer in view counts as helped.
+    case always
+    /// Only after the turn (at S1, just the start of the line).
+    case afterTurn
+}
+
+/// Moving through a session: ⏮ ↺ ⏭ and starting from a line of the script.
+public enum SessionMove: Equatable, Sendable {
+    /// The line before (from the first line of a part: the start of the part before).
+    case previous
+    /// This line again, from its beginning.
+    case again
+    /// The next line (from the last line of a part: the next part).
+    case next
+    /// A part of the session and, in a scene, one of its lines (counted from the scene's first line).
+    case to(part: Int, line: Int?)
+}
+
 /// Options decided by the app for one session.
 public struct SessionOptions: Sendable {
     /// Teach the hands-free help words (もう一度, ゆっくり, ヒント, 答え) before the first exercise.
@@ -23,13 +46,15 @@ public struct SessionOptions: Sendable {
     public var sceneStartBeat: Int
     /// A practised learner: skip the spoken plan at the start.
     public var briefIntro: Bool
+    public var answerDisplay: AnswerDisplay
 
     public init(includeHelpOnboarding: Bool = false, sceneMode: SceneMode = .automatic, sceneStartBeat: Int = 0,
-                briefIntro: Bool = false) {
+                briefIntro: Bool = false, answerDisplay: AnswerDisplay = .whileLearning) {
         self.includeHelpOnboarding = includeHelpOnboarding
         self.sceneMode = sceneMode
         self.sceneStartBeat = sceneStartBeat
         self.briefIntro = briefIntro
+        self.answerDisplay = answerDisplay
     }
 }
 
@@ -41,8 +66,8 @@ public struct SessionOptions: Sendable {
 /// row; a missed line comes back later, one level easier.
 ///
 /// Everything essential is spoken, so the session works with the phone in a pocket. The screen mirrors
-/// state through `onEvent`. Pause, skip and stop cancel the running task; learning data is saved as it
-/// happens.
+/// state through `onEvent`. Pause, the moves (⏮ ↺ ⏭) and stop cancel the running task; the session keeps
+/// its place line by line, so it carries on from the same line. Learning data is saved as it happens.
 @MainActor
 public final class SessionRunner {
     public struct Voice {
@@ -114,6 +139,23 @@ public final class SessionRunner {
     var pendingCommand: PendingCommand?
     var isListening = false
 
+    // The place inside the current part, so that pause and the moves work one line at a time.
+    /// The segment being played (a scene has one per line and step; other parts have one).
+    var cursor = 0
+    /// The part `cursor` belongs to.
+    var cursorPart = -1
+    var segmentCount = 1
+    var sceneState: SceneState?
+    /// A scene line chosen in the script, for the part about to start.
+    var pendingLine: Int?
+    var announcedPart = -1
+    /// ↺ (or a line coming back, replayed): the line in progress plays again, so it isn't recorded or dropped.
+    var replayingCurrent = false
+    /// The learner chose a part themselves: it plays even when the planned time is up.
+    var userChosePart = false
+    /// A line coming back was paused or replayed: it plays before anything else.
+    var interruptedRecall = false
+
     // Teaching state.
     /// Lines whose English and Japanese have both been spoken this session (the exposure ledger).
     var exposed: Set<String> = []
@@ -176,28 +218,111 @@ public final class SessionRunner {
         emit(.activity(.paused))
     }
 
+    /// Carries on from the line that was playing when the session was paused (from its beginning).
     public func resume() {
         guard isPaused, !isFinished else { return }
         if let pausedAt { pausedTotal += now().timeIntervalSince(pausedAt) }
         pausedAt = nil
         isPaused = false
-        launch(after: task)
+        // Stops a line being played on request first.
+        let previous = task
+        previous?.cancel()
+        voice.synthesizer.stopSpeaking()
+        launch(after: previous)
     }
 
     public func togglePause() {
         isPaused ? resume() : pause()
     }
 
-    /// Skips what is playing now: the welcome, the help lesson, the exercise, a line coming back, or the closing.
+    /// ⏭: the next line, or past what is playing now (the welcome, the help lesson, a line coming back, the closing).
     public func skip() {
+        move(.next)
+    }
+
+    /// ⏮ ↺ ⏭, or a line chosen in the script. Works while playing or paused; playing carries on from there.
+    public func move(_ move: SessionMove) {
         guard started, !isFinished else { return }
-        switch stage {
-        case .intro: introDone = true
-        case .onboarding: onboardingDone = true
-        case .exercise: pendingStartIndex = currentExerciseIndex + 1
-        case .recall: break // already taken off the queue, so it just doesn't come back
-        case .closing: closingDone = true
+        replayingCurrent = false
+        sceneState?.lastOutcome = nil
+        switch move {
+        case .again:
+            replayingCurrent = true
+        case .previous:
+            if stage == .exercise && cursor > 0 {
+                cursor -= 1
+            } else if stage == .exercise && currentExerciseIndex > 0 {
+                pendingStartIndex = currentExerciseIndex - 1
+                userChosePart = true
+            } else {
+                // Nothing before it in this part: the welcome, the help lesson, a line coming back or the
+                // closing starts again.
+                replayingCurrent = true
+            }
+        case .next:
+            switch stage {
+            case .intro: introDone = true
+            case .onboarding: onboardingDone = true
+            case .exercise:
+                if cursor + 1 < segmentCount {
+                    cursor += 1
+                } else {
+                    pendingStartIndex = currentExerciseIndex + 1
+                }
+            case .recall: break // already taken off the queue, so it just doesn't come back
+            case .closing: closingDone = true
+            }
+        case .to(let part, let line):
+            guard plan.exercises.indices.contains(part) else { return }
+            introDone = true
+            onboardingDone = true
+            if stage == .exercise, part == currentExerciseIndex, let line,
+               let target = sceneState?.segmentIndex(forLine: line, near: cursor) {
+                cursor = target
+            } else {
+                pendingStartIndex = part
+                pendingLine = line
+                cursorPart = -1
+                userChosePart = true
+            }
         }
+        restart()
+    }
+
+    /// Plays lines on request — the speaker buttons and the script — as often as the learner likes. The
+    /// session pauses first so nothing overlaps; play carries on from the same line.
+    public func listen(to requests: [SpeechRequest]) {
+        guard started, !isFinished, !requests.isEmpty else { return }
+        if !isPaused { pause() }
+        let previous = task
+        previous?.cancel()
+        voice.synthesizer.stopSpeaking()
+        task = Task { [weak self] in
+            await previous?.value
+            await self?.playOnRequest(requests)
+        }
+    }
+
+    private func playOnRequest(_ requests: [SpeechRequest]) async {
+        for request in requests {
+            // English with Japanese in 「」 is spoken by two voices, as in the session.
+            let parts: [SpeechRequest] = request.language == .japanese ? [request]
+                : JapaneseText.bilingualSegments(request.text).map { segment in
+                    segment.isJapanese
+                        ? SpeechRequest(text: segment.text, language: .japanese, rate: 0.9, pauseAfter: 0.1, voice: .coachJapanese)
+                        : SpeechRequest(text: JapaneseText.speakableEnglish(segment.text), language: .english, pauseAfter: 0.1)
+                }
+            for part in parts {
+                guard !Task.isCancelled else { return }
+                await voice.synthesizer.speak(part)
+            }
+        }
+    }
+
+    /// The line in progress will be played again (paused, or ↺), so it isn't recorded or dropped.
+    var redoesCurrentLine: Bool { isPaused || replayingCurrent }
+
+    private func restart() {
         let previous = task
         previous?.cancel()
         silenceVoice()
@@ -283,8 +408,9 @@ public final class SessionRunner {
 
     private func run() async {
         guard !isFinished, !Task.isCancelled else { return }
+        replayingCurrent = false
         if let pending = pendingStartIndex {
-            nextExerciseIndex = max(nextExerciseIndex, pending)
+            nextExerciseIndex = pending
             pendingStartIndex = nil
         }
         do {
@@ -303,19 +429,38 @@ public final class SessionRunner {
                 try await runHelpOnboarding()
                 onboardingDone = true
             }
+            if interruptedRecall {
+                interruptedRecall = false
+                stage = .recall
+                try await runOnePendingRecall()
+            }
             while nextExerciseIndex < plan.exercises.count {
-                if timeIsUp() { break }
+                if timeIsUp() && !userChosePart { break }
+                userChosePart = false
                 currentExerciseIndex = nextExerciseIndex
+                var startLine: Int?
+                if cursorPart != currentExerciseIndex {
+                    // A new part starts at its beginning (or at the line chosen in the script). Resuming the
+                    // same part keeps its place.
+                    cursorPart = currentExerciseIndex
+                    cursor = 0
+                    segmentCount = 1
+                    sceneState = nil
+                    startLine = pendingLine
+                }
+                pendingLine = nil
                 let exercise = plan.exercises[currentExerciseIndex]
                 emit(.exerciseStarted(index: currentExerciseIndex, total: plan.exercises.count,
                                       kind: exercise.kind, title: title(for: exercise)))
                 stage = .exercise
                 emit(.step(""))
-                if plan.exercises.count > 1 {
+                if plan.exercises.count > 1 && announcedPart != currentExerciseIndex {
                     try await coach(.part, ["n": "\(currentExerciseIndex + 1)", "k": "\(plan.exercises.count)",
                                             "title": spokenTitle(for: exercise)])
+                    announcedPart = currentExerciseIndex
                 }
-                try await perform(exercise)
+                try await perform(exercise, startLine: startLine)
+                try Task.checkCancellation()
                 nextExerciseIndex = currentExerciseIndex + 1
                 // A line taught or missed earlier comes back after at least one other exercise.
                 if !timeIsUp() {
@@ -346,7 +491,7 @@ public final class SessionRunner {
         return elapsed > Double(plan.minutes * 60) - reserve
     }
 
-    private func perform(_ exercise: PlannedExercise) async throws {
+    private func perform(_ exercise: PlannedExercise, startLine: Int?) async throws {
         switch exercise {
         case .listening(let id):
             if let item = library.item(id: id) { try await runListening(item) }
@@ -355,11 +500,11 @@ public final class SessionRunner {
         case .shadowing(let id):
             if let item = library.item(id: id) { try await runShadowing(item) }
         case .conversation(let id, let turns):
-            try await runConversation(scenarioID: id, maxTurns: turns)
+            try await runConversation(scenarioID: id, maxTurns: turns, startLine: startLine)
         }
     }
 
-    private func title(for exercise: PlannedExercise) -> String {
+    func title(for exercise: PlannedExercise) -> String {
         switch exercise {
         case .listening: "Listen and answer"
         case .recall: "Say it"

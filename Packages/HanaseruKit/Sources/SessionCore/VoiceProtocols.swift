@@ -45,6 +45,18 @@ public struct SpeechRequest: Equatable, Sendable {
     }
 }
 
+extension SpeechRequest {
+    /// The other person's line, in their voice.
+    static func partner(_ japanese: String, gender: VoiceGender?, rate: Double = 0.9) -> SpeechRequest {
+        SpeechRequest(text: japanese, language: .japanese, rate: rate, pauseAfter: 0.3, voice: .partner(gender))
+    }
+
+    /// A model of the learner's line, in the coach's Japanese voice.
+    static func model(_ japanese: String, rate: Double = 0.9) -> SpeechRequest {
+        SpeechRequest(text: japanese, language: .japanese, rate: rate, pauseAfter: 0.3, voice: .coachJapanese)
+    }
+}
+
 @MainActor
 public protocol SpeechSynthesisProvider: AnyObject {
     /// Speaks and returns when finished, or immediately when the calling task is cancelled.

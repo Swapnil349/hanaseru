@@ -194,20 +194,35 @@ extension SessionRunner {
         }
         var visible = ""
         var placeholder = ""
-        switch level {
-        case .model:
+        let shown = answerShown(at: level)
+        if shown {
             visible = line.japanese
-        case .guided:
+        } else if level == .guided {
             let start = guidedStart(line)
             visible = start.shown
             let hidden = max(1, JapaneseText.moraCount(line.kana) - JapaneseText.moraCount(start.shownKana))
             placeholder = String(repeating: "○", count: min(hidden, 12))
-        default:
-            break
+        }
+        var prompt: [SpeechRequest] = []
+        if let partner = line.partner {
+            prompt = [.partner(partner.japanese, gender: partner.gender)]
+        } else if let situation = line.situationEn {
+            prompt = [SpeechRequest(text: situation, language: .english)]
         }
         return FocusInfo(lineID: line.id, level: level, cueEn: cue, english: line.english, japanese: line.japanese,
                          kana: line.kana, visibleJapanese: visible, hiddenPlaceholder: placeholder,
                          partnerJapanese: line.partner?.japanese ?? "", partnerEnglish: line.partner?.english ?? "",
-                         partnerName: line.partner?.nameEn ?? "")
+                         partnerName: line.partner?.nameEn ?? "", answerShown: shown,
+                         promptAudio: prompt, answerAudio: [.model(line.japanese)])
+    }
+
+    /// Whether the whole Japanese of the learner's line is on screen before they say it. While a line is
+    /// being learned (S0–S2) reading it is part of the support those levels give, so it isn't counted as help.
+    func answerShown(at level: ScaffoldLevel) -> Bool {
+        switch options.answerDisplay {
+        case .whileLearning: level <= .cued
+        case .always: true
+        case .afterTurn: level == .model
+        }
     }
 }

@@ -94,7 +94,9 @@ final class SessionViewModel {
         let teachHelp = scene == nil && minutes >= 5 && !defaults.bool(forKey: SettingsKey.helpOnboardingDone)
         let options = SessionOptions(includeHelpOnboarding: teachHelp, sceneMode: scene?.mode ?? .automatic,
                                      sceneStartBeat: scene?.startBeat ?? 0,
-                                     briefIntro: scene != nil || defaults.integer(forKey: SettingsKey.completedSessions) >= 3)
+                                     briefIntro: scene != nil || defaults.integer(forKey: SettingsKey.completedSessions) >= 3,
+                                     answerDisplay: AnswerDisplay(rawValue: defaults.string(forKey: SettingsKey.answerDisplay) ?? "")
+                                         ?? .whileLearning)
         let runner = SessionRunner(plan: plan, library: library, voice: voice,
                                    ai: app.makeAIProvider(), repository: app.repository, options: options)
         runner.onEvent = { [weak self] event in self?.handle(event) }
@@ -136,7 +138,37 @@ final class SessionViewModel {
         runner?.skip()
     }
 
-    /// Help bar: ヒント, 答え, もう一度, ゆっくり, 英語で, スキップ.
+    /// ⏮ ⏭, and starting from a line of the script.
+    func move(_ move: SessionMove) {
+        runner?.move(move)
+    }
+
+    /// ↺: during the learner's turn, the question again (the turn goes on); otherwise this line from its start.
+    func again() {
+        if activity == .listening {
+            command(.repeatPrompt)
+        } else {
+            move(.again)
+        }
+    }
+
+    /// Plays lines on request (the speaker buttons and the script). The session pauses, so they can be heard
+    /// as often as needed; play carries on from the same line.
+    func listen(to requests: [SpeechRequest], slowly: Bool = false) {
+        let playing = slowly ? requests.map { request -> SpeechRequest in
+            var slower = request
+            if slower.language == .japanese { slower.rate = 0.7 }
+            return slower
+        } : requests
+        runner?.listen(to: playing)
+    }
+
+    /// The complete script of this session.
+    func script() -> [ScriptPart] {
+        runner?.script() ?? []
+    }
+
+    /// Help bar: ヒント, 答え, ゆっくり, 英語で, ちょっと待って.
     func command(_ command: VoiceCommand) {
         runner?.command(command)
     }
@@ -255,7 +287,7 @@ final class SessionViewModel {
             self.togglePause(reason: "headphone play")
         }
         remote.onSkip = { [weak self] in self?.answerAndNext() }
-        remote.onPrevious = { [weak self] in self?.command(.repeatPrompt) }
+        remote.onPrevious = { [weak self] in self?.again() }
         // A call or Siri pauses the session and it carries on by itself afterwards when iOS says so.
         // AirPods coming out pauses it until the learner presses play.
         app.voice.audioSession.onInterruption = { [weak self] event in

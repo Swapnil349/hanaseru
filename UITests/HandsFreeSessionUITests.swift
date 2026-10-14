@@ -19,6 +19,17 @@ final class HandsFreeSessionUITests: XCTestCase {
         XCTAssertTrue(yourTurn.waitForExistence(timeout: 90), "The learner's turn never came")
         screenshot(app, "02-your-turn")
 
+        // The script and pausing both keep the place in the session.
+        app.buttons["open-script"].tap()
+        XCTAssertTrue(app.buttons["script-done"].waitForExistence(timeout: 10), "The script didn't open")
+        screenshot(app, "02b-script")
+        app.buttons["script-done"].tap()
+        let pause = app.buttons["transport-pause"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 10))
+        pause.tap()
+        screenshot(app, "02c-paused")
+        pause.tap()
+
         let done = app.buttons["summary-done"]
         XCTAssertTrue(done.waitForExistence(timeout: 240), "The session never reached its summary")
         screenshot(app, "03-summary")
