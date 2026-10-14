@@ -9,6 +9,9 @@ name: iOS
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "android/**"
+      - ".github/workflows/android.yml"
   pull_request:
   workflow_dispatch:
 

@@ -19,3 +19,10 @@ Thumbs.db
 
 # Natural English voice clips, recorded in CI by tools/voice/build_clips.py
 App/EnglishVoice/
+
+# Android (built by .github/workflows/android.yml)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.kotlin/

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Two speech bubbles over the blue line of a Shinkansen. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#1C4E9B"
+        android:pathData="M30,34 h30 a8,8 0 0 1 8,8 v14 a8,8 0 0 1 -8,8 h-16 l-9,8 v-8 h-5 a8,8 0 0 1 -8,-8 v-14 a8,8 0 0 1 8,-8 z" />
+    <path
+        android:fillColor="#C98A00"
+        android:pathData="M56,48 h22 a7,7 0 0 1 7,7 v11 a7,7 0 0 1 -7,7 h-3 v7 l-8,-7 h-11 a7,7 0 0 1 -7,-7 v-11 a7,7 0 0 1 7,-7 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,46 h22 v4 h-22 z M34,53 h14 v4 h-14 z" />
+</vector>

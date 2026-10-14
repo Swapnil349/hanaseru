@@ -145,8 +145,16 @@ public enum Romaji {
                 index += 1
                 continue
             }
-            // The tokenizer read it differently: the kanji words up to the next kana or punctuation take the
-            // reading in between, as one word.
+            // A word ending in kana (特に, 近く) ends where that kana is in the reading.
+            let trailing = String(token.surface.reversed().prefix { !isKanji($0) }.reversed())
+            if !trailing.isEmpty, let found = find(trailing, from: position + 1) {
+                let end = found + trailing.count
+                words.append(Piece(kana: String(reading[position..<end]), surface: token.surface))
+                position = end
+                index += 1
+                continue
+            }
+            // Otherwise the kanji words up to the next kana or punctuation take the reading in between, as one word.
             var next = index + 1
             while next < tokens.count && tokens[next].hasKanji { next += 1 }
             let end: Int

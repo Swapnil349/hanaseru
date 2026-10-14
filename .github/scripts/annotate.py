@@ -11,8 +11,13 @@ import sys
 MAX_ANNOTATIONS = 10
 
 COMPILER = re.compile(r"^(?P<file>/\S+?\.swift):(?P<line>\d+):(?:(?P<col>\d+):)?\s*(?:fatal )?error:\s*(?P<msg>.+)$")
+# Kotlin 2: "e: file:///…/File.kt:12:5 Unresolved reference 'x'."; Android resources: "ERROR: /…/file.xml:3:5: …"
+KOTLIN = re.compile(r"^e: (?:file://)?(?P<file>/\S+?\.kts?):(?P<line>\d+):(?P<col>\d+) (?P<msg>.+)$")
+RESOURCE = re.compile(r"^ERROR: ?(?P<file>/\S+?\.xml):(?P<line>\d+):(?P<col>\d+): (?P<msg>.+)$")
+# JUnit through Gradle: "ContentTest > theSharedLessonsLoad FAILED" then the reason on the next line.
+JUNIT = re.compile(r"^(?P<name>\w+ > .+) FAILED$")
 SWIFT_TESTING = re.compile(r"✘ Test (?P<name>.+?) recorded an issue at (?P<file>\S+?\.swift):(?P<line>\d+):(?P<col>\d+):\s*(?P<msg>.+)$")
-GENERIC = re.compile(r"(error:|\*\* (BUILD|TEST|ARCHIVE) FAILED \*\*|Testing failed|✘ )")
+GENERIC = re.compile(r"(error:|\*\* (BUILD|TEST|ARCHIVE) FAILED \*\*|Testing failed|✘ |What went wrong|FAILED|Exception)")
 
 
 def escape(text: str) -> str:
@@ -26,9 +31,17 @@ def main() -> int:
     root = os.environ.get("GITHUB_WORKSPACE", os.getcwd())
     lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
     seen, emitted = set(), 0
-    for raw in lines:
+    for number, raw in enumerate(lines):
         line = raw.strip()
-        match = COMPILER.match(line) or SWIFT_TESTING.search(line)
+        junit = JUNIT.match(line)
+        if junit:
+            reason = lines[number + 1].strip() if number + 1 < len(lines) else ""
+            print(f"::error title={escape(title)}::{escape((junit.group('name') + ': ' + reason)[:400])}")
+            emitted += 1
+            if emitted >= MAX_ANNOTATIONS:
+                break
+            continue
+        match = COMPILER.match(line) or SWIFT_TESTING.search(line) or KOTLIN.match(line) or RESOURCE.match(line)
         if not match:
             continue
         file = match.group("file")
