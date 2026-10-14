@@ -71,11 +71,15 @@ public struct FocusInfo: Equatable, Sendable {
     /// What the speaker buttons play: the question (the partner's line, or the situation) and the answer.
     public var promptAudio: [SpeechRequest]
     public var answerAudio: [SpeechRequest]
+    /// The line in English letters, and the partner's line in kana (for its romaji).
+    public var romaji: String
+    public var partnerKana: String
 
     public init(lineID: String, level: ScaffoldLevel, cueEn: String, english: String, japanese: String, kana: String,
                 visibleJapanese: String, hiddenPlaceholder: String = "", partnerJapanese: String = "",
                 partnerEnglish: String = "", partnerName: String = "", heading: String = "", answerShown: Bool = false,
-                promptAudio: [SpeechRequest] = [], answerAudio: [SpeechRequest] = []) {
+                promptAudio: [SpeechRequest] = [], answerAudio: [SpeechRequest] = [], romaji: String = "",
+                partnerKana: String = "") {
         self.lineID = lineID
         self.level = level
         self.cueEn = cueEn
@@ -91,6 +95,8 @@ public struct FocusInfo: Equatable, Sendable {
         self.answerShown = answerShown || level == .model
         self.promptAudio = promptAudio
         self.answerAudio = answerAudio
+        self.romaji = romaji
+        self.partnerKana = partnerKana
     }
 }
 
@@ -105,9 +111,10 @@ public struct RevealInfo: Equatable, Sendable {
     public var matchedChunks: [String]
     public var missingChunks: [String]
     public var note: String
+    public var romaji: String
 
     public init(lineID: String, japanese: String, kana: String, english: String, heard: String, outcome: TurnOutcome,
-                matchedChunks: [String] = [], missingChunks: [String] = [], note: String = "") {
+                matchedChunks: [String] = [], missingChunks: [String] = [], note: String = "", romaji: String = "") {
         self.lineID = lineID
         self.japanese = japanese
         self.kana = kana
@@ -117,6 +124,37 @@ public struct RevealInfo: Equatable, Sendable {
         self.matchedChunks = matchedChunks
         self.missingChunks = missingChunks
         self.note = note
+        self.romaji = romaji
+    }
+}
+
+/// The scrubber over a scene: for every line of every step, a stop at its question and one at its answer.
+public struct SessionTimeline: Equatable, Sendable {
+    public struct Stop: Equatable, Sendable {
+        /// "Listen", "Practise" or "Conversation"; "Start" and "End" around them.
+        public var step: String
+        /// The line's number in the scene (1 = the first), for stops at a line.
+        public var line: Int?
+        /// The learner's line (otherwise the question: the other person's line).
+        public var isAnswer: Bool
+        /// What is heard there.
+        public var japanese: String
+
+        public init(step: String, line: Int?, isAnswer: Bool, japanese: String) {
+            self.step = step
+            self.line = line
+            self.isAnswer = isAnswer
+            self.japanese = japanese
+        }
+    }
+
+    public var stops: [Stop]
+    /// The stop being played.
+    public var position: Int
+
+    public init(stops: [Stop], position: Int) {
+        self.stops = stops
+        self.position = position
     }
 }
 
@@ -148,6 +186,8 @@ public enum SessionEvent: Equatable, Sendable {
     case turnWindow(seconds: Double, nudgeAt: Double)
     /// Where the learner is inside the current part, e.g. "Step 2 of 3 · Practise your lines". Empty clears it.
     case step(String)
+    /// Where the session is in the scene being played, for the scrubber; nil outside a scene.
+    case timeline(SessionTimeline?)
     case finished(SessionSummary)
 }
 

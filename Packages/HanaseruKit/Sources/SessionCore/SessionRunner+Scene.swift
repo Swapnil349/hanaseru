@@ -3,7 +3,8 @@ import LearningCore
 import ConversationCore
 
 /// A scene broken into segments, one per line and step, so that pause, ⏮, ↺ and ⏭ work one line at a
-/// time and a paused scene carries on from the same line instead of starting again.
+/// time and a paused scene carries on from the same line instead of starting again. The scrubber has two
+/// stops per segment: its question and its answer.
 struct SceneState {
     enum Segment: Equatable {
         /// The scene's title (in a full lesson also the situation and the three steps).
@@ -18,6 +19,12 @@ struct SceneState {
         case ending
     }
 
+    /// Where a stop of the scrubber plays from.
+    struct StopTarget {
+        var segment: Int
+        var answer: Bool
+    }
+
     let scenario: Scenario
     let persona: Persona
     /// The learner's lines being practised, from `start` on.
@@ -27,6 +34,8 @@ struct SceneState {
     /// Resolved once (never `.automatic`), so a resumed scene keeps its steps.
     let mode: SceneMode
     let segments: [Segment]
+    let stops: [SessionTimeline.Stop]
+    let targets: [StopTarget]
     /// How the learner's last answer in the conversation went: the partner reacts to a good one.
     var lastOutcome: TurnOutcome?
 
@@ -46,6 +55,45 @@ struct SceneState {
         segments += lines.indices.map { Segment.perform($0) }
         segments.append(.ending)
         self.segments = segments
+
+        var stops: [SessionTimeline.Stop] = []
+        var targets: [StopTarget] = []
+        for (position, segment) in segments.enumerated() {
+            switch segment {
+            case .intro:
+                stops.append(SessionTimeline.Stop(step: "Start", line: nil, isAnswer: false, japanese: scenario.titleJa))
+                targets.append(StopTarget(segment: position, answer: false))
+            case .listen(let index), .practise(let index), .perform(let index):
+                let line = lines[index]
+                let step = Self.stepName(segment)
+                stops.append(SessionTimeline.Stop(step: step, line: start + index + 1, isAnswer: false,
+                                                  japanese: line.partner?.japanese ?? ""))
+                targets.append(StopTarget(segment: position, answer: false))
+                stops.append(SessionTimeline.Stop(step: step, line: start + index + 1, isAnswer: true, japanese: line.japanese))
+                targets.append(StopTarget(segment: position, answer: true))
+            case .ending:
+                stops.append(SessionTimeline.Stop(step: "End", line: nil, isAnswer: false, japanese: scenario.closingLine))
+                targets.append(StopTarget(segment: position, answer: false))
+            }
+        }
+        self.stops = stops
+        self.targets = targets
+    }
+
+    static func stepName(_ segment: Segment) -> String {
+        switch segment {
+        case .intro: "Start"
+        case .listen: "Listen"
+        case .practise: "Practise"
+        case .perform: "Conversation"
+        case .ending: "End"
+        }
+    }
+
+    /// The scrubber stop for a segment, at its question or its answer.
+    func stop(segment: Int, answer: Bool) -> Int {
+        targets.firstIndex { $0.segment == segment && $0.answer == answer }
+            ?? targets.firstIndex { $0.segment == segment } ?? 0
     }
 
     /// The segment for a line of the scene (`line` counts from the scene's first line): in the step being
@@ -80,10 +128,11 @@ extension SessionRunner {
             if !scenarioIDs.contains(state.scenario.id) { scenarioIDs.append(state.scenario.id) }
         }
         while let state = sceneState, cursor < state.segments.count {
-            try await playSegment(state.segments[cursor], of: state)
+            try await playSegment(state.segments[cursor], of: state, fromAnswer: answerFirst)
             // A move made while the segment was ending has already set the place.
             try Task.checkCancellation()
             cursor += 1
+            answerFirst = false
         }
     }
 
@@ -102,8 +151,16 @@ extension SessionRunner {
         return SceneState(scenario: scenario, persona: persona, lines: lines, start: start, mode: mode)
     }
 
-    private func playSegment(_ segment: SceneState.Segment, of state: SceneState) async throws {
+    /// Moves the scrubber to the segment being played, at its question or its answer.
+    private func showPlace(answer: Bool) {
+        guard let state = sceneState else { return }
+        emit(.timeline(SessionTimeline(stops: state.stops, position: state.stop(segment: cursor, answer: answer))))
+    }
+
+    /// `fromAnswer`: chosen on the scrubber — skip the question and go straight to the learner's line.
+    private func playSegment(_ segment: SceneState.Segment, of state: SceneState, fromAnswer: Bool) async throws {
         let full = state.mode == .fullLesson
+        showPlace(answer: fromAnswer)
         switch segment {
         case .intro:
             emit(.line(ScriptLine(role: .instruction, japanese: state.scenario.titleJa, english: state.scenario.situationEn)))
@@ -118,11 +175,14 @@ extension SessionRunner {
             let line = state.lines[index]
             emit(.step("Step 1 of 3 · Listen to the conversation"))
             emit(.focus(focusInfo(line, level: .model)))
-            if index == 0 { try await coach(.listenFirst) }
-            if let partner = line.partner {
-                try await partnerSays(partner, rate: 0.9)
-                try await speak(partner.english, .english, pauseAfter: 0.3)
+            if !fromAnswer {
+                if index == 0 { try await coach(.listenFirst) }
+                if let partner = line.partner {
+                    try await partnerSays(partner, rate: 0.9)
+                    try await speak(partner.english, .english, pauseAfter: 0.3)
+                }
             }
+            showPlace(answer: true)
             if index == 0 && state.start == 0 && state.scenario.roleReversal {
                 try await coach(.youStart, ["english": line.english])
             } else {
@@ -136,8 +196,11 @@ extension SessionRunner {
             let line = state.lines[index]
             emit(.step(full ? "Step 2 of 3 · Practise your lines" : "Practise your lines"))
             emit(.focus(focusInfo(line, level: .model)))
-            if index == 0 { try await coach(full ? .rehearseStart : .rehearseShort) }
-            if let partner = line.partner { try await partnerSays(partner, rate: 0.9) }
+            if !fromAnswer {
+                if index == 0 { try await coach(full ? .rehearseStart : .rehearseShort) }
+                if let partner = line.partner { try await partnerSays(partner, rate: 0.9) }
+            }
+            showPlace(answer: true)
             try await coach(.youSay, ["english": line.english])
             try await sayModel(line, rate: 0.85)
             _ = try await runEcho(line, window: 5, silentNote: false)
@@ -151,6 +214,17 @@ extension SessionRunner {
             let stored = await entryLevel(for: line)
             let level: ScaffoldLevel = full ? .cued : max(.cued, stored ?? .cued)
             emit(.focus(focusInfo(line, level: level)))
+            if fromAnswer {
+                // Straight to the answer: hear it and say it once. Nothing is asked, so nothing is graded.
+                emit(.reveal(RevealInfo(lineID: line.id, japanese: line.japanese, kana: line.kana, english: line.english,
+                                        heard: "", outcome: .skipped, romaji: line.romaji)))
+                try await coach(.youCouldSay)
+                try await sayModel(line, rate: 0.85)
+                _ = try await runEcho(line, window: 5, silentNote: false)
+                exposed.insert(line.id)
+                sceneState?.lastOutcome = nil
+                return
+            }
             if index == 0 {
                 let youStart = state.lines.first?.partner == nil
                 if full {
@@ -167,6 +241,7 @@ extension SessionRunner {
                 }
                 try await partnerSays(partner, rate: rate, prefix: prefix)
             }
+            showPlace(answer: true)
             var outcome: TurnOutcome?
             if stored == nil && !exposed.contains(line.id) {
                 // Never practised and the lesson was skipped: teach it here rather than ask for it.

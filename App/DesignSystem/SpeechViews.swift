@@ -15,6 +15,8 @@ struct JapaneseTextView: View {
     @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
 
     private var intensity: KanjiIntensity { KanjiIntensity(rawValue: intensityRaw) ?? .minimal }
+    /// The content's romaji, or one made from the kana.
+    private var reading: String { romaji.isEmpty ? Romaji.of(japanese, kana: kana) : romaji }
     private var hasDistinctKana: Bool { !kana.isEmpty && JapaneseText.normalize(kana) != JapaneseText.normalize(japanese) }
 
     var body: some View {
@@ -29,8 +31,11 @@ struct JapaneseTextView: View {
                 primary(japanese)
                 if hasDistinctKana { secondary(kana) }
             }
-            if showRomaji && !romaji.isEmpty {
-                Text(romaji).font(.callout.italic()).foregroundStyle(Palette.inkSecondary)
+            if showRomaji {
+                let letters = reading
+                if !letters.isEmpty {
+                    Text(letters).font(.callout.italic()).foregroundStyle(Palette.inkSecondary)
+                }
             }
             if showEnglish && !english.isEmpty {
                 Text(english).font(.callout).foregroundStyle(Palette.inkSecondary)
@@ -223,6 +228,87 @@ struct AudioControl: View {
         .foregroundStyle(Palette.ink)
         .accessibilityLabel("\(title), \(japanese)")
         .accessibilityIdentifier(id)
+    }
+}
+
+/// The scrubber over a scene: drag to any line of any step — its question, or straight to its answer — and the
+/// session plays from there.
+struct TimelineScrubber: View {
+    let timeline: SessionTimeline
+    let onSeek: (Int) -> Void
+    @State private var dragging: Double?
+
+    private var lastIndex: Int { max(1, timeline.stops.count - 1) }
+
+    private var shownIndex: Int {
+        let value = dragging.map { Int($0.rounded()) } ?? timeline.position
+        return min(max(0, value), timeline.stops.count - 1)
+    }
+
+    var body: some View {
+        let stop = timeline.stops[shownIndex]
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(title(stop))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Palette.line)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if dragging != nil {
+                    Text(stop.japanese).font(.caption).foregroundStyle(Palette.inkSecondary).lineLimit(1)
+                } else if !stop.isAnswer && stop.line != nil && shownIndex + 1 < timeline.stops.count {
+                    Button { onSeek(shownIndex + 1) } label: {
+                        Label("Go to the answer", systemImage: "arrow.right.to.line")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.borderless)
+                    .accessibilityIdentifier("timeline-answer")
+                }
+            }
+            Slider(value: Binding(get: { dragging ?? Double(timeline.position) }, set: { dragging = $0 }),
+                   in: 0...Double(lastIndex), step: 1,
+                   onEditingChanged: { editing in
+                       guard !editing, let value = dragging else { return }
+                       dragging = nil
+                       onSeek(Int(value.rounded()))
+                   })
+                .accessibilityLabel("Place in the conversation")
+                .accessibilityValue(title(stop))
+                .accessibilityIdentifier("timeline")
+            steps
+        }
+    }
+
+    private func title(_ stop: SessionTimeline.Stop) -> String {
+        guard let line = stop.line else { return stop.step }
+        return "\(stop.step) · line \(line) · " + (stop.isAnswer ? "your answer" : "question")
+    }
+
+    /// The steps under the bar, each as wide as its share of the stops.
+    private var steps: some View {
+        var groups: [(name: String, count: Int)] = []
+        for stop in timeline.stops {
+            if let last = groups.last, last.name == stop.step {
+                groups[groups.count - 1].count += 1
+            } else {
+                groups.append((stop.step, 1))
+            }
+        }
+        let total = max(1, timeline.stops.count)
+        return GeometryReader { geometry in
+            HStack(spacing: 0) {
+                ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
+                    Text(group.count > 1 ? group.name : "")
+                        .font(.caption2)
+                        .foregroundStyle(Palette.inkSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(width: geometry.size.width * CGFloat(group.count) / CGFloat(total), alignment: .center)
+                }
+            }
+        }
+        .frame(height: 14)
+        .accessibilityHidden(true)
     }
 }
 

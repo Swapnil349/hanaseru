@@ -55,7 +55,7 @@ struct SettingsView: View {
                     Picker("Kanji", selection: $kanjiIntensity) {
                         ForEach(KanjiIntensity.allCases) { Text($0.title).tag($0.rawValue) }
                     }
-                    Toggle("Show romaji", isOn: $showRomaji)
+                    Toggle("Japanese in English letters (romaji)", isOn: $showRomaji)
                     Toggle("Show English on screen", isOn: $showEnglish)
                     Picker("Your line in Japanese", selection: $answerDisplay) {
                         ForEach(AnswerDisplay.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }

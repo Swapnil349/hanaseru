@@ -45,6 +45,8 @@ final class SessionViewModel {
     private(set) var listenStartedAt = Date()
     /// The line whose hidden Japanese the learner tapped to see (it counts as help for that turn).
     private(set) var peekedLineID: String?
+    /// Where the session is in the scene being played (the scrubber); nil outside a scene.
+    private(set) var timeline: SessionTimeline?
 
     private let app: AppEnvironment
     private var runner: SessionRunner?
@@ -255,6 +257,8 @@ final class SessionViewModel {
         case .turnWindow(let seconds, _):
             thinkSeconds = seconds
             listenStartedAt = Date()
+        case .timeline(let place):
+            timeline = place
         case .step(let title):
             stepTitle = title
             if !title.isEmpty { VoiceLog.add("step: \(title)") }

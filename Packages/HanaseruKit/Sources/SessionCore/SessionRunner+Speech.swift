@@ -213,7 +213,8 @@ extension SessionRunner {
                          kana: line.kana, visibleJapanese: visible, hiddenPlaceholder: placeholder,
                          partnerJapanese: line.partner?.japanese ?? "", partnerEnglish: line.partner?.english ?? "",
                          partnerName: line.partner?.nameEn ?? "", answerShown: shown,
-                         promptAudio: prompt, answerAudio: [.model(line.japanese)])
+                         promptAudio: prompt, answerAudio: [.model(line.japanese)], romaji: line.romaji,
+                         partnerKana: line.partner?.kana ?? "")
     }
 
     /// Whether the whole Japanese of the learner's line is on screen before they say it. While a line is

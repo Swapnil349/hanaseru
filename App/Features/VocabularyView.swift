@@ -2,7 +2,8 @@ import LearningCore
 import SwiftData
 import SwiftUI
 
-/// "My vocabulary": every word, phrase and line practised so far, to go back to at any time.
+/// "My vocabulary": every word, phrase and line practised so far — in every session and scene, ever — to go
+/// back to at any time.
 struct VocabularyView: View {
     enum Segment: String, CaseIterable, Identifiable {
         case words = "Words"
@@ -13,8 +14,10 @@ struct VocabularyView: View {
     @Environment(AppEnvironment.self) private var app
     @Query private var knowledge: [KnowledgeRecord]
     @Query private var profiles: [LearnerProfileRecord]
+    @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
     @State private var segment = Segment.words
     @State private var showAllWords = false
+    @State private var query = ""
 
     private var practised: Set<String> { Set(knowledge.map(\.itemID)) }
 
@@ -46,6 +49,17 @@ struct VocabularyView: View {
         return terms.values.sorted { $0.kana < $1.kana }.map { ($0, sources[$0.id] ?? []) }
     }
 
+    private func romaji(_ term: VocabularyTerm) -> String {
+        term.romaji.isEmpty ? Romaji.of(term.japanese, kana: term.kana) : term.romaji
+    }
+
+    /// Search matches the Japanese, the kana, the romaji (with or without long-vowel marks) or the English.
+    private func matches(_ texts: [String]) -> Bool {
+        let wanted = query.trimmingCharacters(in: .whitespaces)
+        guard !wanted.isEmpty else { return true }
+        return texts.contains { $0.range(of: wanted, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+    }
+
     var body: some View {
         List {
             Picker("Show", selection: $segment) {
@@ -61,14 +75,28 @@ struct VocabularyView: View {
             }
         }
         .navigationTitle("My vocabulary")
+        .searchable(text: $query, prompt: "Japanese, romaji or English")
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Toggle(isOn: $showRomaji) { Text("Romaji") }
+                    .toggleStyle(.button)
+                ShareLink(item: listText(), subject: Text("My Japanese vocabulary")) {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+            }
+        }
     }
 
     @ViewBuilder
     private var wordRows: some View {
-        let met = words
+        let met = words.filter { matches([$0.term.japanese, $0.term.kana, romaji($0.term), $0.term.english]) }
         if met.isEmpty {
-            ContentUnavailableView("No words yet", systemImage: "character.book.closed.ja",
-                                   description: Text("Words from the phrases and scenes you practise collect here."))
+            if query.isEmpty {
+                ContentUnavailableView("No words yet", systemImage: "character.book.closed.ja",
+                                       description: Text("Words from the phrases and scenes you practise collect here."))
+            } else {
+                ContentUnavailableView.search(text: query)
+            }
         } else {
             Section {
                 ForEach(met, id: \.term.id) { entry in
@@ -77,14 +105,15 @@ struct VocabularyView: View {
             } header: {
                 Text("\(met.count) words met so far")
             } footer: {
-                Text("Tap a word to hear it.")
+                Text("Every word from the scenes and phrases you have practised, in every session. Tap a word to hear it.")
             }
         }
         Section {
             Toggle("Show every word in the course", isOn: $showAllWords)
             if showAllWords {
-                let metIDs = Set(met.map(\.term.id))
-                ForEach(app.library.vocabulary.filter { !metIDs.contains($0.id) }.sorted { $0.kana < $1.kana }) { term in
+                let metIDs = Set(words.map(\.term.id))
+                ForEach(app.library.vocabulary.filter { !metIDs.contains($0.id) && matches([$0.japanese, $0.kana, romaji($0), $0.english]) }
+                    .sorted { $0.kana < $1.kana }) { term in
                     WordRow(term: term, detail: "Not met yet")
                 }
             }
@@ -93,37 +122,49 @@ struct VocabularyView: View {
 
     @ViewBuilder
     private var lineRows: some View {
-        let items = practisedItems
+        let items = practisedItems.filter { matches([$0.japanese, $0.kana, $0.romaji, $0.english]) }
         let scenes = practisedScenes
-        if items.isEmpty && scenes.isEmpty {
+        if practisedItems.isEmpty && scenes.isEmpty {
             ContentUnavailableView("Nothing practised yet", systemImage: "text.bubble",
                                    description: Text("Phrases and scene lines you practise collect here."))
         }
         if !items.isEmpty {
             Section("Phrases (\(items.count))") {
                 ForEach(items) { item in
-                    lineRow(item.japanese, item.english)
+                    lineRow(item.japanese, kana: item.kana, romaji: item.romaji, english: item.english)
                 }
             }
         }
         ForEach(scenes) { scenario in
             let lines = app.library.lines(in: scenario, learnerName: profiles.first?.name ?? "")
-                .filter { practised.contains($0.id) }
-            Section(scenario.title) {
-                ForEach(lines) { line in
-                    lineRow(line.japanese, line.english)
+                .filter { practised.contains($0.id) && matches([$0.japanese, $0.kana, $0.romaji, $0.english]) }
+            if !lines.isEmpty {
+                Section(scenario.title) {
+                    ForEach(lines) { line in
+                        lineRow(line.japanese, kana: line.kana, romaji: line.romaji, english: line.english)
+                    }
                 }
             }
         }
     }
 
-    private func lineRow(_ japanese: String, _ english: String) -> some View {
+    private func lineRow(_ japanese: String, kana: String, romaji: String, english: String) -> some View {
         Button { SayJapanese.play(japanese) } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(japanese).font(.body).foregroundStyle(Palette.ink)
-                Text(english).font(.caption).foregroundStyle(Palette.inkSecondary)
-            }
+            JapaneseTextView(japanese: japanese, kana: kana, romaji: romaji, english: english, style: .body)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
+    }
+
+    /// The word list as text, to share or keep.
+    private func listText() -> String {
+        var lines = ["My Japanese vocabulary", ""]
+        for entry in words {
+            var line = entry.term.japanese
+            if entry.term.kana != entry.term.japanese { line += " (\(entry.term.kana))" }
+            line += " — " + romaji(entry.term) + " — " + entry.term.english
+            lines.append(line)
+        }
+        return lines.joined(separator: "\n") + "\n"
     }
 }

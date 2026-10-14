@@ -113,6 +113,45 @@ struct NavigationTests {
         #expect(summary.conversationTurns == lines.count)
     }
 
+    @Test func theScrubberGoesStraightToAnAnswer() async throws {
+        let (harness, lines, _) = try await scene()
+        harness.runner.start()
+        try await waitUntil { harness.recognizer.listenCount > 0 }
+        let places = harness.events.compactMap { event -> SessionTimeline? in
+            if case .timeline(let place?) = event { return place }
+            return nil
+        }
+        let timeline = try #require(places.last)
+        // A stop at the start, at each line's question and answer, and at the end.
+        #expect(timeline.stops.count == 2 + 2 * lines.count)
+        // The learner's turn on the first line is its answer stop.
+        #expect(timeline.stops[timeline.position].isAnswer)
+        #expect(timeline.stops[timeline.position].line == 1)
+        // The second line's answer: its question is skipped, the answer is heard, nothing is graded.
+        harness.runner.move(.seek(4))
+        let summary = try await finish(harness)
+        #expect(harness.synthesizer.count(partner(lines[1])) == 0)
+        #expect(harness.synthesizer.count(lines[1].japanese) >= 1)
+        #expect(summary.conversationTurns == lines.count - 2)
+        #expect(!summary.results.contains { $0.lineID == lines[1].id })
+    }
+
+    @Test func theScriptCanBeWrittenOutInThreeWays() throws {
+        let library = try ContentLibrary.bundled()
+        let scenario = try #require(library.scenario(id: "s.weekend.chat"))
+        let lines = library.lines(in: scenario, learnerName: "")
+        let text = ScriptPart.text(of: [library.script(of: scenario, learnerName: "")])
+        for line in lines {
+            #expect(text.contains(line.japanese))
+            #expect(text.contains(line.romaji))
+            #expect(text.contains(line.english))
+            if let partner = line.partner {
+                #expect(text.contains(partner.japanese))
+                #expect(text.contains(partner.romaji))
+            }
+        }
+    }
+
     // MARK: - The answer on screen
 
     func focus(at level: ScaffoldLevel, _ harness: Harness) -> FocusInfo? {

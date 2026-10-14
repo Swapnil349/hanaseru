@@ -20,6 +20,21 @@ struct MyJapaneseView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    NavigationLink { VocabularyView() } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("My vocabulary").font(.headline)
+                                Text("Every word and line from all your practice so far").font(.footnote)
+                                    .foregroundStyle(Palette.inkSecondary)
+                            }
+                        } icon: {
+                            Image(systemName: "character.book.closed.ja").foregroundStyle(Palette.line)
+                        }
+                    }
+                    .accessibilityIdentifier("my-vocabulary")
+                }
+
                 Picker("Show", selection: $segment) {
                     ForEach(Segment.allCases) { Text($0.rawValue).tag($0) }
                 }

@@ -435,6 +435,8 @@ public struct VocabularyTerm: Codable, Identifiable, Hashable, Sendable {
     public var level: Int
     public var note: String?
     public var example: VocabularyExample?
+    /// Other ways the word appears in lines (conjugated forms, short kana words), for the word lists.
+    public var forms: [String]?
 }
 
 public struct GrammarPattern: Codable, Identifiable, Hashable, Sendable {

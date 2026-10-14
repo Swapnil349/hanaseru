@@ -351,7 +351,7 @@ extension SessionRunner {
         }
         emit(.reveal(RevealInfo(lineID: line.id, japanese: line.japanese, kana: line.kana, english: line.english,
                                 heard: transcript, outcome: outcome, matchedChunks: matched, missingChunks: missing,
-                                note: note)))
+                                note: note, romaji: line.romaji)))
         emit(.feedback(FeedbackNote(verdict: outcome.legacyVerdict, headline: headline(outcome, matched: matched),
                                     detail: note, suggestion: line.japanese, heard: transcript)))
 

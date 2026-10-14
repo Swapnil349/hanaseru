@@ -12,15 +12,20 @@ public extension ContentLibrary {
         return terms(ids: scenario.targetTerms, appearingIn: text.joined(separator: " "))
     }
 
-    /// The words used in a phrase item.
+    /// The words used in a phrase item and the line before it.
     func vocabulary(in item: LearningItem) -> [VocabularyTerm] {
-        terms(ids: item.terms, appearingIn: item.japanese)
+        terms(ids: item.terms, appearingIn: [item.japanese, item.partner?.japanese ?? ""].joined(separator: " "))
     }
 
     private func terms(ids: [String], appearingIn text: String) -> [VocabularyTerm] {
         var result = ids.compactMap { term(id: $0) }
         for candidate in vocabulary where !result.contains(where: { $0.id == candidate.id }) {
-            // Kanji spellings only (or kana-only words of 3+ characters): short kana would match inside other words.
+            // Listed forms always count (verbs as conjugated, short kana words); otherwise kanji spellings, or
+            // kana-only words of 3+ characters: short kana would match inside other words.
+            if let forms = candidate.forms, forms.contains(where: { !$0.isEmpty && text.contains($0) }) {
+                result.append(candidate)
+                continue
+            }
             let form = candidate.japanese
             let isKanaOnly = form == candidate.kana
             guard !form.isEmpty, !isKanaOnly || form.count >= 3 else { continue }

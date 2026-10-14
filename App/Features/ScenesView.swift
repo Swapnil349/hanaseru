@@ -201,6 +201,7 @@ struct SceneDetailView: View {
 struct WordRow: View {
     let term: VocabularyTerm
     var detail: String = ""
+    @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
 
     var body: some View {
         Button { SayJapanese.play(term.japanese) } label: {
@@ -209,6 +210,10 @@ struct WordRow: View {
                     Text(term.japanese).font(.body.weight(.medium)).foregroundStyle(Palette.ink)
                     if term.kana != term.japanese {
                         Text(term.kana).font(.caption).foregroundStyle(Palette.inkSecondary)
+                    }
+                    if showRomaji {
+                        Text(term.romaji.isEmpty ? Romaji.of(term.japanese, kana: term.kana) : term.romaji)
+                            .font(.caption.italic()).foregroundStyle(Palette.inkSecondary)
                     }
                 }
                 Spacer()

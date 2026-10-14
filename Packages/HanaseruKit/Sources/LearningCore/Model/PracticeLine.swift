@@ -11,6 +11,9 @@ public struct PracticePartner: Hashable, Sendable {
     /// Persona speaking-rate multiplier.
     public var speakingRate: Double
 
+    /// The line in English letters.
+    public var romaji: String { Romaji.of(japanese, kana: kana) }
+
     public init(japanese: String, kana: String, english: String, nameJa: String, nameEn: String,
                 gender: VoiceGender?, speakingRate: Double) {
         self.japanese = japanese
@@ -51,11 +54,13 @@ public struct PracticeLine: Hashable, Sendable, Identifiable {
     public var choiceVariant: ModelLine?
     /// Set when the line is a phrase item.
     public var itemID: String?
+    /// Romaji written in the content, when there is some.
+    public var authoredRomaji: String
 
     public init(id: String, japanese: String, kana: String, english: String, chunks: [Chunk], noteEn: String? = nil,
                 level: Int, cueEn: String, intentEn: String, situationEn: String? = nil, partner: PracticePartner? = nil,
                 references: [String], keyTerms: [KeyTermGroup], mistakes: [MistakePattern], politeness: Politeness,
-                choiceVariant: ModelLine? = nil, itemID: String? = nil) {
+                choiceVariant: ModelLine? = nil, itemID: String? = nil, romaji: String = "") {
         self.id = id
         self.japanese = japanese
         self.kana = kana
@@ -73,7 +78,11 @@ public struct PracticeLine: Hashable, Sendable, Identifiable {
         self.politeness = politeness
         self.choiceVariant = choiceVariant
         self.itemID = itemID
+        self.authoredRomaji = romaji
     }
+
+    /// The line in English letters (the content's own, or made from the kana).
+    public var romaji: String { authoredRomaji.isEmpty ? Romaji.of(japanese, kana: kana) : authoredRomaji }
 
     /// Questions are cued with "Ask:", everything else with "Say:".
     public var isQuestion: Bool { PracticeLine.isQuestion(japanese) }
@@ -128,7 +137,7 @@ public extension ContentLibrary {
             noteEn: item.noteEn, level: item.level, cueEn: cue, intentEn: item.intentEn ?? cue,
             situationEn: item.situationEn, partner: partner, references: item.referenceResponses,
             keyTerms: item.keyTerms, mistakes: item.commonMistakes + CommonMistakes.general,
-            politeness: item.politeness, itemID: item.id
+            politeness: item.politeness, itemID: item.id, romaji: item.romaji
         )
     }
 

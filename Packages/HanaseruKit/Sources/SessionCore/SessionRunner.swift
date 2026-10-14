@@ -35,6 +35,8 @@ public enum SessionMove: Equatable, Sendable {
     case next
     /// A part of the session and, in a scene, one of its lines (counted from the scene's first line).
     case to(part: Int, line: Int?)
+    /// A stop of the scene's timeline (the scrubber): a line's question, or straight to its answer.
+    case seek(Int)
 }
 
 /// Options decided by the app for one session.
@@ -155,6 +157,8 @@ public final class SessionRunner {
     var userChosePart = false
     /// A line coming back was paused or replayed: it plays before anything else.
     var interruptedRecall = false
+    /// The scene segment being played starts at its answer (chosen on the scrubber).
+    var answerFirst = false
 
     // Teaching state.
     /// Lines whose English and Japanese have both been spoken this session (the exposure ledger).
@@ -244,6 +248,7 @@ public final class SessionRunner {
     public func move(_ move: SessionMove) {
         guard started, !isFinished else { return }
         replayingCurrent = false
+        answerFirst = false
         sceneState?.lastOutcome = nil
         switch move {
         case .again:
@@ -285,6 +290,10 @@ public final class SessionRunner {
                 cursorPart = -1
                 userChosePart = true
             }
+        case .seek(let stop):
+            guard stage == .exercise, let state = sceneState, state.targets.indices.contains(stop) else { return }
+            cursor = state.targets[stop].segment
+            answerFirst = state.targets[stop].answer
         }
         restart()
     }
@@ -449,6 +458,7 @@ public final class SessionRunner {
                     startLine = pendingLine
                 }
                 pendingLine = nil
+                emit(.timeline(nil))
                 let exercise = plan.exercises[currentExerciseIndex]
                 emit(.exerciseStarted(index: currentExerciseIndex, total: plan.exercises.count,
                                       kind: exercise.kind, title: title(for: exercise)))

@@ -35,6 +35,8 @@ public struct ScriptEntry: Identifiable, Equatable, Sendable {
     public var speaker: Speaker
     public var japanese: String
     public var kana: String
+    /// In English letters.
+    public var romaji: String
     public var english: String
     public var audio: [SpeechRequest]
     /// The practice line it belongs to, to show where the session is.
@@ -42,12 +44,13 @@ public struct ScriptEntry: Identifiable, Equatable, Sendable {
     /// The learner's lines in a scene: the line's place in the scene, to practise from there.
     public var startLine: Int?
 
-    public init(id: String, speaker: Speaker, japanese: String, kana: String, english: String,
+    public init(id: String, speaker: Speaker, japanese: String, kana: String, romaji: String? = nil, english: String,
                 audio: [SpeechRequest], lineID: String? = nil, startLine: Int? = nil) {
         self.id = id
         self.speaker = speaker
         self.japanese = japanese
         self.kana = kana
+        self.romaji = romaji ?? Romaji.of(japanese, kana: kana)
         self.english = english
         self.audio = audio
         self.lineID = lineID
@@ -55,6 +58,32 @@ public struct ScriptEntry: Identifiable, Equatable, Sendable {
     }
 
     public var isLearner: Bool { speaker == .learner }
+}
+
+public extension ScriptPart {
+    /// The whole script as text in three ways — Japanese (with its kana), English letters and English — to
+    /// share, print or keep.
+    static func text(of parts: [ScriptPart]) -> String {
+        var blocks: [String] = []
+        for part in parts {
+            var block = [part.title]
+            if !part.situation.isEmpty { block.append(part.situation) }
+            for entry in part.entries {
+                let speaker: String = switch entry.speaker {
+                case .partner(let name): name.isEmpty ? "Colleague" : name
+                case .learner: "You"
+                case .narrator: "Listen"
+                }
+                var lines = ["", speaker + ":", "  " + entry.japanese]
+                if !entry.kana.isEmpty && entry.kana != entry.japanese { lines.append("  " + entry.kana) }
+                if !entry.romaji.isEmpty { lines.append("  " + entry.romaji) }
+                if !entry.english.isEmpty { lines.append("  " + entry.english) }
+                block.append(contentsOf: lines)
+            }
+            blocks.append(block.joined(separator: "\n"))
+        }
+        return blocks.joined(separator: "\n\n\n") + "\n"
+    }
 }
 
 public extension ContentLibrary {
@@ -71,8 +100,8 @@ public extension ContentLibrary {
             }
             let canStart = startable.map { $0.contains(position) } ?? true
             entries.append(ScriptEntry(id: "\(index)|\(line.id)", speaker: .learner, japanese: line.japanese, kana: line.kana,
-                                       english: line.english, audio: [.model(line.japanese)], lineID: line.id,
-                                       startLine: canStart ? position : nil))
+                                       romaji: line.romaji, english: line.english, audio: [.model(line.japanese)],
+                                       lineID: line.id, startLine: canStart ? position : nil))
         }
         if !scenario.closingLine.isEmpty {
             let gender = persona(id: scenario.personaID)?.voiceGender
@@ -113,13 +142,15 @@ extension SessionRunner {
                                            audio: [.partner(partner.japanese, gender: partner.gender)], lineID: line.id))
             }
             entries.append(ScriptEntry(id: "\(index)|\(line.id)", speaker: .learner, japanese: line.japanese, kana: line.kana,
-                                       english: line.english, audio: [.model(line.japanese)], lineID: line.id))
+                                       romaji: line.romaji, english: line.english, audio: [.model(line.japanese)],
+                                       lineID: line.id))
             return ScriptPart(index: index, title: title(for: exercise), situation: line.situationEn ?? "", entries: entries)
         case .listening(let id):
             guard let item = library.item(id: id) else { return nil }
             let gender = library.practiceLine(item: item).partner?.gender
             var entries = [ScriptEntry(id: "\(index)|\(item.id)", speaker: .narrator, japanese: item.japanese, kana: item.kana,
-                                       english: item.english, audio: [.partner(item.japanese, gender: gender)], lineID: item.id)]
+                                       romaji: item.romaji.isEmpty ? nil : item.romaji, english: item.english,
+                                       audio: [.partner(item.japanese, gender: gender)], lineID: item.id)]
             if let check = item.listening {
                 entries.append(ScriptEntry(id: "\(index)|q", speaker: .narrator, japanese: check.questionJa, kana: "",
                                            english: check.questionEn, audio: [.model(check.questionJa)], lineID: item.id))

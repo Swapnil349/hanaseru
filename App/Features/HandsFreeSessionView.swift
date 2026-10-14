@@ -51,6 +51,7 @@ struct HandsFreeSessionView: View {
     let onEnd: () -> Void
 
     @AppStorage(SettingsKey.showEnglish) private var showEnglish = true
+    @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
     @State private var showTranscript = false
     @State private var scriptParts: [ScriptPart]?
 
@@ -210,8 +211,8 @@ struct HandsFreeSessionView: View {
                             if !focus.partnerName.isEmpty {
                                 Text(focus.partnerName).font(.caption.weight(.semibold)).foregroundStyle(Palette.inkSecondary)
                             }
-                            JapaneseTextView(japanese: focus.partnerJapanese, english: focus.partnerEnglish, style: .body,
-                                             showEnglish: showEnglish)
+                            JapaneseTextView(japanese: focus.partnerJapanese, kana: focus.partnerKana,
+                                             english: focus.partnerEnglish, style: .body, showEnglish: showEnglish)
                         }
                         Spacer(minLength: 0)
                         Button { model.listen(to: focus.promptAudio) } label: {
@@ -255,13 +256,15 @@ struct HandsFreeSessionView: View {
             if let reveal = model.reveal, reveal.lineID == focus.lineID {
                 revealView(reveal)
             } else if focus.answerShown {
-                JapaneseTextView(japanese: focus.japanese, kana: focus.kana, style: .title2, showEnglish: false)
+                JapaneseTextView(japanese: focus.japanese, kana: focus.kana, romaji: focus.romaji, style: .title2,
+                                 showEnglish: false)
             } else if !focus.visibleJapanese.isEmpty {
                 Text(focus.visibleJapanese + " " + focus.hiddenPlaceholder)
                     .font(.title2.weight(.medium))
                     .foregroundStyle(Palette.ink)
             } else if model.peekedLineID == focus.lineID {
-                JapaneseTextView(japanese: focus.japanese, kana: focus.kana, style: .title3, showEnglish: false)
+                JapaneseTextView(japanese: focus.japanese, kana: focus.kana, romaji: focus.romaji, style: .title3,
+                                 showEnglish: false)
             } else if !focus.japanese.isEmpty {
                 Button("Tap to see the Japanese") { model.peek() }
                     .font(.footnote)
@@ -294,7 +297,8 @@ struct HandsFreeSessionView: View {
     @ViewBuilder
     private func revealView(_ reveal: RevealInfo) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            JapaneseTextView(japanese: reveal.japanese, kana: reveal.kana, style: .title2, showEnglish: false)
+            JapaneseTextView(japanese: reveal.japanese, kana: reveal.kana, romaji: reveal.romaji, style: .title2,
+                             showEnglish: false)
             if !reveal.matchedChunks.isEmpty && !reveal.outcome.isClean {
                 Text("Right: " + reveal.matchedChunks.joined(separator: " · "))
                     .font(.footnote).foregroundStyle(Palette.go)
@@ -322,19 +326,27 @@ struct HandsFreeSessionView: View {
     private var footer: some View {
         VStack(spacing: 10) {
             helpBar
+            if let timeline = model.timeline, timeline.stops.count > 1 {
+                TimelineScrubber(timeline: timeline) { model.move(.seek($0)) }
+            }
             AudioControl(isPaused: model.isPaused, onPrevious: { model.move(.previous) }, onAgain: { model.again() },
                          onTogglePause: { model.togglePause() }, onNext: { model.move(.next) })
             HStack {
-                Toggle("English", isOn: $showEnglish).toggleStyle(.button).font(.caption)
-                Toggle("Transcript", isOn: $showTranscript).toggleStyle(.button).font(.caption)
-                if let writing = model.writing {
-                    Toggle(isOn: Binding(get: { writing.isEnabled }, set: { writing.isEnabled = $0 })) {
-                        Label("Write", systemImage: "pencil.tip")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        Toggle("English", isOn: $showEnglish).toggleStyle(.button).font(.caption)
+                        Toggle("Romaji", isOn: $showRomaji).toggleStyle(.button).font(.caption)
+                            .accessibilityIdentifier("romaji-toggle")
+                        Toggle("Transcript", isOn: $showTranscript).toggleStyle(.button).font(.caption)
+                        if let writing = model.writing {
+                            Toggle(isOn: Binding(get: { writing.isEnabled }, set: { writing.isEnabled = $0 })) {
+                                Label("Write", systemImage: "pencil.tip")
+                            }
+                            .toggleStyle(.button).font(.caption)
+                            .accessibilityIdentifier("writing-toggle")
+                        }
                     }
-                    .toggleStyle(.button).font(.caption)
-                    .accessibilityIdentifier("writing-toggle")
                 }
-                Spacer()
                 Button { scriptParts = model.script() } label: {
                     Label("Script", systemImage: "doc.plaintext")
                 }

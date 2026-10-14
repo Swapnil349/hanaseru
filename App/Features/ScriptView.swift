@@ -15,6 +15,7 @@ struct ScriptView: View {
     var onStart: ((Int, Int?) -> Void)?
     var title = "Script"
 
+    @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
     @State private var slowly = false
     @State private var showEnglish = true
     @State private var testMe = false
@@ -44,6 +45,15 @@ struct ScriptView: View {
         .safeAreaInset(edge: .bottom) { options }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                // The whole conversation in writing: Japanese, English letters and English.
+                ShareLink(item: ScriptPart.text(of: parts), subject: Text(title)) {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+                .accessibilityIdentifier("script-share")
+            }
+        }
     }
 
     private var currentEntryID: String? {
@@ -83,7 +93,7 @@ struct ScriptView: View {
                         .font(.footnote)
                         .buttonStyle(.borderless)
                 } else {
-                    JapaneseTextView(japanese: entry.japanese, kana: entry.kana,
+                    JapaneseTextView(japanese: entry.japanese, kana: entry.kana, romaji: entry.romaji,
                                      english: showEnglish ? entry.english : "", style: .body)
                 }
                 if let line = entry.startLine, let onStart {
@@ -117,6 +127,7 @@ struct ScriptView: View {
     private var options: some View {
         HStack(spacing: 8) {
             Toggle(isOn: $showEnglish) { Text("English") }
+            Toggle(isOn: $showRomaji) { Text("Romaji") }
             Toggle(isOn: $testMe) { Label("Test me", systemImage: "eye.slash") }
                 .onChange(of: testMe) { revealed.removeAll() }
             Toggle(isOn: $slowly) { Label("Slowly", systemImage: "tortoise") }
