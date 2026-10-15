@@ -2905,5 +2905,2566 @@
     "closingLine": "おいしそうですね。じゃあ、行きましょう。",
     "closingKana": "おいしそうですね。じゃあ、いきましょう。",
     "closingEnglish": "Sounds delicious. Well, let's go."
+  },
+  {
+    "id": "s.long.weekly",
+    "title": "Weekly progress meeting",
+    "titleJa": "週次進捗会議",
+    "track": "work",
+    "level": 4,
+    "personaID": "p.suzuki",
+    "situationEn": "The weekly progress meeting with Suzuki-san, the project manager. You report on your section from start to finish.",
+    "placeEn": "in the weekly progress meeting",
+    "canDoEn": "Give a full progress report: status, delays and their cause, how you'll recover, safety and next week.",
+    "roleReversal": false,
+    "targetTerms": [
+      "v.shinchoku",
+      "v.okure",
+      "v.genin",
+      "v.eikyou",
+      "v.yotei"
+    ],
+    "beats": [
+      {
+        "id": "open",
+        "line": "それでは、今週の進捗を教えてください。",
+        "kana": "それでは、こんしゅうのしんちょくをおしえてください。",
+        "english": "Well then, please tell me this week's progress.",
+        "hintEn": "Sum up the week.",
+        "intentEn": "Give her the headline for this week.",
+        "keyTerms": [
+          [
+            "順調",
+            "じゅんちょう",
+            "遅れ",
+            "おくれ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい。今週は全体的に順調でした。",
+            "kana": "はい。こんしゅうはぜんたいてきにじゅんちょうでした。",
+            "english": "Sure. Overall, this week went smoothly.",
+            "chunks": [
+              {
+                "ja": "はい。",
+                "kana": "はい。"
+              },
+              {
+                "ja": "今週は",
+                "kana": "こんしゅうは"
+              },
+              {
+                "ja": "全体的に",
+                "kana": "ぜんたいてきに"
+              },
+              {
+                "ja": "順調でした。",
+                "kana": "じゅんちょうでした。"
+              }
+            ],
+            "noteEn": "「全体的に」: overall, on the whole."
+          },
+          {
+            "japanese": "はい。今週は少し遅れが出ました。",
+            "kana": "はい。こんしゅうはすこしおくれがでました。",
+            "english": "Sure. We had a small delay this week.",
+            "chunks": [
+              {
+                "ja": "はい。",
+                "kana": "はい。"
+              },
+              {
+                "ja": "今週は",
+                "kana": "こんしゅうは"
+              },
+              {
+                "ja": "少し遅れが",
+                "kana": "すこしおくれが"
+              },
+              {
+                "ja": "出ました。",
+                "kana": "でました。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "piers",
+        "line": "橋脚の工事はどこまで進みましたか？",
+        "kana": "きょうきゃくのこうじはどこまですすみましたか？",
+        "english": "How far has the pier work got?",
+        "hintEn": "Say how many piers are done.",
+        "intentEn": "Tell her how far the pier work has got.",
+        "keyTerms": [
+          [
+            "終わり",
+            "おわり"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "十二本のうち、八本が終わりました。",
+            "kana": "じゅうにほんのうち、はっぽんがおわりました。",
+            "english": "Eight of the twelve are finished.",
+            "chunks": [
+              {
+                "ja": "十二本のうち、",
+                "kana": "じゅうにほんのうち、"
+              },
+              {
+                "ja": "八本が",
+                "kana": "はっぽんが"
+              },
+              {
+                "ja": "終わりました。",
+                "kana": "おわりました。"
+              }
+            ],
+            "noteEn": "「〜のうち」: out of — 「十二本のうち八本」."
+          },
+          {
+            "japanese": "半分ぐらい終わりました。",
+            "kana": "はんぶんぐらいおわりました。",
+            "english": "About half are done.",
+            "chunks": [
+              {
+                "ja": "半分ぐらい",
+                "kana": "はんぶんぐらい"
+              },
+              {
+                "ja": "終わりました。",
+                "kana": "おわりました。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "delay",
+        "line": "遅れている作業はありますか？",
+        "kana": "おくれているさぎょうはありますか？",
+        "english": "Is any work behind?",
+        "hintEn": "Say which work is behind.",
+        "intentEn": "Tell her whether any work is behind.",
+        "keyTerms": [
+          [
+            "遅れ",
+            "おくれ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、基礎の工事が三日ほど遅れています。",
+            "kana": "はい、きそのこうじがみっかほどおくれています。",
+            "english": "Yes, the foundation work is about three days behind.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "基礎の工事が",
+                "kana": "きそのこうじが"
+              },
+              {
+                "ja": "三日ほど",
+                "kana": "みっかほど"
+              },
+              {
+                "ja": "遅れています。",
+                "kana": "おくれています。"
+              }
+            ]
+          },
+          {
+            "japanese": "いいえ、今のところ遅れはありません。",
+            "kana": "いいえ、いまのところおくれはありません。",
+            "english": "No, there's no delay so far.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "今のところ",
+                "kana": "いまのところ"
+              },
+              {
+                "ja": "遅れはありません。",
+                "kana": "おくれはありません。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cause",
+        "line": "原因は何ですか？",
+        "kana": "げんいんはなんですか？",
+        "english": "What's the cause?",
+        "hintEn": "Explain why.",
+        "intentEn": "Tell her what caused the delay.",
+        "keyTerms": [
+          [
+            "雨",
+            "あめ",
+            "資材",
+            "しざい",
+            "遅れ",
+            "おくれ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "先週の雨で、コンクリートを打てませんでした。",
+            "kana": "せんしゅうのあめで、コンクリートをうてませんでした。",
+            "english": "We couldn't pour concrete because of last week's rain.",
+            "chunks": [
+              {
+                "ja": "先週の雨で、",
+                "kana": "せんしゅうのあめで、"
+              },
+              {
+                "ja": "コンクリートを",
+                "kana": "コンクリートを"
+              },
+              {
+                "ja": "打てませんでした。",
+                "kana": "うてませんでした。"
+              }
+            ],
+            "noteEn": "「打つ」 is the verb for pouring concrete."
+          },
+          {
+            "japanese": "資材の到着が遅れたからです。",
+            "kana": "しざいのとうちゃくがおくれたからです。",
+            "english": "Because the materials arrived late.",
+            "chunks": [
+              {
+                "ja": "資材の到着が",
+                "kana": "しざいのとうちゃくが"
+              },
+              {
+                "ja": "遅れたからです。",
+                "kana": "おくれたからです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "recover",
+        "line": "どうやって取り戻しますか？",
+        "kana": "どうやってとりもどしますか？",
+        "english": "How will you make it up?",
+        "hintEn": "Say how you'll catch up.",
+        "intentEn": "Tell her how you'll make up the time.",
+        "keyTerms": [
+          [
+            "作業",
+            "さぎょう",
+            "増やし",
+            "ふやし",
+            "取り戻",
+            "とりもど"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "土曜日も作業して、取り戻す予定です。",
+            "kana": "どようびもさぎょうして、とりもどすよていです。",
+            "english": "We plan to work on Saturdays too and make it up.",
+            "chunks": [
+              {
+                "ja": "土曜日も",
+                "kana": "どようびも"
+              },
+              {
+                "ja": "作業して、",
+                "kana": "さぎょうして、"
+              },
+              {
+                "ja": "取り戻す予定です。",
+                "kana": "とりもどすよていです。"
+              }
+            ]
+          },
+          {
+            "japanese": "作業員を二人増やします。",
+            "kana": "さぎょういんをふたりふやします。",
+            "english": "We'll add two more workers.",
+            "chunks": [
+              {
+                "ja": "作業員を",
+                "kana": "さぎょういんを"
+              },
+              {
+                "ja": "二人",
+                "kana": "ふたり"
+              },
+              {
+                "ja": "増やします。",
+                "kana": "ふやします。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "impact",
+        "line": "全体の工程に影響はありそうですか？",
+        "kana": "ぜんたいのこうていにえいきょうはありそうですか？",
+        "english": "Is it likely to affect the overall schedule?",
+        "hintEn": "Say whether the overall schedule is affected.",
+        "intentEn": "Tell her whether the overall schedule will be affected.",
+        "keyTerms": [
+          [
+            "影響",
+            "えいきょう"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "いいえ、全体の工程には影響しないと思います。",
+            "kana": "いいえ、ぜんたいのこうていにはえいきょうしないとおもいます。",
+            "english": "No, I don't think it will affect the overall schedule.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "全体の工程には",
+                "kana": "ぜんたいのこうていには"
+              },
+              {
+                "ja": "影響しないと",
+                "kana": "えいきょうしないと"
+              },
+              {
+                "ja": "思います。",
+                "kana": "おもいます。"
+              }
+            ]
+          },
+          {
+            "japanese": "少し影響が出るかもしれません。",
+            "kana": "すこしえいきょうがでるかもしれません。",
+            "english": "There might be a small impact.",
+            "chunks": [
+              {
+                "ja": "少し",
+                "kana": "すこし"
+              },
+              {
+                "ja": "影響が出るかもしれません。",
+                "kana": "えいきょうがでるかもしれません。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "safety",
+        "line": "安全面で、何か問題はありましたか？",
+        "kana": "あんぜんめんで、なにかもんだいはありましたか？",
+        "english": "Were there any problems on the safety side?",
+        "hintEn": "Report on safety.",
+        "intentEn": "Tell her how the week went for safety.",
+        "keyTerms": [
+          [
+            "ありません",
+            "ありました",
+            "事故",
+            "じこ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "いいえ、事故やけがはありませんでした。",
+            "kana": "いいえ、じこやけがはありませんでした。",
+            "english": "No, there were no accidents or injuries.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "事故やけがは",
+                "kana": "じこやけがは"
+              },
+              {
+                "ja": "ありませんでした。",
+                "kana": "ありませんでした。"
+              }
+            ]
+          },
+          {
+            "japanese": "小さいヒヤリハットが一件ありました。",
+            "kana": "ちいさいヒヤリハットがいっけんありました。",
+            "english": "There was one small near-miss.",
+            "chunks": [
+              {
+                "ja": "小さいヒヤリハットが",
+                "kana": "ちいさいヒヤリハットが"
+              },
+              {
+                "ja": "一件",
+                "kana": "いっけん"
+              },
+              {
+                "ja": "ありました。",
+                "kana": "ありました。"
+              }
+            ],
+            "noteEn": "「ヒヤリハット」: a near-miss — every site reports them."
+          }
+        ]
+      },
+      {
+        "id": "next",
+        "line": "来週の予定を教えてください。",
+        "kana": "らいしゅうのよていをおしえてください。",
+        "english": "Please tell me next week's plan.",
+        "hintEn": "Say what's planned next week.",
+        "intentEn": "Tell her what's planned for next week.",
+        "keyTerms": [
+          [
+            "予定",
+            "よてい",
+            "検査",
+            "けんさ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "来週は、残りの橋脚の型枠を組む予定です。",
+            "kana": "らいしゅうは、のこりのきょうきゃくのかたわくをくむよていです。",
+            "english": "Next week we plan to set up the formwork for the remaining piers.",
+            "chunks": [
+              {
+                "ja": "来週は、",
+                "kana": "らいしゅうは、"
+              },
+              {
+                "ja": "残りの橋脚の",
+                "kana": "のこりのきょうきゃくの"
+              },
+              {
+                "ja": "型枠を組む",
+                "kana": "かたわくをくむ"
+              },
+              {
+                "ja": "予定です。",
+                "kana": "よていです。"
+              }
+            ],
+            "noteEn": "「型枠」 is formwork; 「組む」 is to set it up."
+          },
+          {
+            "japanese": "来週は、配筋検査があります。",
+            "kana": "らいしゅうは、はいきんけんさがあります。",
+            "english": "Next week there's the rebar inspection.",
+            "chunks": [
+              {
+                "ja": "来週は、",
+                "kana": "らいしゅうは、"
+              },
+              {
+                "ja": "配筋検査が",
+                "kana": "はいきんけんさが"
+              },
+              {
+                "ja": "あります。",
+                "kana": "あります。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ask",
+        "line": "何か、私に確認してほしいことはありますか？",
+        "kana": "なにか、わたしにかくにんしてほしいことはありますか？",
+        "english": "Is there anything you'd like me to check?",
+        "hintEn": "Ask for what you need.",
+        "intentEn": "Ask her for anything you need from her.",
+        "keyTerms": [
+          [
+            "お願い",
+            "おねがい",
+            "ありません"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、変更した図面の承認をお願いします。",
+            "kana": "はい、へんこうしたずめんのしょうにんをおねがいします。",
+            "english": "Yes, please approve the revised drawing.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "変更した図面の",
+                "kana": "へんこうしたずめんの"
+              },
+              {
+                "ja": "承認を",
+                "kana": "しょうにんを"
+              },
+              {
+                "ja": "お願いします。",
+                "kana": "おねがいします。"
+              }
+            ]
+          },
+          {
+            "japanese": "いいえ、特にありません。",
+            "kana": "いいえ、とくにありません。",
+            "english": "No, nothing in particular.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "特にありません。",
+                "kana": "とくにありません。"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "closingLine": "わかりました。では、来週もよろしくお願いします。",
+    "closingKana": "わかりました。では、らいしゅうもよろしくおねがいします。",
+    "closingEnglish": "Understood. Then let's keep it up next week too."
+  },
+  {
+    "id": "s.long.site",
+    "title": "Site walk before the pour",
+    "titleJa": "現場巡回",
+    "track": "work",
+    "level": 3,
+    "personaID": "p.ito",
+    "situationEn": "Ito-san, the site engineer, walks the site with you on the morning of a concrete pour.",
+    "placeEn": "on the site walk",
+    "canDoEn": "Walk the site with a Japanese engineer: confirm safety, explain the day's work and agree on reporting.",
+    "roleReversal": false,
+    "targetTerms": [
+      "v.genba",
+      "v.anzen",
+      "v.sagyou",
+      "v.konkuriito",
+      "v.ashiba"
+    ],
+    "beats": [
+      {
+        "id": "greet",
+        "line": "おはようございます。今日は一緒に現場を回りましょう。",
+        "kana": "おはようございます。きょうはいっしょにげんばをまわりましょう。",
+        "english": "Good morning. Let's go round the site together today.",
+        "hintEn": "Greet him back.",
+        "intentEn": "Greet him back.",
+        "keyTerms": [
+          [
+            "おはよう",
+            "よろしく"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "おはようございます。よろしくお願いします。",
+            "kana": "おはようございます。よろしくおねがいします。",
+            "english": "Good morning. Thanks for having me.",
+            "chunks": [
+              {
+                "ja": "おはようございます。",
+                "kana": "おはようございます。"
+              },
+              {
+                "ja": "よろしくお願いします。",
+                "kana": "よろしくおねがいします。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "gear",
+        "line": "ヘルメットと安全帯は大丈夫ですか？",
+        "kana": "ヘルメットとあんぜんたいはだいじょうぶですか？",
+        "english": "Are your helmet and safety harness OK?",
+        "hintEn": "Say your gear is fine.",
+        "intentEn": "Tell him your safety gear is checked.",
+        "keyTerms": [
+          [
+            "大丈夫",
+            "だいじょうぶ",
+            "確認",
+            "かくにん"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、大丈夫です。確認しました。",
+            "kana": "はい、だいじょうぶです。かくにんしました。",
+            "english": "Yes, they're fine. I checked them.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "大丈夫です。",
+                "kana": "だいじょうぶです。"
+              },
+              {
+                "ja": "確認しました。",
+                "kana": "かくにんしました。"
+              }
+            ],
+            "noteEn": "「安全帯」 is the safety harness."
+          }
+        ]
+      },
+      {
+        "id": "work",
+        "line": "今日の作業の内容を説明してもらえますか？",
+        "kana": "きょうのさぎょうのないようをせつめいしてもらえますか？",
+        "english": "Could you explain today's work?",
+        "hintEn": "Say what today's work is.",
+        "intentEn": "Tell him what work is planned today.",
+        "keyTerms": [
+          [
+            "コンクリート",
+            "こんくりーと",
+            "打ち",
+            "うち"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい。今日は三番の橋脚にコンクリートを打ちます。",
+            "kana": "はい。きょうはさんばんのきょうきゃくにコンクリートをうちます。",
+            "english": "Sure. Today we pour concrete into pier number three.",
+            "chunks": [
+              {
+                "ja": "はい。",
+                "kana": "はい。"
+              },
+              {
+                "ja": "今日は",
+                "kana": "きょうは"
+              },
+              {
+                "ja": "三番の橋脚に",
+                "kana": "さんばんのきょうきゃくに"
+              },
+              {
+                "ja": "コンクリートを",
+                "kana": "コンクリートを"
+              },
+              {
+                "ja": "打ちます。",
+                "kana": "うちます。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "time",
+        "line": "打設は何時から始めますか？",
+        "kana": "だせつはなんじからはじめますか？",
+        "english": "What time does the pour start?",
+        "hintEn": "Give the start and finish times.",
+        "intentEn": "Tell him when the pour starts and ends.",
+        "keyTerms": [
+          [
+            "時",
+            "じ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "十時から始めて、三時ごろに終わる予定です。",
+            "kana": "じゅうじからはじめて、さんじごろにおわるよていです。",
+            "english": "We start at ten and plan to finish around three.",
+            "chunks": [
+              {
+                "ja": "十時から",
+                "kana": "じゅうじから"
+              },
+              {
+                "ja": "始めて、",
+                "kana": "はじめて、"
+              },
+              {
+                "ja": "三時ごろに",
+                "kana": "さんじごろに"
+              },
+              {
+                "ja": "終わる予定です。",
+                "kana": "おわるよていです。"
+              }
+            ],
+            "noteEn": "「打設」 is the formal word for pouring concrete."
+          }
+        ]
+      },
+      {
+        "id": "trucks",
+        "line": "ミキサー車は何台来ますか？",
+        "kana": "ミキサーしゃはなんだいきますか？",
+        "english": "How many mixer trucks are coming?",
+        "hintEn": "Say how many trucks.",
+        "intentEn": "Tell him how many mixer trucks are coming.",
+        "keyTerms": [
+          [
+            "台",
+            "だい"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "全部で十五台来る予定です。",
+            "kana": "ぜんぶでじゅうごだいくるよていです。",
+            "english": "Fifteen in total.",
+            "chunks": [
+              {
+                "ja": "全部で",
+                "kana": "ぜんぶで"
+              },
+              {
+                "ja": "十五台",
+                "kana": "じゅうごだい"
+              },
+              {
+                "ja": "来る予定です。",
+                "kana": "くるよていです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "rain",
+        "line": "午後から雨の予報ですが、大丈夫ですか？",
+        "kana": "ごごからあめのよほうですが、だいじょうぶですか？",
+        "english": "Rain is forecast from the afternoon. Will that be OK?",
+        "hintEn": "Say how you'll handle the rain.",
+        "intentEn": "Tell him how you'll handle the rain.",
+        "keyTerms": [
+          [
+            "大丈夫",
+            "だいじょうぶ",
+            "止め",
+            "とめ",
+            "準備",
+            "じゅんび"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、シートを準備してあるので大丈夫です。",
+            "kana": "はい、シートをじゅんびしてあるのでだいじょうぶです。",
+            "english": "Yes, we've got sheets ready, so it's fine.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "シートを",
+                "kana": "シートを"
+              },
+              {
+                "ja": "準備してあるので",
+                "kana": "じゅんびしてあるので"
+              },
+              {
+                "ja": "大丈夫です。",
+                "kana": "だいじょうぶです。"
+              }
+            ]
+          },
+          {
+            "japanese": "強く降ったら、作業を止めます。",
+            "kana": "つよくふったら、さぎょうをとめます。",
+            "english": "If it rains hard, we'll stop work.",
+            "chunks": [
+              {
+                "ja": "強く降ったら、",
+                "kana": "つよくふったら、"
+              },
+              {
+                "ja": "作業を",
+                "kana": "さぎょうを"
+              },
+              {
+                "ja": "止めます。",
+                "kana": "とめます。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "scaffold",
+        "line": "あの足場、少しぐらついていませんか？",
+        "kana": "あのあしば、すこしぐらついていませんか？",
+        "english": "Isn't that scaffolding a bit wobbly?",
+        "hintEn": "Agree and say you'll get it fixed.",
+        "intentEn": "Tell him you'll have it fixed now.",
+        "keyTerms": [
+          [
+            "直",
+            "なお",
+            "すぐ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "本当ですね。すぐに直させます。",
+            "kana": "ほんとうですね。すぐになおさせます。",
+            "english": "You're right. I'll have it fixed right away.",
+            "chunks": [
+              {
+                "ja": "本当ですね。",
+                "kana": "ほんとうですね。"
+              },
+              {
+                "ja": "すぐに",
+                "kana": "すぐに"
+              },
+              {
+                "ja": "直させます。",
+                "kana": "なおさせます。"
+              }
+            ],
+            "noteEn": "「直させます」: I'll have someone fix it."
+          }
+        ]
+      },
+      {
+        "id": "photos",
+        "line": "作業の前に、写真を撮っておいてください。",
+        "kana": "さぎょうのまえに、しゃしんをとっておいてください。",
+        "english": "Please take photos before the work.",
+        "hintEn": "Agree to take the photos.",
+        "intentEn": "Tell him you'll take the photos.",
+        "keyTerms": [
+          [
+            "撮って",
+            "とって",
+            "わかりました",
+            "承知"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、記録用に撮っておきます。",
+            "kana": "はい、きろくようにとっておきます。",
+            "english": "Sure, I'll take them for the record.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "記録用に",
+                "kana": "きろくように"
+              },
+              {
+                "ja": "撮っておきます。",
+                "kana": "とっておきます。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "report",
+        "line": "終わったら、報告をお願いします。",
+        "kana": "おわったら、ほうこくをおねがいします。",
+        "english": "When it's done, please report.",
+        "hintEn": "Agree to report.",
+        "intentEn": "Promise to report as soon as it's done.",
+        "keyTerms": [
+          [
+            "報告",
+            "ほうこく",
+            "承知",
+            "しょうち"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "承知しました。終わったらすぐに報告します。",
+            "kana": "しょうちしました。おわったらすぐにほうこくします。",
+            "english": "Certainly. I'll report as soon as it's done.",
+            "chunks": [
+              {
+                "ja": "承知しました。",
+                "kana": "しょうちしました。"
+              },
+              {
+                "ja": "終わったら",
+                "kana": "おわったら"
+              },
+              {
+                "ja": "すぐに",
+                "kana": "すぐに"
+              },
+              {
+                "ja": "報告します。",
+                "kana": "ほうこくします。"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "closingLine": "では、今日も一日、安全第一でいきましょう。",
+    "closingKana": "では、きょうもいちにち、あんぜんだいいちでいきましょう。",
+    "closingEnglish": "Right, let's keep safety first all day today."
+  },
+  {
+    "id": "s.long.design",
+    "title": "Design change meeting",
+    "titleJa": "設計変更の打ち合わせ",
+    "track": "work",
+    "level": 4,
+    "personaID": "p.kobayashi",
+    "situationEn": "A meeting with Kobayashi-san about changing the foundation design of a viaduct pier.",
+    "placeEn": "in the design meeting",
+    "canDoEn": "Explain a design change: what, why, the proposal, cost, schedule impact and the documents for approval.",
+    "roleReversal": false,
+    "targetTerms": [
+      "v.sekkei",
+      "v.henkou",
+      "v.zumen",
+      "v.shounin",
+      "v.eikyou"
+    ],
+    "beats": [
+      {
+        "id": "open",
+        "line": "今日は、高架橋の設計変更について話しましょう。",
+        "kana": "きょうは、こうかきょうのせっけいへんこうについてはなしましょう。",
+        "english": "Today let's talk about the design change for the viaduct.",
+        "hintEn": "Agree politely.",
+        "intentEn": "Agree politely to start.",
+        "keyTerms": [
+          [
+            "よろしく",
+            "はい"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、よろしくお願いします。",
+            "kana": "はい、よろしくおねがいします。",
+            "english": "Sure, thank you.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "よろしくお願いします。",
+                "kana": "よろしくおねがいします。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "what",
+        "line": "どの部分を変更したいですか？",
+        "kana": "どのぶぶんをへんこうしたいですか？",
+        "english": "Which part do you want to change?",
+        "hintEn": "Say which part.",
+        "intentEn": "Tell him which part you want to change.",
+        "keyTerms": [
+          [
+            "基礎",
+            "きそ",
+            "変更",
+            "へんこう"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "五番の橋脚の基礎を変更したいです。",
+            "kana": "ごばんのきょうきゃくのきそをへんこうしたいです。",
+            "english": "We want to change the foundation of pier number five.",
+            "chunks": [
+              {
+                "ja": "五番の",
+                "kana": "ごばんの"
+              },
+              {
+                "ja": "橋脚の基礎を",
+                "kana": "きょうきゃくのきそを"
+              },
+              {
+                "ja": "変更したいです。",
+                "kana": "へんこうしたいです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "why",
+        "line": "なぜ変更が必要なんですか？",
+        "kana": "なぜへんこうがひつようなんですか？",
+        "english": "Why is the change necessary?",
+        "hintEn": "Explain why.",
+        "intentEn": "Tell him why the change is needed.",
+        "keyTerms": [
+          [
+            "地盤",
+            "じばん",
+            "弱",
+            "よわ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "地盤が予想より弱かったからです。",
+            "kana": "じばんがよそうよりよわかったからです。",
+            "english": "Because the ground was weaker than expected.",
+            "chunks": [
+              {
+                "ja": "地盤が",
+                "kana": "じばんが"
+              },
+              {
+                "ja": "予想より",
+                "kana": "よそうより"
+              },
+              {
+                "ja": "弱かったからです。",
+                "kana": "よわかったからです。"
+              }
+            ],
+            "noteEn": "「地盤」: the ground (soil) — key in foundation work."
+          }
+        ]
+      },
+      {
+        "id": "plan",
+        "line": "どのような案を考えていますか？",
+        "kana": "どのようなあんをかんがえていますか？",
+        "english": "What kind of plan are you thinking of?",
+        "hintEn": "Say what you propose.",
+        "intentEn": "Tell him what you propose.",
+        "keyTerms": [
+          [
+            "杭",
+            "くい",
+            "増や",
+            "ふや"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "杭の数を増やす案を考えています。",
+            "kana": "くいのかずをふやすあんをかんがえています。",
+            "english": "We're thinking of increasing the number of piles.",
+            "chunks": [
+              {
+                "ja": "杭の数を",
+                "kana": "くいのかずを"
+              },
+              {
+                "ja": "増やす案を",
+                "kana": "ふやすあんを"
+              },
+              {
+                "ja": "考えています。",
+                "kana": "かんがえています。"
+              }
+            ],
+            "noteEn": "「杭」: a pile, driven into the ground."
+          }
+        ]
+      },
+      {
+        "id": "cost",
+        "line": "費用はどのくらい増えそうですか？",
+        "kana": "ひようはどのくらいふえそうですか？",
+        "english": "How much might the cost go up?",
+        "hintEn": "Say what you know about the cost.",
+        "intentEn": "Tell him what you know about the cost.",
+        "keyTerms": [
+          [
+            "計算",
+            "けいさん",
+            "増え",
+            "ふえ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "今、計算しているところです。",
+            "kana": "いま、けいさんしているところです。",
+            "english": "We're calculating it now.",
+            "chunks": [
+              {
+                "ja": "今、",
+                "kana": "いま、"
+              },
+              {
+                "ja": "計算している",
+                "kana": "けいさんしている"
+              },
+              {
+                "ja": "ところです。",
+                "kana": "ところです。"
+              }
+            ],
+            "noteEn": "「〜ているところです」: in the middle of doing it."
+          },
+          {
+            "japanese": "一割ぐらい増えると思います。",
+            "kana": "いちわりぐらいふえるとおもいます。",
+            "english": "I think about ten percent more.",
+            "chunks": [
+              {
+                "ja": "一割ぐらい",
+                "kana": "いちわりぐらい"
+              },
+              {
+                "ja": "増えると",
+                "kana": "ふえると"
+              },
+              {
+                "ja": "思います。",
+                "kana": "おもいます。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "schedule",
+        "line": "工程への影響はどうですか？",
+        "kana": "こうていへのえいきょうはどうですか？",
+        "english": "What about the impact on the schedule?",
+        "hintEn": "Say how the schedule is affected.",
+        "intentEn": "Tell him how the schedule could be affected.",
+        "keyTerms": [
+          [
+            "遅れ",
+            "おくれ",
+            "可能性",
+            "かのうせい",
+            "影響",
+            "えいきょう"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "二週間ぐらい遅れる可能性があります。",
+            "kana": "にしゅうかんぐらいおくれるかのうせいがあります。",
+            "english": "It could be about two weeks late.",
+            "chunks": [
+              {
+                "ja": "二週間ぐらい",
+                "kana": "にしゅうかんぐらい"
+              },
+              {
+                "ja": "遅れる",
+                "kana": "おくれる"
+              },
+              {
+                "ja": "可能性があります。",
+                "kana": "かのうせいがあります。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "docs",
+        "line": "承認には、計算書と図面が必要です。",
+        "kana": "しょうにんには、けいさんしょとずめんがひつようです。",
+        "english": "For approval, we need the calculations and the drawings.",
+        "hintEn": "Say when you'll prepare them.",
+        "intentEn": "Tell him when you'll have the documents ready.",
+        "keyTerms": [
+          [
+            "準備",
+            "じゅんび",
+            "わかりました",
+            "承知"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "わかりました。金曜日までに準備します。",
+            "kana": "わかりました。きんようびまでにじゅんびします。",
+            "english": "Understood. I'll prepare them by Friday.",
+            "chunks": [
+              {
+                "ja": "わかりました。",
+                "kana": "わかりました。"
+              },
+              {
+                "ja": "金曜日までに",
+                "kana": "きんようびまでに"
+              },
+              {
+                "ja": "準備します。",
+                "kana": "じゅんびします。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "check",
+        "line": "提出の前に、一度確認させてください。",
+        "kana": "ていしゅつのまえに、いちどかくにんさせてください。",
+        "english": "Before you submit them, let me check them once.",
+        "hintEn": "Say when you'll send them.",
+        "intentEn": "Tell him when you'll send them for checking.",
+        "keyTerms": [
+          [
+            "送",
+            "おく"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、木曜日にお送りします。",
+            "kana": "はい、もくようびにおおくりします。",
+            "english": "Sure, I'll send them to you on Thursday.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "木曜日に",
+                "kana": "もくようびに"
+              },
+              {
+                "ja": "お送りします。",
+                "kana": "おおくりします。"
+              }
+            ],
+            "noteEn": "「お送りします」 is the humble, polite 'I'll send'."
+          }
+        ]
+      },
+      {
+        "id": "questions",
+        "line": "ほかに何か質問はありますか？",
+        "kana": "ほかになにかしつもんはありますか？",
+        "english": "Any other questions?",
+        "hintEn": "Close politely.",
+        "intentEn": "Say you have no more questions and thank him.",
+        "keyTerms": [
+          [
+            "大丈夫",
+            "ありません",
+            "ありがとう"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "いいえ、大丈夫です。ありがとうございました。",
+            "kana": "いいえ、だいじょうぶです。ありがとうございました。",
+            "english": "No, I'm fine. Thank you very much.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "大丈夫です。",
+                "kana": "だいじょうぶです。"
+              },
+              {
+                "ja": "ありがとうございました。",
+                "kana": "ありがとうございました。"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "closingLine": "こちらこそ。では、資料を楽しみにしています。",
+    "closingKana": "こちらこそ。では、しりょうをたのしみにしています。",
+    "closingEnglish": "Likewise. I'll look forward to the documents."
+  },
+  {
+    "id": "s.long.lunch",
+    "title": "Lunch with Nakamura-san",
+    "titleJa": "同僚とランチ",
+    "track": "everyday",
+    "level": 2,
+    "personaID": "p.nakamura",
+    "situationEn": "Nakamura-san invites you to lunch. You order, then chat about food, home and family.",
+    "placeEn": "at lunch in the office canteen",
+    "canDoEn": "Order lunch and keep a friendly conversation going about food, your home town and family.",
+    "roleReversal": false,
+    "targetTerms": [
+      "v.taberu",
+      "v.ryouri",
+      "v.suki",
+      "v.shuumatsu"
+    ],
+    "beats": [
+      {
+        "id": "invite",
+        "line": "お昼、一緒に食べに行きませんか？",
+        "kana": "おひる、いっしょにたべにいきませんか？",
+        "english": "Want to go for lunch together?",
+        "hintEn": "Accept.",
+        "intentEn": "Accept the invitation.",
+        "keyTerms": [
+          [
+            "いい",
+            "行き",
+            "いき"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "いいですね。行きましょう。",
+            "kana": "いいですね。いきましょう。",
+            "english": "Sounds good. Let's go.",
+            "chunks": [
+              {
+                "ja": "いいですね。",
+                "kana": "いいですね。"
+              },
+              {
+                "ja": "行きましょう。",
+                "kana": "いきましょう。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "order",
+        "line": "何にしますか？",
+        "kana": "なににしますか？",
+        "english": "What will you have?",
+        "hintEn": "Order.",
+        "intentEn": "Tell her what you'll have.",
+        "keyTerms": [
+          [
+            "にします"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "私は日替わり定食にします。",
+            "kana": "わたしはひがわりていしょくにします。",
+            "english": "I'll have the daily set meal.",
+            "chunks": [
+              {
+                "ja": "私は",
+                "kana": "わたしは"
+              },
+              {
+                "ja": "日替わり定食に",
+                "kana": "ひがわりていしょくに"
+              },
+              {
+                "ja": "します。",
+                "kana": "します。"
+              }
+            ],
+            "noteEn": "「〜にします」: I'll have ~ (when ordering)."
+          },
+          {
+            "japanese": "カレーライスにします。",
+            "kana": "カレーライスにします。",
+            "english": "I'll have the curry rice.",
+            "chunks": [
+              {
+                "ja": "カレーライスに",
+                "kana": "カレーライスに"
+              },
+              {
+                "ja": "します。",
+                "kana": "します。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "spicy",
+        "line": "辛い食べ物は大丈夫ですか？",
+        "kana": "からいたべものはだいじょうぶですか？",
+        "english": "Are you OK with spicy food?",
+        "hintEn": "Say you like spicy food.",
+        "intentEn": "Tell her how you feel about spicy food.",
+        "keyTerms": [
+          [
+            "好き",
+            "すき",
+            "大丈夫",
+            "辛い",
+            "からい"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、大好きです。インドの料理はけっこう辛いですよ。",
+            "kana": "はい、だいすきです。インドのりょうりはけっこうからいですよ。",
+            "english": "Yes, I love it. Indian food is pretty spicy, you know.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "大好きです。",
+                "kana": "だいすきです。"
+              },
+              {
+                "ja": "インドの料理は",
+                "kana": "インドのりょうりは"
+              },
+              {
+                "ja": "けっこう辛いですよ。",
+                "kana": "けっこうからいですよ。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "hometown",
+        "line": "インドのどこの出身ですか？",
+        "kana": "インドのどこのしゅっしんですか？",
+        "english": "Where in India are you from?",
+        "hintEn": "Say where you're from.",
+        "intentEn": "Tell her where in India you're from.",
+        "keyTerms": [
+          [
+            "出身",
+            "しゅっしん",
+            "近く",
+            "ちかく"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "ムンバイの出身です。",
+            "kana": "ムンバイのしゅっしんです。",
+            "english": "I'm from Mumbai.",
+            "chunks": [
+              {
+                "ja": "ムンバイの",
+                "kana": "ムンバイの"
+              },
+              {
+                "ja": "出身です。",
+                "kana": "しゅっしんです。"
+              }
+            ],
+            "noteEn": "Use your own city: 「〜の出身です」."
+          },
+          {
+            "japanese": "デリーの近くの町です。",
+            "kana": "デリーのちかくのまちです。",
+            "english": "A town near Delhi.",
+            "chunks": [
+              {
+                "ja": "デリーの近くの",
+                "kana": "デリーのちかくの"
+              },
+              {
+                "ja": "町です。",
+                "kana": "まちです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "family",
+        "line": "ご家族は日本に一緒に来ていますか？",
+        "kana": "ごかぞくはにほんにいっしょにきていますか？",
+        "english": "Has your family come to Japan with you?",
+        "hintEn": "Say where your family is.",
+        "intentEn": "Tell her where your family is.",
+        "keyTerms": [
+          [
+            "家族",
+            "かぞく"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "いいえ、家族はインドにいます。",
+            "kana": "いいえ、かぞくはインドにいます。",
+            "english": "No, my family is in India.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "家族は",
+                "kana": "かぞくは"
+              },
+              {
+                "ja": "インドにいます。",
+                "kana": "インドにいます。"
+              }
+            ],
+            "noteEn": "「ご家族」 is their family; 「家族」 is yours."
+          },
+          {
+            "japanese": "はい、家族と一緒に住んでいます。",
+            "kana": "はい、かぞくといっしょにすんでいます。",
+            "english": "Yes, I live with my family.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "家族と一緒に",
+                "kana": "かぞくといっしょに"
+              },
+              {
+                "ja": "住んでいます。",
+                "kana": "すんでいます。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "favourite",
+        "line": "日本の食べ物で、何が一番好きですか？",
+        "kana": "にほんのたべもので、なにがいちばんすきですか？",
+        "english": "Of Japanese food, what do you like best?",
+        "hintEn": "Say your favourite.",
+        "intentEn": "Tell her your favourite Japanese food.",
+        "keyTerms": [
+          [
+            "好き",
+            "すき"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "ラーメンが一番好きです。",
+            "kana": "ラーメンがいちばんすきです。",
+            "english": "I like ramen best.",
+            "chunks": [
+              {
+                "ja": "ラーメンが",
+                "kana": "ラーメンが"
+              },
+              {
+                "ja": "一番",
+                "kana": "いちばん"
+              },
+              {
+                "ja": "好きです。",
+                "kana": "すきです。"
+              }
+            ]
+          },
+          {
+            "japanese": "お寿司が好きです。",
+            "kana": "おすしがすきです。",
+            "english": "I like sushi.",
+            "chunks": [
+              {
+                "ja": "お寿司が",
+                "kana": "おすしが"
+              },
+              {
+                "ja": "好きです。",
+                "kana": "すきです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cook",
+        "line": "自分で料理もしますか？",
+        "kana": "じぶんでりょうりもしますか？",
+        "english": "Do you cook for yourself too?",
+        "hintEn": "Say whether you cook.",
+        "intentEn": "Tell her whether you cook.",
+        "keyTerms": [
+          [
+            "作り",
+            "つくり",
+            "しません",
+            "します"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、週末はよくカレーを作ります。",
+            "kana": "はい、しゅうまつはよくカレーをつくります。",
+            "english": "Yes, I often make curry at the weekend.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "週末は",
+                "kana": "しゅうまつは"
+              },
+              {
+                "ja": "よくカレーを",
+                "kana": "よくカレーを"
+              },
+              {
+                "ja": "作ります。",
+                "kana": "つくります。"
+              }
+            ]
+          },
+          {
+            "japanese": "いいえ、あまりしません。",
+            "kana": "いいえ、あまりしません。",
+            "english": "No, not much.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "あまりしません。",
+                "kana": "あまりしません。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "teach",
+        "line": "今度、本場のカレーの作り方を教えてください。",
+        "kana": "こんど、ほんばのカレーのつくりかたをおしえてください。",
+        "english": "Next time, teach me how to make real Indian curry.",
+        "hintEn": "Agree happily.",
+        "intentEn": "Agree to teach her.",
+        "keyTerms": [
+          [
+            "もちろん",
+            "作り",
+            "つくり",
+            "いい"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "もちろんです。今度、一緒に作りましょう。",
+            "kana": "もちろんです。こんど、いっしょにつくりましょう。",
+            "english": "Of course. Let's make it together sometime.",
+            "chunks": [
+              {
+                "ja": "もちろんです。",
+                "kana": "もちろんです。"
+              },
+              {
+                "ja": "今度、",
+                "kana": "こんど、"
+              },
+              {
+                "ja": "一緒に",
+                "kana": "いっしょに"
+              },
+              {
+                "ja": "作りましょう。",
+                "kana": "つくりましょう。"
+              }
+            ],
+            "noteEn": "「本場」: the real home of something — 「本場のカレー」."
+          }
+        ]
+      },
+      {
+        "id": "back",
+        "line": "あ、もうすぐ一時ですね。そろそろ戻りましょうか。",
+        "kana": "あ、もうすぐいちじですね。そろそろもどりましょうか。",
+        "english": "Oh, it's nearly one. Shall we head back?",
+        "hintEn": "Agree.",
+        "intentEn": "Agree to head back.",
+        "keyTerms": [
+          [
+            "戻",
+            "もど",
+            "そうですね"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "そうですね。戻りましょう。",
+            "kana": "そうですね。もどりましょう。",
+            "english": "Yes, let's go back.",
+            "chunks": [
+              {
+                "ja": "そうですね。",
+                "kana": "そうですね。"
+              },
+              {
+                "ja": "戻りましょう。",
+                "kana": "もどりましょう。"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "closingLine": "今日は楽しかったです。また行きましょう。",
+    "closingKana": "きょうはたのしかったです。またいきましょう。",
+    "closingEnglish": "That was fun today. Let's go again."
+  },
+  {
+    "id": "s.long.break",
+    "title": "Coffee break with Sato-san",
+    "titleJa": "休憩室で",
+    "track": "everyday",
+    "level": 3,
+    "personaID": "p.sato",
+    "situationEn": "Sato-san, a senior engineer, chats with you over coffee in the break room.",
+    "placeEn": "in the office break room",
+    "canDoEn": "Chat with a senior colleague about life in Japan, your commute, India and your days off.",
+    "roleReversal": false,
+    "targetTerms": [
+      "v.nihon",
+      "v.seikatsu",
+      "v.isogashii"
+    ],
+    "beats": [
+      {
+        "id": "coffee",
+        "line": "お疲れさまです。コーヒーでもどうですか？",
+        "kana": "おつかれさまです。コーヒーでもどうですか？",
+        "english": "Hello. How about a coffee?",
+        "hintEn": "Accept politely.",
+        "intentEn": "Accept the coffee politely.",
+        "keyTerms": [
+          [
+            "ありがとう",
+            "いただきます"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "ありがとうございます。いただきます。",
+            "kana": "ありがとうございます。いただきます。",
+            "english": "Thank you. I'll have one.",
+            "chunks": [
+              {
+                "ja": "ありがとうございます。",
+                "kana": "ありがとうございます。"
+              },
+              {
+                "ja": "いただきます。",
+                "kana": "いただきます。"
+              }
+            ],
+            "noteEn": "「いただきます」: I'll gladly accept (food or drink)."
+          }
+        ]
+      },
+      {
+        "id": "used",
+        "line": "日本の生活には、もう慣れましたか？",
+        "kana": "にほんのせいかつには、もうなれましたか？",
+        "english": "Have you got used to life in Japan yet?",
+        "hintEn": "Say how settled you are.",
+        "intentEn": "Tell him how used to Japan you are.",
+        "keyTerms": [
+          [
+            "慣れ",
+            "なれ",
+            "大変",
+            "たいへん"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、だいぶ慣れました。",
+            "kana": "はい、だいぶなれました。",
+            "english": "Yes, I've got quite used to it.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "だいぶ",
+                "kana": "だいぶ"
+              },
+              {
+                "ja": "慣れました。",
+                "kana": "なれました。"
+              }
+            ]
+          },
+          {
+            "japanese": "まだ少し大変です。",
+            "kana": "まだすこしたいへんです。",
+            "english": "It's still a bit hard.",
+            "chunks": [
+              {
+                "ja": "まだ少し",
+                "kana": "まだすこし"
+              },
+              {
+                "ja": "大変です。",
+                "kana": "たいへんです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "hard",
+        "line": "何が一番大変ですか？",
+        "kana": "なにがいちばんたいへんですか？",
+        "english": "What's hardest?",
+        "hintEn": "Say what's hardest.",
+        "intentEn": "Tell him what you find hardest.",
+        "keyTerms": [
+          [
+            "難しい",
+            "むずかしい",
+            "大変",
+            "たいへん"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "日本語の敬語が一番難しいです。",
+            "kana": "にほんごのけいごがいちばんむずかしいです。",
+            "english": "Polite Japanese (keigo) is the hardest.",
+            "chunks": [
+              {
+                "ja": "日本語の",
+                "kana": "にほんごの"
+              },
+              {
+                "ja": "敬語が",
+                "kana": "けいごが"
+              },
+              {
+                "ja": "一番",
+                "kana": "いちばん"
+              },
+              {
+                "ja": "難しいです。",
+                "kana": "むずかしいです。"
+              }
+            ],
+            "noteEn": "「敬語」: honorific, polite Japanese."
+          },
+          {
+            "japanese": "漢字を読むのが大変です。",
+            "kana": "かんじをよむのがたいへんです。",
+            "english": "Reading kanji is hard.",
+            "chunks": [
+              {
+                "ja": "漢字を読むのが",
+                "kana": "かんじをよむのが"
+              },
+              {
+                "ja": "大変です。",
+                "kana": "たいへんです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "commute",
+        "line": "会社まで、どうやって来ていますか？",
+        "kana": "かいしゃまで、どうやってきていますか？",
+        "english": "How do you get to work?",
+        "hintEn": "Say how you commute.",
+        "intentEn": "Tell him how you get to work.",
+        "keyTerms": [
+          [
+            "電車",
+            "でんしゃ",
+            "バス",
+            "歩いて",
+            "あるいて"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "電車で来ています。三十分ぐらいです。",
+            "kana": "でんしゃできています。さんじゅっぷんぐらいです。",
+            "english": "By train. About thirty minutes.",
+            "chunks": [
+              {
+                "ja": "電車で",
+                "kana": "でんしゃで"
+              },
+              {
+                "ja": "来ています。",
+                "kana": "きています。"
+              },
+              {
+                "ja": "三十分ぐらいです。",
+                "kana": "さんじゅっぷんぐらいです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "crowded",
+        "line": "朝の電車は混んでいるでしょう。",
+        "kana": "あさのでんしゃはこんでいるでしょう。",
+        "english": "The morning trains must be crowded.",
+        "hintEn": "Agree.",
+        "intentEn": "Agree, and say you're used to it.",
+        "keyTerms": [
+          [
+            "混んで",
+            "こんで"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、とても混んでいます。でも、もう慣れました。",
+            "kana": "はい、とてもこんでいます。でも、もうなれました。",
+            "english": "Yes, very crowded. But I'm used to it now.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "とても",
+                "kana": "とても"
+              },
+              {
+                "ja": "混んでいます。",
+                "kana": "こんでいます。"
+              },
+              {
+                "ja": "でも、",
+                "kana": "でも、"
+              },
+              {
+                "ja": "もう慣れました。",
+                "kana": "もうなれました。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "india",
+        "line": "インドの電車も混んでいますか？",
+        "kana": "インドのでんしゃもこんでいますか？",
+        "english": "Are trains in India crowded too?",
+        "hintEn": "Compare with India.",
+        "intentEn": "Compare the trains in India with Japan.",
+        "keyTerms": [
+          [
+            "混んで",
+            "こんで"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、ムンバイの電車は日本よりもっと混んでいます。",
+            "kana": "はい、ムンバイのでんしゃはにほんよりもっとこんでいます。",
+            "english": "Yes, Mumbai's trains are even more crowded than Japan's.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "ムンバイの電車は",
+                "kana": "ムンバイのでんしゃは"
+              },
+              {
+                "ja": "日本より",
+                "kana": "にほんより"
+              },
+              {
+                "ja": "もっと",
+                "kana": "もっと"
+              },
+              {
+                "ja": "混んでいます。",
+                "kana": "こんでいます。"
+              }
+            ],
+            "noteEn": "「AよりB」 compares: 「日本より」 — than Japan."
+          }
+        ]
+      },
+      {
+        "id": "hsr",
+        "line": "だから、高速鉄道が必要なんですね。",
+        "kana": "だから、こうそくてつどうがひつようなんですね。",
+        "english": "So that's why high-speed rail is needed.",
+        "hintEn": "Agree warmly.",
+        "intentEn": "Agree, and say what you hope for.",
+        "keyTerms": [
+          [
+            "そう",
+            "期待",
+            "きたい"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "そうなんです。日本の技術にとても期待しています。",
+            "kana": "そうなんです。にほんのぎじゅつにとてもきたいしています。",
+            "english": "Exactly. We have great hopes for Japanese technology.",
+            "chunks": [
+              {
+                "ja": "そうなんです。",
+                "kana": "そうなんです。"
+              },
+              {
+                "ja": "日本の技術に",
+                "kana": "にほんのぎじゅつに"
+              },
+              {
+                "ja": "とても",
+                "kana": "とても"
+              },
+              {
+                "ja": "期待しています。",
+                "kana": "きたいしています。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "weekend",
+        "line": "休みの日は、何をしていますか？",
+        "kana": "やすみのひは、なにをしていますか？",
+        "english": "What do you do on your days off?",
+        "hintEn": "Say what you do.",
+        "intentEn": "Tell him what you do on your days off.",
+        "keyTerms": [
+          [
+            "しています",
+            "散歩",
+            "さんぽ",
+            "勉強",
+            "べんきょう"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "よく近くの公園を散歩しています。",
+            "kana": "よくちかくのこうえんをさんぽしています。",
+            "english": "I often walk in the park nearby.",
+            "chunks": [
+              {
+                "ja": "よく",
+                "kana": "よく"
+              },
+              {
+                "ja": "近くの公園を",
+                "kana": "ちかくのこうえんを"
+              },
+              {
+                "ja": "散歩しています。",
+                "kana": "さんぽしています。"
+              }
+            ]
+          },
+          {
+            "japanese": "日本語の勉強をしています。",
+            "kana": "にほんごのべんきょうをしています。",
+            "english": "I study Japanese.",
+            "chunks": [
+              {
+                "ja": "日本語の",
+                "kana": "にほんごの"
+              },
+              {
+                "ja": "勉強をしています。",
+                "kana": "べんきょうをしています。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "help",
+        "line": "何か困ったことがあったら、いつでも言ってくださいね。",
+        "kana": "なにかこまったことがあったら、いつでもいってくださいね。",
+        "english": "If anything's troubling you, tell me any time.",
+        "hintEn": "Thank him.",
+        "intentEn": "Thank him for the offer.",
+        "keyTerms": [
+          [
+            "ありがとう"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "ありがとうございます。とても心強いです。",
+            "kana": "ありがとうございます。とてもこころづよいです。",
+            "english": "Thank you. That's very reassuring.",
+            "chunks": [
+              {
+                "ja": "ありがとうございます。",
+                "kana": "ありがとうございます。"
+              },
+              {
+                "ja": "とても",
+                "kana": "とても"
+              },
+              {
+                "ja": "心強いです。",
+                "kana": "こころづよいです。"
+              }
+            ],
+            "noteEn": "「心強い」: reassuring — when someone offers support."
+          }
+        ]
+      }
+    ],
+    "closingLine": "では、そろそろ仕事に戻りましょうか。",
+    "closingKana": "では、そろそろしごとにもどりましょうか。",
+    "closingEnglish": "Well, shall we get back to work?"
+  },
+  {
+    "id": "s.long.crack",
+    "title": "Reporting a crack from the site",
+    "titleJa": "現場からの報告",
+    "track": "work",
+    "level": 4,
+    "personaID": "p.takahashi",
+    "situationEn": "You phone Takahashi-san, the technical consultant, to report a crack found in a pier. You start the call.",
+    "placeEn": "on a call from the site",
+    "canDoEn": "Report a problem by phone: what, how big, how serious, the likely cause, what you'll do and when you'll report.",
+    "roleReversal": true,
+    "targetTerms": [
+      "v.mondai",
+      "v.genin",
+      "v.taiou",
+      "v.hibi",
+      "v.houkoku"
+    ],
+    "beats": [
+      {
+        "id": "call",
+        "line": "",
+        "kana": "",
+        "english": "",
+        "hintEn": "Start the call.",
+        "intentEn": "Say who you are and ask if he has a moment.",
+        "keyTerms": [
+          [
+            "もしもし",
+            "よろしい"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "もしもし、{name}です。今、少しよろしいですか？",
+            "kana": "もしもし、{name}です。いま、すこしよろしいですか？",
+            "english": "Hello, this is {name}. Do you have a moment?",
+            "chunks": [
+              {
+                "ja": "もしもし、",
+                "kana": "もしもし、"
+              },
+              {
+                "ja": "{name}です。",
+                "kana": "{name}です。"
+              },
+              {
+                "ja": "今、少し",
+                "kana": "いま、すこし"
+              },
+              {
+                "ja": "よろしいですか？",
+                "kana": "よろしいですか？"
+              }
+            ],
+            "noteEn": "「よろしいですか」: a polite way to ask if it's OK."
+          }
+        ]
+      },
+      {
+        "id": "what",
+        "line": "はい、大丈夫です。どうしましたか？",
+        "kana": "はい、だいじょうぶです。どうしましたか？",
+        "english": "Yes, that's fine. What happened?",
+        "hintEn": "Say what you found.",
+        "intentEn": "Tell him what you found.",
+        "keyTerms": [
+          [
+            "ひび",
+            "見つか",
+            "みつか"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "七番の橋脚に、ひびが見つかりました。",
+            "kana": "ななばんのきょうきゃくに、ひびがみつかりました。",
+            "english": "We found a crack in pier number seven.",
+            "chunks": [
+              {
+                "ja": "七番の橋脚に、",
+                "kana": "ななばんのきょうきゃくに、"
+              },
+              {
+                "ja": "ひびが",
+                "kana": "ひびが"
+              },
+              {
+                "ja": "見つかりました。",
+                "kana": "みつかりました。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "size",
+        "line": "ひびの大きさはどのくらいですか？",
+        "kana": "ひびのおおきさはどのくらいですか？",
+        "english": "How big is the crack?",
+        "hintEn": "Give its size.",
+        "intentEn": "Tell him how long and how wide it is.",
+        "keyTerms": [
+          [
+            "センチ",
+            "せんち",
+            "ミリ",
+            "みり"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "長さは三十センチぐらいで、幅は一ミリ以下です。",
+            "kana": "ながさはさんじゅっセンチぐらいで、はばはいちミリいかです。",
+            "english": "About 30 cm long and under 1 mm wide.",
+            "chunks": [
+              {
+                "ja": "長さは",
+                "kana": "ながさは"
+              },
+              {
+                "ja": "三十センチぐらいで、",
+                "kana": "さんじゅっセンチぐらいで、"
+              },
+              {
+                "ja": "幅は",
+                "kana": "はばは"
+              },
+              {
+                "ja": "一ミリ以下です。",
+                "kana": "いちミリいかです。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "danger",
+        "line": "構造的に危険な状態ですか？",
+        "kana": "こうぞうてきにきけんなじょうたいですか？",
+        "english": "Is it structurally dangerous?",
+        "hintEn": "Say how serious it is.",
+        "intentEn": "Tell him whether it's dangerous.",
+        "keyTerms": [
+          [
+            "危険",
+            "きけん"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "いいえ、今のところ危険ではないと思います。",
+            "kana": "いいえ、いまのところきけんではないとおもいます。",
+            "english": "No, I don't think it's dangerous for now.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "今のところ",
+                "kana": "いまのところ"
+              },
+              {
+                "ja": "危険ではないと",
+                "kana": "きけんではないと"
+              },
+              {
+                "ja": "思います。",
+                "kana": "おもいます。"
+              }
+            ],
+            "noteEn": "「今のところ」: for now, as far as we know."
+          }
+        ]
+      },
+      {
+        "id": "cause",
+        "line": "原因は何だと思いますか？",
+        "kana": "げんいんはなんだとおもいますか？",
+        "english": "What do you think caused it?",
+        "hintEn": "Give the likely cause.",
+        "intentEn": "Tell him what you think caused it.",
+        "keyTerms": [
+          [
+            "思います",
+            "おもいます",
+            "調べ",
+            "しらべ",
+            "わかりません"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "コンクリートの乾燥収縮だと思います。",
+            "kana": "コンクリートのかんそうしゅうしゅくだとおもいます。",
+            "english": "I think it's drying shrinkage of the concrete.",
+            "chunks": [
+              {
+                "ja": "コンクリートの",
+                "kana": "コンクリートの"
+              },
+              {
+                "ja": "乾燥収縮だと",
+                "kana": "かんそうしゅうしゅくだと"
+              },
+              {
+                "ja": "思います。",
+                "kana": "おもいます。"
+              }
+            ],
+            "noteEn": "「乾燥収縮」: drying shrinkage — a common cause of fine cracks."
+          },
+          {
+            "japanese": "まだわかりません。調べています。",
+            "kana": "まだわかりません。しらべています。",
+            "english": "I don't know yet. We're investigating.",
+            "chunks": [
+              {
+                "ja": "まだわかりません。",
+                "kana": "まだわかりません。"
+              },
+              {
+                "ja": "調べています。",
+                "kana": "しらべています。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "measure",
+        "line": "どう対応する予定ですか？",
+        "kana": "どうたいおうするよていですか？",
+        "english": "How do you plan to deal with it?",
+        "hintEn": "Say what you'll do first.",
+        "intentEn": "Tell him what you'll do about it.",
+        "keyTerms": [
+          [
+            "写真",
+            "しゃしん",
+            "測",
+            "はか"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "まず写真を撮って、ひびの幅を毎日測ります。",
+            "kana": "まずしゃしんをとって、ひびのはばをまいにちはかります。",
+            "english": "First we'll take photos and measure the crack width every day.",
+            "chunks": [
+              {
+                "ja": "まず",
+                "kana": "まず"
+              },
+              {
+                "ja": "写真を撮って、",
+                "kana": "しゃしんをとって、"
+              },
+              {
+                "ja": "ひびの幅を",
+                "kana": "ひびのはばを"
+              },
+              {
+                "ja": "毎日",
+                "kana": "まいにち"
+              },
+              {
+                "ja": "測ります。",
+                "kana": "はかります。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "repair",
+        "line": "補修は必要ですか？",
+        "kana": "ほしゅうはひつようですか？",
+        "english": "Will it need repair?",
+        "hintEn": "Say whether you'll repair it.",
+        "intentEn": "Tell him about the repair.",
+        "keyTerms": [
+          [
+            "補修",
+            "ほしゅう",
+            "様子",
+            "ようす",
+            "決め",
+            "きめ"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "はい、エポキシ樹脂の注入で補修する予定です。",
+            "kana": "はい、エポキシじゅしのちゅうにゅうでほしゅうするよていです。",
+            "english": "Yes, we plan to repair it by injecting epoxy resin.",
+            "chunks": [
+              {
+                "ja": "はい、",
+                "kana": "はい、"
+              },
+              {
+                "ja": "エポキシ樹脂の注入で",
+                "kana": "エポキシじゅしのちゅうにゅうで"
+              },
+              {
+                "ja": "補修する予定です。",
+                "kana": "ほしゅうするよていです。"
+              }
+            ],
+            "noteEn": "「補修」: repair (of a structure)."
+          },
+          {
+            "japanese": "様子を見てから決めます。",
+            "kana": "ようすをみてからきめます。",
+            "english": "We'll decide after watching it for a while.",
+            "chunks": [
+              {
+                "ja": "様子を見てから",
+                "kana": "ようすをみてから"
+              },
+              {
+                "ja": "決めます。",
+                "kana": "きめます。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "schedule",
+        "line": "工程に影響は出ますか？",
+        "kana": "こうていにえいきょうはでますか？",
+        "english": "Will it affect the schedule?",
+        "hintEn": "Say whether the schedule is affected.",
+        "intentEn": "Tell him about the schedule.",
+        "keyTerms": [
+          [
+            "予定",
+            "よてい",
+            "影響",
+            "えいきょう"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "いいえ、ほかの作業は予定どおり進めます。",
+            "kana": "いいえ、ほかのさぎょうはよていどおりすすめます。",
+            "english": "No, the other work will go ahead as planned.",
+            "chunks": [
+              {
+                "ja": "いいえ、",
+                "kana": "いいえ、"
+              },
+              {
+                "ja": "ほかの作業は",
+                "kana": "ほかのさぎょうは"
+              },
+              {
+                "ja": "予定どおり",
+                "kana": "よていどおり"
+              },
+              {
+                "ja": "進めます。",
+                "kana": "すすめます。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "report",
+        "line": "わかりました。今日中に報告書を送ってください。",
+        "kana": "わかりました。きょうじゅうにほうこくしょをおくってください。",
+        "english": "Understood. Please send a report today.",
+        "hintEn": "Say when you'll send it.",
+        "intentEn": "Tell him when you'll send the report.",
+        "keyTerms": [
+          [
+            "送",
+            "おく",
+            "承知",
+            "しょうち"
+          ]
+        ],
+        "responses": [
+          {
+            "japanese": "承知しました。夕方までに送ります。",
+            "kana": "しょうちしました。ゆうがたまでにおくります。",
+            "english": "Certainly. I'll send it by this evening.",
+            "chunks": [
+              {
+                "ja": "承知しました。",
+                "kana": "しょうちしました。"
+              },
+              {
+                "ja": "夕方までに",
+                "kana": "ゆうがたまでに"
+              },
+              {
+                "ja": "送ります。",
+                "kana": "おくります。"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "closingLine": "連絡ありがとうございました。よろしくお願いします。",
+    "closingKana": "れんらくありがとうございました。よろしくおねがいします。",
+    "closingEnglish": "Thanks for letting me know. I'm counting on you."
   }
 ]
