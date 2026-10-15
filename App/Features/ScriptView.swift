@@ -2,7 +2,47 @@ import LearningCore
 import SessionCore
 import SwiftUI
 
-/// The complete script: every line with its reading and meaning, to read, hear and learn by heart.
+/// What "Say it" heard, and how close it was to the line (0…1).
+struct SayResult {
+    var heard: String
+    var similarity: Double
+    var problem: String?
+
+    init(heard: String, similarity: Double, problem: String? = nil) {
+        self.heard = heard
+        self.similarity = similarity
+        self.problem = problem
+    }
+}
+
+/// "Say it" outside a session: the microphone is on just for this one line.
+@MainActor
+enum LineCheck {
+    static func listen(_ app: AppEnvironment, references: [String]) async -> SayResult {
+        var permitted = VoicePermissions.granted
+        if !permitted { permitted = await VoicePermissions.request() }
+        guard permitted else {
+            return SayResult(heard: "", similarity: 0, problem: "Allow the microphone and speech recognition in Settings › Hanaseru.")
+        }
+        do {
+            try app.voice.beginSession()
+        } catch {
+            return SayResult(heard: "", similarity: 0, problem: error.localizedDescription)
+        }
+        // Spoken, even when answers are usually written.
+        let wasWriting = app.voice.writing.isEnabled
+        app.voice.writing.isEnabled = false
+        app.voice.cues.play(.yourTurn)
+        let options = ListenOptions(startTimeout: 6, endSilence: 1.2, maxDuration: 15, contextualStrings: references)
+        let result = await app.voice.recognizer.listen(options) { _ in }
+        app.voice.writing.isEnabled = wasWriting
+        app.voice.endSession()
+        let heard = result.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        return SayResult(heard: heard, similarity: heard.isEmpty ? 0 : JapaneseText.bestSimilarity(heard, to: references))
+    }
+}
+
+/// The complete script: every line with its reading and meaning, to read, hear, say and learn by heart.
 /// "Test me" hides your own lines until you tap them, so you can check you know what to say.
 struct ScriptView: View {
     let parts: [ScriptPart]
@@ -14,8 +54,12 @@ struct ScriptView: View {
     /// Starts practising at a part and, in a scene, at a line. Nil: no start buttons.
     var onStart: ((Int, Int?) -> Void)?
     var title = "Script"
+    /// "Say it": listens for a line and says how close it was. Nil: no Say it buttons.
+    var onSay: ((ScriptEntry) async -> SayResult)?
 
     @AppStorage(SettingsKey.showRomaji) private var showRomaji = false
+    @State private var saying: String?
+    @State private var results: [String: SayResult] = [:]
     @State private var slowly = false
     @State private var showEnglish = true
     @State private var testMe = false
@@ -78,9 +122,8 @@ struct ScriptView: View {
     private func row(_ entry: ScriptEntry, part: ScriptPart) -> some View {
         let isCurrent = entry.isLearner && entry.lineID != nil && entry.lineID == currentLineID && part.index == currentPart
         let hidden = testMe && entry.isLearner && !revealed.contains(entry.id)
-        HStack(alignment: .top, spacing: 10) {
-            VStack(alignment: .leading, spacing: 6) {
-                let name = speaker(entry)
+        VStack(alignment: .leading, spacing: 6) {
+                let name = entry.label ?? speaker(entry)
                 if !name.isEmpty {
                     Text(name)
                         .font(.caption.weight(.semibold))
@@ -96,24 +139,67 @@ struct ScriptView: View {
                     JapaneseTextView(japanese: entry.japanese, kana: entry.kana, romaji: entry.romaji,
                                      english: showEnglish ? entry.english : "", style: .body)
                 }
-                if let line = entry.startLine, let onStart {
-                    Button { onStart(part.index, line) } label: {
-                        Label("Practise from here", systemImage: "play.circle")
+                HStack(spacing: 8) {
+                    Button { onPlay(entry.audio, slowly) } label: {
+                        Label("Hear", systemImage: "speaker.wave.2.fill")
                     }
-                    .font(.footnote)
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("script-hear")
+                    if let onSay {
+                        Button {
+                            say(entry, with: onSay)
+                        } label: {
+                            Label(saying == entry.id ? "Listening…" : "Say it", systemImage: "mic.fill")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Palette.signal)
+                        .disabled(saying != nil)
+                        .accessibilityIdentifier("script-say")
+                    }
+                    if let line = entry.startLine, let onStart {
+                        Button { onStart(part.index, line) } label: {
+                            Label("From here", systemImage: "play.circle")
+                        }
+                        .buttonStyle(.borderless)
+                    }
                 }
-            }
-            Spacer(minLength: 0)
-            Button { onPlay(entry.audio, slowly) } label: {
-                Image(systemName: "speaker.wave.2.fill").font(.body).frame(width: 40, height: 40)
-            }
-            .buttonStyle(.borderless)
-            .foregroundStyle(Palette.line)
-            .accessibilityLabel("Hear this line")
+                .font(.footnote.weight(.semibold))
+                if let result = results[entry.id] {
+                    sayFeedback(result)
+                }
         }
         .padding(.vertical, 4)
         .listRowBackground(isCurrent ? Palette.line.opacity(0.1) : Palette.surface)
+    }
+
+    private func say(_ entry: ScriptEntry, with check: @escaping (ScriptEntry) async -> SayResult) {
+        saying = entry.id
+        results[entry.id] = nil
+        Task {
+            let result = await check(entry)
+            results[entry.id] = result
+            saying = nil
+        }
+    }
+
+    /// Never "wrong": what was heard, and whether it matched the line.
+    @ViewBuilder
+    private func sayFeedback(_ result: SayResult) -> some View {
+        if let problem = result.problem {
+            Text(problem).font(.footnote).foregroundStyle(Palette.caution)
+        } else if result.heard.isEmpty {
+            Label("Nothing heard. Tap Say it and speak after the chime.", systemImage: "ear")
+                .font(.footnote).foregroundStyle(Palette.inkSecondary)
+        } else if result.similarity >= 0.8 {
+            Label("That's it: 「\(result.heard)」", systemImage: "checkmark.circle.fill")
+                .font(.footnote).foregroundStyle(Palette.go)
+        } else if result.similarity >= 0.5 {
+            Label("Close. Heard 「\(result.heard)」. Hear it and try again.", systemImage: "arrow.triangle.2.circlepath")
+                .font(.footnote).foregroundStyle(Palette.signal)
+        } else {
+            Label("Heard 「\(result.heard)」. Hear it and try again.", systemImage: "arrow.triangle.2.circlepath")
+                .font(.footnote).foregroundStyle(Palette.inkSecondary)
+        }
     }
 
     private func speaker(_ entry: ScriptEntry) -> String {

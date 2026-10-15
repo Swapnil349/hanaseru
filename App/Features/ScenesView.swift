@@ -8,6 +8,8 @@ struct SceneStart: Hashable {
     var scenarioID: String
     var startBeat: Int
     var mode: SceneMode
+    /// You play the colleague; the app says your usual lines.
+    var playAsPartner = false
 }
 
 extension SceneMode {
@@ -98,6 +100,7 @@ struct SceneDetailView: View {
     let scenario: Scenario
     @State private var session: SceneSession?
     @State private var showScript = false
+    @State private var playAsPartner = false
     /// A start chosen in the script, opened once the script has closed.
     @State private var startAfterScript: SceneSession?
 
@@ -114,18 +117,24 @@ struct SceneDetailView: View {
         List {
             Section {
                 Text(scenario.situationEn).font(.callout).foregroundStyle(Palette.ink)
+                Picker("You play", selection: $playAsPartner) {
+                    Text("Yourself").tag(false)
+                    Text(persona?.nameEn ?? "The colleague").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("scene-role")
                 Picker("Lesson", selection: $modeRaw) {
                     ForEach(SceneMode.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
                 }
                 Text(mode.detail).font(.caption).foregroundStyle(Palette.inkSecondary)
                 Button {
-                    session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: 0, mode: mode))
+                    session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: 0, mode: mode, playAsPartner: playAsPartner))
                 } label: {
                     Label("Start from the beginning", systemImage: "play.fill")
                 }
                 .accessibilityIdentifier("scene-start")
                 Button {
-                    session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: 0, mode: .watch))
+                    session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: 0, mode: .watch, playAsPartner: playAsPartner))
                 } label: {
                     Label("Watch the scene", systemImage: "theatermasks")
                 }
@@ -166,7 +175,7 @@ struct SceneDetailView: View {
                         }
                         .buttonStyle(.plain)
                         Button {
-                            session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: index, mode: mode))
+                            session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: index, mode: mode, playAsPartner: playAsPartner))
                         } label: {
                             Label("Start here", systemImage: "play.circle")
                         }
@@ -191,10 +200,11 @@ struct SceneDetailView: View {
                            onPlay: { requests, slowly in SayJapanese.play(requests, slowly: slowly) },
                            onStart: { _, line in
                                startAfterScript = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: line ?? 0,
-                                                                                 mode: mode))
+                                                                                 mode: mode, playAsPartner: playAsPartner))
                                showScript = false
                            },
-                           title: scenario.title)
+                           title: scenario.title,
+                           onSay: { entry in await LineCheck.listen(app, references: entry.references) })
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { showScript = false }

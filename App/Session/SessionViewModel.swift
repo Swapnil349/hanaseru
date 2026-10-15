@@ -102,7 +102,8 @@ final class SessionViewModel {
                                      sceneStartBeat: scene?.startBeat ?? 0,
                                      briefIntro: scene != nil || defaults.integer(forKey: SettingsKey.completedSessions) >= 3,
                                      answerDisplay: AnswerDisplay(rawValue: defaults.string(forKey: SettingsKey.answerDisplay) ?? "")
-                                         ?? .whileLearning)
+                                         ?? .whileLearning,
+                                     playAsPartner: scene?.playAsPartner ?? false)
         let runner = SessionRunner(plan: plan, library: library, voice: voice,
                                    ai: app.makeAIProvider(), repository: app.repository, options: options)
         runner.onEvent = { [weak self] event in self?.handle(event) }
@@ -146,7 +147,19 @@ final class SessionViewModel {
 
     /// ⏮ ⏭, and starting from a line of the script.
     func move(_ move: SessionMove) {
+        VoiceLog.add("move: \(move)")
         runner?.move(move)
+    }
+
+    /// "Say it" in the script: the session pauses and listens for that line.
+    func sayLine(_ references: [String]) async -> SayResult {
+        guard let runner else { return SayResult(heard: "", similarity: 0) }
+        // Spoken, even when answers are usually written.
+        let wasWriting = writing?.isEnabled ?? false
+        writing?.isEnabled = false
+        defer { writing?.isEnabled = wasWriting }
+        let result = await runner.sayLine(references)
+        return SayResult(heard: result.heard, similarity: result.similarity)
     }
 
     /// ↺: during the learner's turn, the question again (the turn goes on); otherwise this line from its start.

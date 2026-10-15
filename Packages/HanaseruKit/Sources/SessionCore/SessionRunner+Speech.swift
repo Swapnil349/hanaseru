@@ -44,6 +44,11 @@ extension SessionRunner {
         let cue = library.cue(key)
         let english = library.fill(cue.en, values)
         emit(.line(ScriptLine(role: .coach, japanese: cue.ja, kana: cue.kana, english: english)))
+        if japaneseOnly && !cue.ja.isEmpty {
+            // Inside a scene: Japanese only; the English is on screen.
+            try await speak(cue.ja, .japanese, rate: learner.difficulty.speechRate, voiceRole: .coachJapanese, volume: volume)
+            return
+        }
         if Self.ritualCues.contains(key) {
             // Everyday Japanese worth hearing every time; glossed in English the first time only.
             try await speak(cue.ja, .japanese, rate: learner.difficulty.speechRate, voiceRole: .coachJapanese, volume: volume)
@@ -105,7 +110,7 @@ extension SessionRunner {
             try await speakEnglishCue(line, volume: volume)
         case .intent:
             emit(.line(ScriptLine(role: .instruction, japanese: "", english: line.intentEn)))
-            try await speakMixed(line.intentEn, volume: 0.6)
+            if !japaneseOnly { try await speakMixed(line.intentEn, volume: 0.6) }
         case .free, .fluent:
             break
         }
@@ -114,6 +119,8 @@ extension SessionRunner {
     /// "Say: <meaning>" — the line's own cue in English mode, or the Japanese instruction plus the meaning.
     func speakEnglishCue(_ line: PracticeLine, volume: Double) async throws {
         emit(.line(ScriptLine(role: .instruction, japanese: "", english: line.cueEn)))
+        // Inside a scene the cue is on screen only.
+        guard !japaneseOnly else { return }
         if learner.difficulty.coachLanguage == .english {
             try await speakMixed(line.cueEn, volume: volume)
         } else {
@@ -169,11 +176,13 @@ extension SessionRunner {
             let text = guidedStart(line).spoken
             return [SpeechRequest(text: text.hasSuffix("…") ? text : text + "…", language: .japanese, rate: 0.85, voice: .coachJapanese)]
         case .intent:
+            if japaneseOnly { return nudge(for: line, level: .cued) }
             return [SpeechRequest(text: "Like: " + line.english, language: .english)]
         case .free, .fluent:
             if let choice = line.choiceVariant {
                 return [SpeechRequest(text: choice.japanese, language: .japanese, rate: 0.9, voice: .partner(line.partner?.gender))]
             }
+            if japaneseOnly { return nudge(for: line, level: .cued) }
             return [SpeechRequest(text: line.intentEn, language: .english, volume: 0.6)]
         }
     }

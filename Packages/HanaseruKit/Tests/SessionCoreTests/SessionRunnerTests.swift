@@ -372,15 +372,19 @@ struct SessionRunnerTests {
         let library = harness.library
         let scenario = try #require(library.scenario(id: "s.weekend.chat"))
         let lines = library.lines(in: scenario, learnerName: "Swapnil")
-        let texts = harness.synthesizer.texts
-        // Every partner line is acted out first, then heard with its meaning, in practice and in the
-        // performance — never re-asked.
-        for line in lines { #expect(harness.synthesizer.count(line.partner?.japanese ?? "") == 4) }
-        // Three announced steps; the learner's own lines are given in English and Japanese before any turn.
+        let spoken = harness.synthesizer.spoken
+        let texts = spoken.map(\.text)
+        // Every partner line is acted out first, then heard in practice and in the performance — never re-asked.
+        for line in lines { #expect(harness.synthesizer.count(line.partner?.japanese ?? "") == 3) }
+        // The scene is explained once, in English; then the three steps are in Japanese, with the English on
+        // screen: the learner's own lines are modelled before any turn.
         #expect(inOrder(texts, ["Three steps: listen, practise your lines, then the real conversation.",
-                                "Step 1 of 3: just listen to the whole conversation.", "You: " + lines[0].english, lines[0].japanese,
-                                "Step 2 of 3: practise your lines. Repeat each one after me.", "You say: " + lines[0].english,
-                                "Step 3 of 3: the real conversation. Nakamura-san starts. I'll whisper your cue."]))
+                                "ステップ１。まず、会話を聞きましょう。", lines[0].japanese,
+                                "ステップ２。あなたのせりふを練習しましょう。", "こう答えます。", lines[0].japanese,
+                                "ステップ３。では、本番です。"]))
+        let explained = try #require(texts.firstIndex(of: "Three steps: listen, practise your lines, then the real conversation."))
+        let ended = try #require(texts.firstIndex(of: "会話はここまでです。"))
+        #expect(!spoken[(explained + 1)..<ended].contains { $0.language == .english })
         #expect(harness.runner.ledgerViolations.isEmpty)
     }
 

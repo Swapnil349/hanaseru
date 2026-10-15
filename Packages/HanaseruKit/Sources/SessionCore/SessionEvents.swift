@@ -167,15 +167,18 @@ public struct StageInfo: Equatable, Sendable {
     public var partnerName: String
     public var partnerGender: VoiceGender?
     public var learnerName: String
+    /// The learner plays the colleague: the colleague's mouth moves with the learner's lines.
+    public var learnerPlaysPartner: Bool
 
     public init(scenarioID: String, place: String, partnerID: String, partnerName: String,
-                partnerGender: VoiceGender?, learnerName: String) {
+                partnerGender: VoiceGender?, learnerName: String, learnerPlaysPartner: Bool = false) {
         self.scenarioID = scenarioID
         self.place = place
         self.partnerID = partnerID
         self.partnerName = partnerName
         self.partnerGender = partnerGender
         self.learnerName = learnerName
+        self.learnerPlaysPartner = learnerPlaysPartner
     }
 }
 

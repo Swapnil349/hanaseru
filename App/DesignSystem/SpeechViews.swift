@@ -237,6 +237,7 @@ struct TimelineScrubber: View {
     let timeline: SessionTimeline
     let onSeek: (Int) -> Void
     @State private var dragging: Double?
+    @State private var editing = false
 
     private var lastIndex: Int { max(1, timeline.stops.count - 1) }
 
@@ -265,10 +266,12 @@ struct TimelineScrubber: View {
                     .accessibilityIdentifier("timeline-answer")
                 }
             }
-            Slider(value: Binding(get: { dragging ?? Double(timeline.position) }, set: { dragging = $0 }),
+            Slider(value: Binding(get: { dragging ?? Double(timeline.position) },
+                                  set: { value in if editing { dragging = value } }),
                    in: 0...Double(lastIndex), step: 1,
-                   onEditingChanged: { editing in
-                       guard !editing, let value = dragging else { return }
+                   onEditingChanged: { isEditing in
+                       editing = isEditing
+                       guard !isEditing, let value = dragging else { return }
                        dragging = nil
                        onSeek(Int(value.rounded()))
                    })

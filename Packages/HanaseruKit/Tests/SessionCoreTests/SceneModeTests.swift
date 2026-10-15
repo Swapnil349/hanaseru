@@ -29,7 +29,7 @@ struct SceneModeTests {
         let texts = harness.synthesizer.texts
         #expect(!texts.contains("Three steps: listen, practise your lines, then the real conversation."))
         #expect(!texts.contains { $0.hasPrefix("Step 1 of 3") })
-        #expect(texts.contains("Nakamura-san starts."))
+        #expect(texts.contains("始めましょう。"))
         #expect(harness.runner.ledgerViolations.isEmpty)
     }
 
@@ -51,7 +51,7 @@ struct SceneModeTests {
                               options: SessionOptions(sceneMode: .practiseLines))
         _ = try #require(await harness.runToCompletion())
         let texts = harness.synthesizer.texts
-        #expect(texts.contains("Your lines first. Repeat each one after me."))
+        #expect(texts.contains("まず、せりふの練習です。"))
         #expect(!texts.contains { $0.hasPrefix("Step 1 of 3") })
         #expect(harness.runner.ledgerViolations.isEmpty)
     }
@@ -78,6 +78,33 @@ struct SceneModeTests {
             if case .stage(let info?) = event { return info.partnerName == "Nakamura-san" }
             return false
         })
+    }
+
+    @Test func theLearnerCanPlayTheColleague() async throws {
+        let library = try ContentLibrary.bundled()
+        let scenario = try #require(library.scenario(id: "s.weekend.chat"))
+        let mine = library.lines(in: scenario, learnerName: "")
+        let theirs = library.partnerSideLines(in: scenario, learnerName: "")
+        // The colleague's three lines and the closing line; each after the learner's usual line but the first.
+        #expect(theirs.map(\.japanese) == mine.compactMap { $0.partner?.japanese } + [scenario.closingLine])
+        #expect(theirs.first?.partner == nil)
+        #expect(Array(theirs.dropFirst()).compactMap { $0.partner?.japanese } == mine.map(\.japanese))
+
+        let harness = Harness(plan: scene, answers: [], library: library,
+                              options: SessionOptions(sceneMode: .conversationOnly, playAsPartner: true))
+        let summary = try #require(await harness.runToCompletion())
+        #expect(summary.conversationTurns == theirs.count)
+        // The app says the learner's usual lines in the other voice; the colleague's are modelled for the learner.
+        for line in mine {
+            #expect(harness.synthesizer.spoken.contains { $0.text == line.japanese && $0.voice == .partner(nil) })
+        }
+        #expect(summary.results.allSatisfy { $0.lineID?.hasSuffix("~them") == true })
+        #expect(harness.events.contains { event in
+            if case .stage(let info?) = event { return info.learnerPlaysPartner }
+            return false
+        })
+        let script = try #require(harness.runner.script().first)
+        #expect(script.entries.filter(\.isLearner).map(\.japanese) == theirs.map(\.japanese))
     }
 
     @Test func scenesListTheirVocabulary() throws {

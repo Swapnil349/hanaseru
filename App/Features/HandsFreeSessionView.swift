@@ -66,9 +66,12 @@ struct HandsFreeSessionView: View {
                                        micLevel: model.micLevel, focus: model.focusInfo, reveal: model.reveal,
                                        partnerLine: model.partnerLine, showEnglish: showEnglish,
                                        onHearPartner: {
-                                           guard let line = model.partnerLine else { return }
-                                           model.listen(to: [SpeechRequest(text: line.japanese, language: .japanese, rate: 0.9,
-                                                                           voice: .partner(stage.partnerGender))])
+                                           if let focus = model.focusInfo, !focus.promptAudio.isEmpty {
+                                               model.listen(to: focus.promptAudio)
+                                           } else if let line = model.partnerLine {
+                                               model.listen(to: [SpeechRequest(text: line.japanese, language: .japanese,
+                                                                               rate: 0.9, voice: .partner(stage.partnerGender))])
+                                           }
                                        },
                                        onHearYou: {
                                            if let focus = model.focusInfo { model.listen(to: focus.answerAudio) }
@@ -106,7 +109,8 @@ struct HandsFreeSessionView: View {
                            onStart: { part, line in
                                scriptParts = nil
                                model.move(.to(part: part, line: line))
-                           })
+                           },
+                           onSay: { entry in await model.sayLine(entry.references) })
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { scriptParts = nil }

@@ -175,6 +175,42 @@ public extension ContentLibrary {
         scenario.beats.indices.compactMap { practiceLine(scenario: scenario, beatIndex: $0, learnerName: learnerName) }
     }
 
+    /// The other role of a scene: the colleague's lines (and the closing line), for the learner to say, each
+    /// after the learner's usual line, which the app says instead.
+    func partnerSideLines(in scenario: Scenario, learnerName: String) -> [PracticeLine] {
+        let persona = persona(id: scenario.personaID)
+        var result: [PracticeLine] = []
+        var before: ModelLine?
+        func add(id: String, japanese: String, kana: String, english: String, chunks: [Chunk]?) {
+            let usual = before.map { line in
+                PracticePartner(japanese: line.japanese, kana: line.kana, english: line.english,
+                                nameJa: learnerName.isEmpty ? "あなた" : learnerName,
+                                nameEn: learnerName.isEmpty ? "You" : learnerName, gender: nil, speakingRate: 1)
+            }
+            let cue = PracticeLine.defaultCue(english: english, japanese: japanese)
+            var references = [japanese]
+            if !kana.isEmpty && kana != japanese { references.append(kana) }
+            result.append(PracticeLine(
+                id: id, japanese: japanese, kana: kana, english: english,
+                chunks: PracticeLine.chunks(chunks, japanese: japanese, kana: kana), level: scenario.level,
+                cueEn: cue, intentEn: cue, partner: usual, references: references, keyTerms: [],
+                mistakes: CommonMistakes.general, politeness: persona?.formality ?? .professional
+            ))
+        }
+        for (index, beat) in scenario.beats.enumerated() {
+            if !beat.line.isEmpty {
+                add(id: "\(scenario.id)#\(scenario.beatID(at: index))~them", japanese: beat.line, kana: beat.kana,
+                    english: beat.english, chunks: beat.lineChunks)
+            }
+            before = beat.responses.first?.personalized(name: learnerName)
+        }
+        if !scenario.closingLine.isEmpty {
+            add(id: "\(scenario.id)#closing~them", japanese: scenario.closingLine, kana: scenario.closingKana,
+                english: scenario.closingEnglish, chunks: nil)
+        }
+        return result
+    }
+
     /// Fills a cue template's placeholders ({english}, {name}, {title}, {topic}, …).
     func fill(_ template: String, _ values: [String: String]) -> String {
         var text = template

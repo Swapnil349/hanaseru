@@ -181,7 +181,11 @@ extension SessionRunner {
                     case .slower:
                         try await replayPrompt(line, level: level, mode: mode, rate: 0.75)
                     case .english:
+                        // Asked for, so the English is spoken even inside a scene.
                         helped = true
+                        let wasJapaneseOnly = japaneseOnly
+                        japaneseOnly = false
+                        defer { japaneseOnly = wasJapaneseOnly }
                         if let partner = line.partner { try await speak(partner.english, .english, pauseAfter: 0.3) }
                         try await speakEnglishCue(line, volume: 1)
                         if level <= .cued {
@@ -469,7 +473,7 @@ extension SessionRunner {
         introducedToday.insert(line.id)
 
         let stored = await entryLevel(for: line)
-        if stored == nil, let note = line.noteEn, learner.difficulty.englishSupport >= 0.5 {
+        if stored == nil, !japaneseOnly, let note = line.noteEn, learner.difficulty.englishSupport >= 0.5 {
             try await speakMixed(note)
         }
         if !firstEcho.heard && !secondEcho.heard && !echoLaterSaid {

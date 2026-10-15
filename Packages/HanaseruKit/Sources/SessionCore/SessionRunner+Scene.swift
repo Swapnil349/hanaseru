@@ -36,24 +36,25 @@ struct SceneState {
     /// Resolved once (never `.automatic`), so a resumed scene keeps its steps.
     let mode: SceneMode
     let segments: [Segment]
+    /// The learner plays the colleague; `lines` are the colleague's.
+    let swapped: Bool
     let stops: [SessionTimeline.Stop]
     let targets: [StopTarget]
     /// How the learner's last answer in the conversation went: the partner reacts to a good one.
     var lastOutcome: TurnOutcome?
 
-    init(scenario: Scenario, persona: Persona, lines: [PracticeLine], start: Int, mode: SceneMode) {
+    init(scenario: Scenario, persona: Persona, lines: [PracticeLine], start: Int, mode: SceneMode, swapped: Bool = false) {
         self.scenario = scenario
         self.persona = persona
         self.lines = lines
         self.start = start
         self.mode = mode
+        self.swapped = swapped
         var segments: [Segment] = [.intro]
-        // Before any practice, the characters act out the whole conversation.
+        // Before any practice, the characters act out the whole conversation: the English is in the
+        // bubbles, so it isn't explained line by line.
         if mode == .fullLesson || mode == .practiseLines || mode == .watch {
             segments += lines.indices.map { Segment.watch($0) }
-        }
-        if mode == .fullLesson {
-            segments += lines.indices.map { Segment.listen($0) }
         }
         if mode == .fullLesson || mode == .practiseLines {
             segments += lines.indices.map { Segment.practise($0) }
@@ -140,9 +141,12 @@ extension SessionRunner {
         if let state = sceneState {
             emit(.stage(StageInfo(scenarioID: state.scenario.id, place: state.scenario.placeEn ?? "",
                                   partnerID: state.persona.id, partnerName: state.persona.nameEn,
-                                  partnerGender: state.persona.voiceGender, learnerName: learner.name)))
+                                  partnerGender: state.persona.voiceGender, learnerName: learner.name,
+                                  learnerPlaysPartner: state.swapped)))
         }
         while let state = sceneState, cursor < state.segments.count {
+            // After its one explanation, the scene is in Japanese.
+            japaneseOnly = state.segments[cursor] != .intro
             try await playSegment(state.segments[cursor], of: state, fromAnswer: answerFirst)
             // A move made while the segment was ending has already set the place.
             try Task.checkCancellation()
@@ -153,17 +157,22 @@ extension SessionRunner {
 
     private func makeSceneState(scenarioID: String, maxTurns: Int) async -> SceneState? {
         guard let scenario = library.scenario(id: scenarioID), let persona = library.persona(id: scenario.personaID) else { return nil }
-        let all = library.lines(in: scenario, learnerName: learner.name)
+        let swapped = options.playAsPartner
+        let all = swapped ? library.partnerSideLines(in: scenario, learnerName: learner.name)
+            : library.lines(in: scenario, learnerName: learner.name)
         guard !all.isEmpty else { return nil }
-        let start = min(max(0, options.sceneStartBeat), all.count - 1)
-        let lines = Array(all.dropFirst(start).prefix(max(1, maxTurns)))
+        // A scene can start at any beat; playing the colleague, that's their first line from that beat on.
+        let beat = max(0, options.sceneStartBeat)
+        let first = swapped ? scenario.beats.prefix(beat).filter { !$0.line.isEmpty }.count : beat
+        let start = min(first, all.count - 1)
+        let lines = Array(all.dropFirst(start).prefix(swapped ? all.count : max(1, maxTurns)))
         // A scene already practised goes straight to the conversation: no explanations.
         var mode = options.sceneMode
         if mode == .automatic {
             let known = await repository.knowledge(for: all.map(\.id))
             mode = known.values.contains { $0.state(.spokenRecall).reviews > 0 } ? .conversationOnly : .fullLesson
         }
-        return SceneState(scenario: scenario, persona: persona, lines: lines, start: start, mode: mode)
+        return SceneState(scenario: scenario, persona: persona, lines: lines, start: start, mode: mode, swapped: swapped)
     }
 
     /// Moves the scrubber to the segment being played, at its question or its answer.
@@ -180,6 +189,10 @@ extension SessionRunner {
         case .intro:
             emit(.line(ScriptLine(role: .instruction, japanese: state.scenario.titleJa, english: state.scenario.situationEn)))
             try await coach(.sceneIntro, ["title": state.scenario.title])
+            if state.swapped {
+                emit(.line(ScriptLine(role: .instruction, japanese: "", english: "You play \(state.persona.nameEn).")))
+                try await speakMixed("This time you play \(state.persona.nameEn).")
+            }
             if full {
                 try await speakMixed(state.scenario.situationEn)
                 try await coach(.sceneSteps)
@@ -257,7 +270,7 @@ extension SessionRunner {
                 return
             }
             if index == 0 {
-                let youStart = state.lines.first?.partner == nil
+                let youStart = state.lines[0].partner == nil
                 if full {
                     try await coach(youStart ? .performYouStart : .performStart, youStart ? [:] : ["name": state.persona.nameEn])
                 } else {
@@ -284,7 +297,8 @@ extension SessionRunner {
             conversationTurns += 1
 
         case .ending:
-            if !state.scenario.closingLine.isEmpty {
+            // Playing the colleague, the closing line was the learner's own last line.
+            if !state.scenario.closingLine.isEmpty && !state.swapped {
                 let rate = TurnTiming.partnerRate(level: .cued, profile: learner.difficulty, personaRate: state.persona.speakingRate)
                 try await partnerSays(state.scenario.closingLine, kana: state.scenario.closingKana,
                                       english: state.scenario.closingEnglish, name: state.persona.nameJa,

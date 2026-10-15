@@ -51,14 +51,17 @@ public struct SessionOptions: Sendable {
     /// A practised learner: skip the spoken plan at the start.
     public var briefIntro: Bool
     public var answerDisplay: AnswerDisplay
+    /// In scenes, the learner plays the colleague and the app says the learner's usual lines.
+    public var playAsPartner: Bool
 
     public init(includeHelpOnboarding: Bool = false, sceneMode: SceneMode = .automatic, sceneStartBeat: Int = 0,
-                briefIntro: Bool = false, answerDisplay: AnswerDisplay = .whileLearning) {
+                briefIntro: Bool = false, answerDisplay: AnswerDisplay = .whileLearning, playAsPartner: Bool = false) {
         self.includeHelpOnboarding = includeHelpOnboarding
         self.sceneMode = sceneMode
         self.sceneStartBeat = sceneStartBeat
         self.briefIntro = briefIntro
         self.answerDisplay = answerDisplay
+        self.playAsPartner = playAsPartner
     }
 }
 
@@ -161,6 +164,8 @@ public final class SessionRunner {
     var interruptedRecall = false
     /// The scene segment being played starts at its answer (chosen on the scrubber).
     var answerFirst = false
+    /// Inside a scene, after its one explanation, the coach speaks Japanese only; the English is on screen.
+    var japaneseOnly = false
 
     // Teaching state.
     /// Lines whose English and Japanese have both been spoken this session (the exposure ledger).
@@ -405,9 +410,52 @@ public final class SessionRunner {
 
     private func launch(after previous: Task<Void, Never>?) {
         task = Task { [weak self] in
-            await previous?.value
+            if let previous { await Self.settle(previous) }
             await self?.run()
         }
+    }
+
+    /// Waits for a cancelled task to wind down, but never long: a voice call that ignores cancellation must
+    /// not freeze the session.
+    static func settle(_ previous: Task<Void, Never>, within seconds: Double = 1.5) async {
+        let gate = Gate()
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            gate.continuation = continuation
+            Task { @MainActor in
+                await previous.value
+                gate.open()
+            }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                gate.open()
+            }
+        }
+    }
+
+    /// Resumes a waiting task once, whichever comes first.
+    final class Gate {
+        var continuation: CheckedContinuation<Void, Never>?
+
+        func open() {
+            continuation?.resume()
+            continuation = nil
+        }
+    }
+
+    /// Listens for the learner saying one line of the script ("Say it"). The session pauses first; returns
+    /// what was heard and how close it is to the line (0…1).
+    public func sayLine(_ references: [String]) async -> (heard: String, similarity: Double) {
+        guard started, !isFinished, !references.isEmpty else { return ("", 0) }
+        if !isPaused { pause() }
+        task?.cancel()
+        voice.synthesizer.stopSpeaking()
+        // The microphone is free once the paused turn has wound down.
+        if let task { await Self.settle(task) }
+        voice.feedback.play(.yourTurn)
+        let options = ListenOptions(startTimeout: 6, endSilence: 1.2, maxDuration: 15, contextualStrings: references)
+        let result = await voice.recognizer.listen(options) { _ in }
+        let heard = result.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (heard, heard.isEmpty ? 0 : JapaneseText.bestSimilarity(heard, to: references))
     }
 
     private func silenceVoice() {
@@ -460,6 +508,7 @@ public final class SessionRunner {
                     startLine = pendingLine
                 }
                 pendingLine = nil
+                japaneseOnly = false
                 emit(.timeline(nil))
                 emit(.stage(nil))
                 let exercise = plan.exercises[currentExerciseIndex]
@@ -473,6 +522,7 @@ public final class SessionRunner {
                     announcedPart = currentExerciseIndex
                 }
                 try await perform(exercise, startLine: startLine)
+                japaneseOnly = false
                 try Task.checkCancellation()
                 nextExerciseIndex = currentExerciseIndex + 1
                 // A line taught or missed earlier comes back after at least one other exercise.

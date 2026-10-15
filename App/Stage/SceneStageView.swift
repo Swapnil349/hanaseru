@@ -21,26 +21,36 @@ struct SceneStageView: View {
 
     var body: some View {
         let setting = stageSetting
-        let partnerTalking = voice == .partner
-        let youTalking = voice == .you
+        // Normally you are on the right; playing the colleague, you speak for the character on the left.
+        let swapped = stage.learnerPlaysPartner
+        let otherTalking = voice == .partner
+        let learnerTalking = voice == .you
         let yourTurn = activity == .listening
+        let leftTalking = swapped ? learnerTalking : otherTalking
+        let rightTalking = swapped ? otherTalking : learnerTalking
+        let leftActive = swapped ? (learnerTalking || yourTurn) : otherTalking
+        let rightActive = swapped ? otherTalking : (learnerTalking || yourTurn)
         VStack(spacing: 0) {
             HStack(alignment: .bottom, spacing: 10) {
-                partnerBubble(active: partnerTalking)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                yourBubble(active: youTalking || yourTurn)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                Group {
+                    if swapped { learnerBubble(tailOnLeft: true, active: leftActive) } else { otherBubble(tailOnLeft: true, active: leftActive) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Group {
+                    if swapped { otherBubble(tailOnLeft: false, active: rightActive) } else { learnerBubble(tailOnLeft: false, active: rightActive) }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)
             .frame(minHeight: 96, alignment: .bottom)
 
             HStack(alignment: .bottom) {
-                StageCharacter(look: .partner(stage, setting: setting), facesRight: true, talking: partnerTalking,
-                               micLevel: nil, highlighted: partnerTalking, seed: 0)
+                StageCharacter(look: .partner(stage, setting: setting), facesRight: true, talking: leftTalking,
+                               micLevel: swapped && yourTurn ? micLevel : nil, highlighted: leftActive, seed: 0)
                 Spacer(minLength: 8)
-                StageCharacter(look: .you(setting: setting), facesRight: false, talking: youTalking,
-                               micLevel: yourTurn ? micLevel : nil, highlighted: youTalking || yourTurn, seed: 1.7)
+                StageCharacter(look: .you(setting: setting), facesRight: false, talking: rightTalking,
+                               micLevel: !swapped && yourTurn ? micLevel : nil, highlighted: rightActive, seed: 1.7)
             }
             .padding(.horizontal, 24)
             .padding(.top, 4)
@@ -50,9 +60,10 @@ struct SceneStageView: View {
             ZStack(alignment: .bottom) {
                 if setting.hasTable { StageTable(setting: setting).frame(height: 30) }
                 HStack {
-                    nameTag(stage.partnerName.isEmpty ? "Colleague" : stage.partnerName)
+                    let colleague = stage.partnerName.isEmpty ? "Colleague" : stage.partnerName
+                    nameTag(swapped ? colleague + (yourTurn ? " · you, your turn" : " · you") : colleague)
                     Spacer()
-                    nameTag(yourTurn ? "You · your turn" : "You")
+                    nameTag(swapped ? "Your usual part" : (yourTurn ? "You · your turn" : "You"))
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 6)
@@ -73,27 +84,28 @@ struct SceneStageView: View {
             .background(Color.black.opacity(0.45), in: Capsule())
     }
 
+    /// The other side's latest line (the app speaks it).
     @ViewBuilder
-    private func partnerBubble(active: Bool) -> some View {
+    private func otherBubble(tailOnLeft: Bool, active: Bool) -> some View {
         if let line = partnerLine, !line.japanese.isEmpty {
             SpeechBubble(japanese: line.japanese, kana: line.kana, romaji: "", english: line.english,
-                         showEnglish: showEnglish, tailOnLeft: true, active: active, action: onHearPartner)
+                         showEnglish: showEnglish, tailOnLeft: tailOnLeft, active: active, action: onHearPartner)
         }
     }
 
     /// Your line once it's revealed or while you're learning it; before that, just what to say in English.
     @ViewBuilder
-    private func yourBubble(active: Bool) -> some View {
+    private func learnerBubble(tailOnLeft: Bool, active: Bool) -> some View {
         if let focus {
             if let reveal, reveal.lineID == focus.lineID {
                 SpeechBubble(japanese: reveal.japanese, kana: reveal.kana, romaji: reveal.romaji, english: reveal.english,
-                             showEnglish: showEnglish, tailOnLeft: false, active: active, action: onHearYou)
+                             showEnglish: showEnglish, tailOnLeft: tailOnLeft, active: active, action: onHearYou)
             } else if focus.answerShown && !focus.japanese.isEmpty {
                 SpeechBubble(japanese: focus.japanese, kana: focus.kana, romaji: focus.romaji, english: focus.english,
-                             showEnglish: showEnglish, tailOnLeft: false, active: active, action: onHearYou)
+                             showEnglish: showEnglish, tailOnLeft: tailOnLeft, active: active, action: onHearYou)
             } else if !focus.cueEn.isEmpty {
                 SpeechBubble(japanese: "", kana: "", romaji: "", english: "💭 " + focus.cueEn, showEnglish: true,
-                             tailOnLeft: false, active: active, action: onHearYou)
+                             tailOnLeft: tailOnLeft, active: active, action: onHearYou)
             }
         }
     }

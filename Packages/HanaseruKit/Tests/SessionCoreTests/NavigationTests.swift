@@ -47,7 +47,7 @@ struct NavigationTests {
         let summary = try await finish(harness)
         // Not from the beginning: the first line and the scene's opening are heard once.
         #expect(harness.synthesizer.count(partner(lines[0])) == 1)
-        #expect(harness.synthesizer.count("Nakamura-san starts.") == 1)
+        #expect(harness.synthesizer.count("始めましょう。") == 1)
         // The paused line plays again from its start.
         #expect(harness.synthesizer.count(partner(lines[1])) == 2)
         #expect(summary.conversationTurns == lines.count)
@@ -152,6 +152,29 @@ struct NavigationTests {
         }
     }
 
+    @Test func aStuckVoiceNeverStopsTheSession() async throws {
+        let library = try ContentLibrary.bundled()
+        let scenario = try #require(library.scenario(id: "s.weekend.chat"))
+        let lines = library.lines(in: scenario, learnerName: "")
+        let synthesizer = StuckSynthesizer(stuckOn: lines[0].partner?.japanese ?? "-")
+        let recognizer = ScriptedRecognizer([])
+        let runner = SessionRunner(plan: plan, library: library,
+                                   voice: .init(synthesizer: synthesizer, recognizer: recognizer, feedback: RecordingFeedback()),
+                                   ai: OfflineAIProvider(library: library), repository: InMemoryLearnerRepository(),
+                                   options: SessionOptions(sceneMode: .conversationOnly))
+        runner.start()
+        try await waitUntil { synthesizer.isStuck }
+        #expect(synthesizer.isStuck)
+        // The voice ignores the move; the session goes on to the next line anyway.
+        runner.move(.next)
+        for _ in 0..<5_000 where !synthesizer.texts.contains(lines[1].partner?.japanese ?? "-") {
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }
+        #expect(synthesizer.texts.contains(lines[1].partner?.japanese ?? "-"))
+        synthesizer.release()
+        runner.stop()
+    }
+
     // MARK: - The answer on screen
 
     func focus(at level: ScaffoldLevel, _ harness: Harness) -> FocusInfo? {
@@ -213,5 +236,31 @@ struct NavigationTests {
         #expect(script[1].entries.contains { $0.isLearner })
         // Only the lines this session practises can be started from.
         #expect(script[2].entries.compactMap(\.startLine) == [0, 1])
+    }
+}
+
+/// Hangs on one line, ignoring cancellation and stopSpeaking, until released.
+@MainActor
+final class StuckSynthesizer: SpeechSynthesisProvider {
+    let stuckOn: String
+    private(set) var texts: [String] = []
+    private var held: CheckedContinuation<Void, Never>?
+    var isStuck: Bool { held != nil }
+
+    init(stuckOn: String) {
+        self.stuckOn = stuckOn
+    }
+
+    func speak(_ request: SpeechRequest) async {
+        texts.append(request.text)
+        guard request.text == stuckOn, held == nil else { return }
+        await withCheckedContinuation { held = $0 }
+    }
+
+    func stopSpeaking() {}
+
+    func release() {
+        held?.resume()
+        held = nil
     }
 }
