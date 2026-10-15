@@ -62,6 +62,8 @@ final class HandsFreeSessionUITests: XCTestCase {
         let app = launch(onboarded: true)
         app.buttons["open-scenes"].tap()
         let scene = app.staticTexts["Monday small talk"]
+        // The everyday scenes are further down the list.
+        for _ in 0..<6 where !scene.waitForExistence(timeout: 2) { app.swipeUp() }
         XCTAssertTrue(scene.waitForExistence(timeout: 10))
         scene.tap()
         let watch = app.buttons["scene-watch"]
