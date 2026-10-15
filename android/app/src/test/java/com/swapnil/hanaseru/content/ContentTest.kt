@@ -46,6 +46,24 @@ class ContentTest {
     }
 
     @Test
+    fun theLearnerCanPlayTheColleague() {
+        val scenario = library.scenario("s.weekend.chat")!!
+        val mine = library.lines(scenario, "")
+        val theirs = library.partnerSideLines(scenario, "")
+        assertEquals(mine.mapNotNull { it.partner?.japanese } + scenario.closingLine, theirs.map { it.japanese })
+        assertEquals(null, theirs.first().partner)
+        assertEquals(mine.map { it.japanese }, theirs.drop(1).mapNotNull { it.partner?.japanese })
+    }
+
+    @Test
+    fun answersAreComparedLikeOnTheIPhone() {
+        assertEquals(1.0, JapaneseText.similarity("いいえ、特に問題はありません。", "いいえ特に問題はありません"), 0.0001)
+        assertEquals(1.0, JapaneseText.similarity("カレー", "かれー"), 0.0001)
+        assertTrue(JapaneseText.similarity("友達と出かけました", "友達と出かけた") > 0.6)
+        assertEquals(0.0, JapaneseText.similarity("", "はい"), 0.0001)
+    }
+
+    @Test
     fun scenesListTheWordsTheirLinesUse() {
         val words = library.vocabulary(library.scenario("s.weekend.chat")!!).map { it.japanese }
         for (word in listOf("週末", "友達", "映画", "行く", "決める")) assertTrue(word, word in words)

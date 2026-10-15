@@ -39,11 +39,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.swapnil.hanaseru.content.ContentLibrary
+import com.swapnil.hanaseru.practice.Progress
+import com.swapnil.hanaseru.practice.ScenePractice
+import com.swapnil.hanaseru.voice.Listener
 import com.swapnil.hanaseru.voice.Speaker
 import java.util.Calendar
 
 @Composable
-fun HanaseruApp(library: ContentLibrary, speaker: Speaker, prefs: Prefs) {
+fun HanaseruApp(library: ContentLibrary, speaker: Speaker, listener: Listener, progress: Progress, prefs: Prefs) {
     val navigation = rememberNavController()
     NavHost(navController = navigation, startDestination = "home") {
         composable("home") {
@@ -61,8 +64,17 @@ fun HanaseruApp(library: ContentLibrary, speaker: Speaker, prefs: Prefs) {
         }
         composable("scene/{id}") { entry ->
             val id = entry.arguments?.getString("id") ?: ""
-            SceneScreen(library = library, scenarioID = id, speaker = speaker, prefs = prefs,
-                        onBack = { navigation.popBackStack() })
+            SceneScreen(library = library, scenarioID = id, speaker = speaker, listener = listener, prefs = prefs,
+                        onBack = { navigation.popBackStack() },
+                        onPractise = { mode, asPartner -> navigation.navigate("practice/$id/${mode.name}/$asPartner") })
+        }
+        composable("practice/{id}/{mode}/{partner}") { entry ->
+            val id = entry.arguments?.getString("id") ?: ""
+            val mode = runCatching { ScenePractice.Mode.valueOf(entry.arguments?.getString("mode") ?: "") }
+                .getOrDefault(ScenePractice.Mode.AUTOMATIC)
+            val asPartner = entry.arguments?.getString("partner") == "true"
+            PracticeScreen(library = library, scenarioID = id, mode = mode, playAsPartner = asPartner, speaker = speaker,
+                           listener = listener, progress = progress, prefs = prefs, onBack = { navigation.popBackStack() })
         }
         composable("vocabulary") {
             VocabularyScreen(library = library, speaker = speaker, prefs = prefs, onBack = { navigation.popBackStack() })
@@ -116,8 +128,8 @@ private fun HomeScreen(
             }
             HomeCard(Icons.Filled.Forum, "Scenes", "$sceneCount conversations: read, hear and learn every line", onScenes)
             HomeCard(Icons.AutoMirrored.Filled.MenuBook, "My vocabulary", "All $wordCount words in the course, with romaji", onVocabulary)
-            HomeCard(Icons.Filled.RecordVoiceOver, "Hands-free practice",
-                     "Speaking practice with the coach — coming in the next Android update", null)
+            HomeCard(Icons.Filled.RecordVoiceOver, "Speaking practice",
+                     "Open a scene and tap Practise: watch, repeat, then the real conversation", onScenes)
         }
     }
 }

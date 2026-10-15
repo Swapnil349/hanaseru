@@ -203,6 +203,33 @@ class ContentLibrary(
         }
     }
 
+    /**
+     * The other role of a scene: the colleague's lines (and the closing line), for the learner to say, each
+     * after the learner's usual line, which the app says instead.
+     */
+    fun partnerSideLines(scenario: Scenario, learnerName: String): List<PracticeLine> {
+        val result = mutableListOf<PracticeLine>()
+        var before: ModelLine? = null
+        fun add(id: String, japanese: String, kana: String, english: String) {
+            val usual = before?.let {
+                PracticePartner(it.japanese, it.kana, it.english, learnerName.ifEmpty { "あなた" },
+                                learnerName.ifEmpty { "You" }, isFemale = false, speakingRate = 1.0)
+            }
+            val cue = (if (japanese.trim().endsWith("？") || japanese.trim().endsWith("か。")) "Ask: " else "Say: ") + english
+            result.add(PracticeLine(id = id, japanese = japanese, kana = kana, english = english, cueEn = cue,
+                                    intentEn = cue, partner = usual,
+                                    references = listOf(japanese, kana).filter { it.isNotEmpty() }.distinct()))
+        }
+        scenario.beats.forEachIndexed { index, beat ->
+            if (beat.line.isNotEmpty()) add("${scenario.id}#${scenario.beatID(index)}~them", beat.line, beat.kana, beat.english)
+            before = beat.responses.firstOrNull()?.personalized(learnerName)
+        }
+        if (scenario.closingLine.isNotEmpty()) {
+            add("${scenario.id}#closing~them", scenario.closingLine, scenario.closingKana, scenario.closingEnglish)
+        }
+        return result
+    }
+
     /** A phrase as a practice line. */
     fun line(item: LearningItem): PracticeLine {
         val partner = item.partner?.let { line ->

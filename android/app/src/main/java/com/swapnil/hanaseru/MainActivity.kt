@@ -7,9 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import com.swapnil.hanaseru.content.ContentLibrary
 import com.swapnil.hanaseru.content.JapaneseWords
 import com.swapnil.hanaseru.content.Romaji
+import com.swapnil.hanaseru.practice.Progress
 import com.swapnil.hanaseru.ui.HanaseruApp
 import com.swapnil.hanaseru.ui.HanaseruTheme
 import com.swapnil.hanaseru.ui.Prefs
+import com.swapnil.hanaseru.voice.Listener
 import com.swapnil.hanaseru.voice.Speaker
 
 class MainActivity : ComponentActivity() {
@@ -22,9 +24,11 @@ class MainActivity : ComponentActivity() {
         val library = ContentLibrary.load { name -> assets.open(name).bufferedReader().use { it.readText() } }
         speaker = Speaker(this)
         val prefs = Prefs(this)
+        val listener = Listener(this)
+        val progress = Progress(this)
         setContent {
             HanaseruTheme {
-                HanaseruApp(library = library, speaker = speaker, prefs = prefs)
+                HanaseruApp(library = library, speaker = speaker, listener = listener, progress = progress, prefs = prefs)
             }
         }
     }

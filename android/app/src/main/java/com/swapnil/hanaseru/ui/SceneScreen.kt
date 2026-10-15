@@ -1,5 +1,9 @@
 package com.swapnil.hanaseru.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +21,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
@@ -28,6 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,7 +54,11 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.swapnil.hanaseru.content.ContentLibrary
+import com.swapnil.hanaseru.content.JapaneseText
+import com.swapnil.hanaseru.practice.ScenePractice
+import com.swapnil.hanaseru.voice.Listener
 import com.swapnil.hanaseru.content.ScriptEntry
 import com.swapnil.hanaseru.content.VocabularyTerm
 import com.swapnil.hanaseru.content.script
@@ -61,7 +73,15 @@ import kotlinx.coroutines.launch
  * "Test me" to hide your own lines, and the words it uses.
  */
 @Composable
-fun SceneScreen(library: ContentLibrary, scenarioID: String, speaker: Speaker, prefs: Prefs, onBack: () -> Unit) {
+fun SceneScreen(
+    library: ContentLibrary,
+    scenarioID: String,
+    speaker: Speaker,
+    listener: Listener,
+    prefs: Prefs,
+    onBack: () -> Unit,
+    onPractise: (ScenePractice.Mode, Boolean) -> Unit,
+) {
     val scenario = library.scenario(scenarioID)
     if (scenario == null) {
         Text("This scene isn't in this version.", modifier = Modifier.padding(24.dp))
@@ -76,6 +96,32 @@ fun SceneScreen(library: ContentLibrary, scenarioID: String, speaker: Speaker, p
     var testMe by remember { mutableStateOf(false) }
     var slowly by remember { mutableStateOf(false) }
     val revealed = remember { mutableStateListOf<String>() }
+    var lesson by remember { mutableStateOf(ScenePractice.Mode.AUTOMATIC) }
+    var asPartner by remember { mutableStateOf(false) }
+    // "Say it": which line is listening, and what was heard for each.
+    var saying by remember { mutableStateOf<String?>(null) }
+    val heard = remember { mutableStateMapOf<String, String>() }
+    var pendingSay by remember { mutableStateOf<ScriptEntry?>(null) }
+
+    fun say(entry: ScriptEntry) {
+        job?.cancel()
+        speaker.stop()
+        saying = entry.id
+        heard.remove(entry.id)
+        job = scope.launch {
+            try {
+                heard[entry.id] = listener.listen()
+            } finally {
+                saying = null
+            }
+        }
+    }
+
+    val microphone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val entry = pendingSay
+        pendingSay = null
+        if (granted && entry != null) say(entry)
+    }
 
     // Plays lines one after another in their speakers' voices, like the conversation itself.
     fun play(lines: List<ScriptEntry>) {
@@ -123,6 +169,34 @@ fun SceneScreen(library: ContentLibrary, scenarioID: String, speaker: Speaker, p
                     Text(scenario.situationEn, style = MaterialTheme.typography.bodyLarge)
                 }
             }
+            item(key = "practise") {
+                val name = library.persona(scenario.personaID)?.nameEn ?: "The colleague"
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Practise speaking", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("You play", style = MaterialTheme.typography.labelMedium,
+                             color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(selected = !asPartner, onClick = { asPartner = false }, label = { Text("Yourself") })
+                            FilterChip(selected = asPartner, onClick = { asPartner = true }, label = { Text(name) })
+                        }
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            for (option in ScenePractice.Mode.entries) {
+                                FilterChip(selected = lesson == option, onClick = { lesson = option },
+                                           label = { Text(option.title) })
+                            }
+                        }
+                        Button(onClick = { onPractise(lesson, asPartner) }, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Filled.RecordVoiceOver, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Start practising")
+                        }
+                    }
+                }
+            }
             item(key = "play") {
                 val active = playing != null
                 Button(onClick = {
@@ -161,8 +235,20 @@ fun SceneScreen(library: ContentLibrary, scenarioID: String, speaker: Speaker, p
                     hidden = testMe && entry.isLearner && entry.id !in revealed,
                     showRomaji = prefs.showRomaji,
                     showEnglish = prefs.showEnglish,
+                    listening = saying == entry.id,
+                    heard = heard[entry.id],
                     onReveal = { revealed.add(entry.id) },
                     onPlay = { play(listOf(entry)) },
+                    onSay = {
+                        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                            PackageManager.PERMISSION_GRANTED
+                        if (granted) {
+                            say(entry)
+                        } else {
+                            pendingSay = entry
+                            microphone.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
                 )
             }
             if (words.isNotEmpty()) {
@@ -193,8 +279,11 @@ private fun ScriptRow(
     hidden: Boolean,
     showRomaji: Boolean,
     showEnglish: Boolean,
+    listening: Boolean,
+    heard: String?,
     onReveal: () -> Unit,
     onPlay: () -> Unit,
+    onSay: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     Card(
@@ -203,8 +292,8 @@ private fun ScriptRow(
             containerColor = if (highlighted) colors.primary.copy(alpha = 0.14f) else colors.surface,
         ),
     ) {
-        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Column {
                 Text(
                     entry.speaker,
                     style = MaterialTheme.typography.labelLarge,
@@ -220,8 +309,31 @@ private fun ScriptRow(
                     JapaneseBlock(entry.japanese, entry.kana, entry.romaji, entry.english, showRomaji, showEnglish)
                 }
             }
-            IconButton(onClick = onPlay) {
-                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Hear this line", tint = colors.primary)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onPlay) {
+                    Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Hear")
+                }
+                OutlinedButton(onClick = onSay, enabled = !listening) {
+                    Icon(Icons.Filled.Mic, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text(if (listening) "Listening…" else "Say it")
+                }
+            }
+            if (heard != null) {
+                val similarity = if (heard.isEmpty()) 0.0 else JapaneseText.bestSimilarity(heard, listOf(entry.japanese, entry.kana))
+                Text(
+                    when {
+                        heard.isEmpty() -> "Nothing heard. Tap Say it and speak after the beep."
+                        similarity >= 0.8 -> "✓ That's it: 「$heard」"
+                        similarity >= 0.5 -> "Close. Heard 「$heard」. Hear it and try again."
+                        else -> "Heard 「$heard」. Hear it and try again."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (similarity >= 0.8) Palette.go else colors.onSurfaceVariant,
+                )
             }
         }
     }
