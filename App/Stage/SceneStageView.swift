@@ -9,7 +9,8 @@ struct SceneStageView: View {
     let stage: StageInfo
     let voice: StageVoice?
     let activity: SessionActivity
-    let micLevel: Float
+    /// Read as the characters are drawn, so a change doesn't redraw the whole screen.
+    let micLevel: () -> Float
     let focus: FocusInfo?
     let reveal: RevealInfo?
     let partnerLine: ScriptLine?
@@ -225,13 +226,13 @@ struct StageCharacter: View {
     let look: CharacterLook
     let facesRight: Bool
     let talking: Bool
-    let micLevel: Float?
+    let micLevel: (() -> Float)?
     let highlighted: Bool
     let seed: Double
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate + seed
             Canvas { context, size in
                 draw(context, size: size, time: time)
@@ -250,7 +251,7 @@ struct StageCharacter: View {
 
     /// 0 (closed) … 1 (wide open).
     private func mouthOpening(_ time: Double) -> Double {
-        if let micLevel { return min(1, Double(micLevel) * 3) }
+        if let micLevel { return min(1, Double(micLevel()) * 3) }
         guard talking else { return 0 }
         return 0.15 + 0.85 * abs(sin(time * 13)) * (0.55 + 0.45 * abs(sin(time * 3.3)))
     }

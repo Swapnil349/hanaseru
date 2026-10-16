@@ -45,6 +45,15 @@ struct SessionContainerView: View {
     }
 }
 
+/// The microphone level, redrawn on its own as it changes (not the whole session screen).
+private struct LiveMicIndicator: View {
+    let model: SessionViewModel
+
+    var body: some View {
+        SpeakingIndicator(level: model.micLevel, isListening: true)
+    }
+}
+
 /// The screen is secondary (spec §24): large state, current line, feedback. Everything is also spoken.
 struct HandsFreeSessionView: View {
     let model: SessionViewModel
@@ -63,7 +72,7 @@ struct HandsFreeSessionView: View {
                 VStack(spacing: 24) {
                     if let stage = model.stage {
                         SceneStageView(stage: stage, voice: model.stageVoice, activity: model.activity,
-                                       micLevel: model.micLevel, focus: model.focusInfo, reveal: model.reveal,
+                                       micLevel: { model.micLevel }, focus: model.focusInfo, reveal: model.reveal,
                                        partnerLine: model.partnerLine, showEnglish: showEnglish,
                                        onHearPartner: {
                                            if let focus = model.focusInfo, !focus.promptAudio.isEmpty {
@@ -162,7 +171,7 @@ struct HandsFreeSessionView: View {
         VStack(spacing: 12) {
             switch model.activity {
             case .listening:
-                SpeakingIndicator(level: model.micLevel, isListening: true)
+                LiveMicIndicator(model: model)
                 Text("あなたの番です · Your turn").font(.headline).foregroundStyle(Palette.signal)
                 if !model.partialTranscript.isEmpty {
                     Text(model.partialTranscript).font(.title3).foregroundStyle(Palette.ink).multilineTextAlignment(.center)

@@ -58,6 +58,8 @@ final class SessionViewModel {
     private let app: AppEnvironment
     private var runner: SessionRunner?
     private var tornDown = false
+    /// Play was pressed and audio is being brought back.
+    private var resuming = false
     private var pausedByInterruption = false
     /// Scripted voice for Simulator/CI runs (see `DemoVoice`).
     private let demo = DemoVoice.isEnabled
@@ -128,7 +130,7 @@ final class SessionViewModel {
             return false
         }
         do {
-            try app.voice.beginSession()
+            try await app.voice.beginSession()
             return true
         } catch {
             phase = .failed("Couldn't start audio: \(error.localizedDescription)")
@@ -137,12 +139,26 @@ final class SessionViewModel {
     }
 
     func togglePause(reason: String = "pause button") {
-        // Coming back from a call or an AirPods switch: make sure the audio session and mic run again.
-        if isPaused && !demo { app.voice.recover() }
-        runner?.togglePause()
-        isPaused = runner?.isPaused ?? false
-        VoiceLog.add("\(isPaused ? "paused" : "resumed") by \(reason)")
-        updateNowPlaying()
+        if isPaused {
+            // Coming back from a pause, a call or an AirPods switch: the audio session and the microphone are
+            // started again away from the main thread, so the screen never freezes; then play carries on.
+            guard !resuming else { return }
+            resuming = true
+            VoiceLog.add("play pressed (\(reason))")
+            Task { @MainActor in
+                if !demo { await app.voice.recover() }
+                resuming = false
+                runner?.resume()
+                isPaused = runner?.isPaused ?? false
+                VoiceLog.add("resumed")
+                updateNowPlaying()
+            }
+        } else {
+            VoiceLog.add("pause pressed (\(reason))")
+            runner?.pause()
+            isPaused = runner?.isPaused ?? false
+            updateNowPlaying()
+        }
     }
 
     func skip() {

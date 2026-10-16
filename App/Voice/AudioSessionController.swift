@@ -31,10 +31,33 @@ final class AudioSessionController {
         observe()
     }
 
+    /// The same, away from the main thread: activating the audio session is a blocking call that can take a
+    /// moment (after a call, or when headphones change), and the screen must stay responsive meanwhile.
+    func activateInBackground() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let session = AVAudioSession.sharedInstance()
+                    try session.setCategory(.playAndRecord, mode: .default,
+                                            options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .duckOthers])
+                    try session.setAllowHapticsAndSystemSoundsDuringRecording(true)
+                    try session.setActive(true)
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+        observe()
+    }
+
     func deactivate() {
         observers.forEach { NotificationCenter.default.removeObserver($0) }
         observers.removeAll()
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // Blocking, so away from the main thread.
+        DispatchQueue.global(qos: .utility).async {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 
     /// Whether audio is going to headphones (the intended hands-free setup).

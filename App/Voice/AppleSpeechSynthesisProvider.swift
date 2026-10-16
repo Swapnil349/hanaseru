@@ -126,16 +126,22 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         }
     }
 
+    /// AVSpeechSynthesizer.stopSpeaking can block for seconds on some devices, so it never runs on the main
+    /// thread: the synthesizer in use is stopped in the background and a fresh one takes over.
     private func resetSynthesizer() {
-        synthesizer.delegate = nil
-        synthesizer.stopSpeaking(at: .immediate)
+        let old = synthesizer
+        old.delegate = nil
         synthesizer = AVSpeechSynthesizer()
         configure(synthesizer)
+        Self.stopQueue.async { old.stopSpeaking(at: .immediate) }
     }
+
+    private static let stopQueue = DispatchQueue(label: "hanaseru.speech-stop", qos: .userInitiated)
 
     private func finishCurrent(stop: Bool, outcome: Outcome) {
         if stop && synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .immediate)
+            VoiceLog.add("speech stopped")
+            resetSynthesizer()
         }
         currentUtterance = nil
         continuation?.resume(returning: outcome)

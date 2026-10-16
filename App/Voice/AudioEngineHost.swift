@@ -32,6 +32,9 @@ final class AudioEngineHost: @unchecked Sendable {
     private var voiceFormat: AVAudioFormat?
     private let chimeFormat = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
     private let lock = NSLock()
+    /// The recorded voice is scheduled and stopped here: AVAudioPlayerNode.stop() can block for a long time,
+    /// and it must never block the screen.
+    private let voiceQueue = DispatchQueue(label: "hanaseru.voice-player", qos: .userInitiated)
     // @Sendable: these run on the audio thread and must never be inferred as main-actor closures.
     private var consumer: (@Sendable (AVAudioPCMBuffer) -> Void)?
     private var levelHandler: (@Sendable (Float) -> Void)?
@@ -86,17 +89,35 @@ final class AudioEngineHost: @unchecked Sendable {
         let once = ResumeOnce()
         return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
             once.set(continuation)
-            voicePlayer.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in
-                once.resume(true)
+            let player = voicePlayer
+            voiceQueue.async {
+                player.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in
+                    once.resume(true)
+                }
+                if !player.isPlaying { player.play() }
             }
-            if !voicePlayer.isPlaying { voicePlayer.play() }
             // If the engine stalls (route change), don't wait forever.
             DispatchQueue.global().asyncAfter(deadline: .now() + duration + 3) { once.resume(true) }
         }
     }
 
     func stopClip() {
-        voicePlayer.stop()
+        let player = voicePlayer
+        voiceQueue.async { player.stop() }
+    }
+
+    /// Starts the engine away from the main thread (starting audio hardware can take a moment).
+    func startInBackground() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            voiceQueue.async {
+                do {
+                    try self.start()
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
     }
 
     func playChime(_ chime: Chime) {

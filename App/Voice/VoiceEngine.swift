@@ -86,6 +86,23 @@ final class RemoteCommandBridge {
     }
 }
 
+/// Lets a microphone level through at most every 80 ms, and only when it has changed noticeably.
+final class LevelThrottle: @unchecked Sendable {
+    private let lock = NSLock()
+    private var last: Float = -1
+    private var sentAt = Date.distantPast
+
+    func shouldSend(_ level: Float) -> Bool {
+        lock.withLock {
+            let now = Date()
+            guard now.timeIntervalSince(sentAt) >= 0.08, abs(level - last) >= 0.04 else { return false }
+            last = level
+            sentAt = now
+            return true
+        }
+    }
+}
+
 /// Layer 3 of the architecture (spec §55): everything iOS-specific about voice, behind one object.
 @MainActor
 final class VoiceEngine {
@@ -111,20 +128,24 @@ final class VoiceEngine {
         SessionRunner.Voice(synthesizer: synthesizer, recognizer: recognizer, feedback: cues)
     }
 
-    func beginSession() throws {
-        try audioSession.activate()
+    /// Audio for a session. The slow parts (the audio session, the engine) run away from the main thread.
+    func beginSession() async throws {
+        try await audioSession.activateInBackground()
+        // The microphone level reaches the screen a dozen times a second at most, and only when it changes.
+        let throttle = LevelThrottle()
         engineHost.setLevelHandler { [weak self] level in
+            guard throttle.shouldSend(level) else { return }
             Task { @MainActor in self?.onMicLevel?(level) }
         }
-        try engineHost.start()
+        try await engineHost.startInBackground()
         remote.activate()
     }
 
-    /// Brings audio back after an interruption or route change: the session and the mic engine restart.
-    func recover() {
+    /// Brings audio back after a pause, an interruption or a route change, without blocking the screen.
+    func recover() async {
         do {
-            try audioSession.activate()
-            try engineHost.start()
+            try await audioSession.activateInBackground()
+            try await engineHost.startInBackground()
             VoiceLog.add("audio recovered")
         } catch {
             VoiceLog.add("audio recovery failed: \(error.localizedDescription)")

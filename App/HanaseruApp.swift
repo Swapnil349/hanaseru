@@ -8,6 +8,9 @@ struct HanaseruApp: App {
     @State private var environment: AppEnvironment
 
     init() {
+        // Any freeze is written to the voice log (Settings › Diagnostics), which survives a forced quit.
+        HangDetector.shared.start()
+        VoiceLog.add("app started")
         let container: ModelContainer
         do {
             container = try ModelContainer(

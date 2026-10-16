@@ -25,7 +25,7 @@ enum LineCheck {
             return SayResult(heard: "", similarity: 0, problem: "Allow the microphone and speech recognition in Settings › Hanaseru.")
         }
         do {
-            try app.voice.beginSession()
+            try await app.voice.beginSession()
         } catch {
             return SayResult(heard: "", similarity: 0, problem: error.localizedDescription)
         }

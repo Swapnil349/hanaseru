@@ -41,7 +41,7 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
         // After a call, Siri or an AirPods switch the engine may have stopped: without it the mic hears nothing.
         if !engine.isRunning {
             do {
-                try engine.start()
+                try await engine.startInBackground()
                 VoiceLog.add("microphone engine restarted")
             } catch {
                 VoiceLog.add("microphone engine could not restart: \(error.localizedDescription)")
