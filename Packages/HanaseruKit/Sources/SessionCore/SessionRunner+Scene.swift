@@ -21,7 +21,7 @@ struct SceneState {
         case ending
     }
 
-    /// Where a stop of the scrubber plays from.
+    /// Where a stop of the scene's scrubber plays from.
     struct StopTarget {
         var segment: Int
         var answer: Bool
@@ -131,11 +131,19 @@ extension SessionRunner {
     /// `startLine` (a line chosen in the script) starts the scene at that line.
     func runConversation(scenarioID: String, maxTurns: Int, startLine: Int? = nil) async throws {
         if sceneState == nil {
-            guard let state = await makeSceneState(scenarioID: scenarioID, maxTurns: maxTurns) else { return }
-            try Task.checkCancellation()
+            let state: SceneState
+            if let prepared = sceneStates[currentExerciseIndex] {
+                state = prepared
+            } else {
+                guard let made = await makeSceneState(scenarioID: scenarioID, maxTurns: maxTurns) else { return }
+                try Task.checkCancellation()
+                state = made
+            }
             sceneState = state
             segmentCount = state.segments.count
-            cursor = startLine.flatMap { state.segmentIndex(forLine: $0, near: 0) } ?? 0
+            // The cursor is where the scrubber (or the script) put it, otherwise the start.
+            if let startLine, let target = state.segmentIndex(forLine: startLine, near: 0) { cursor = target }
+            cursor = min(max(0, cursor), state.segments.count - 1)
             if !scenarioIDs.contains(state.scenario.id) { scenarioIDs.append(state.scenario.id) }
         }
         if let state = sceneState {
@@ -155,7 +163,7 @@ extension SessionRunner {
         }
     }
 
-    private func makeSceneState(scenarioID: String, maxTurns: Int) async -> SceneState? {
+    func makeSceneState(scenarioID: String, maxTurns: Int) async -> SceneState? {
         guard let scenario = library.scenario(id: scenarioID), let persona = library.persona(id: scenario.personaID) else { return nil }
         let swapped = options.playAsPartner
         let all = swapped ? library.partnerSideLines(in: scenario, learnerName: learner.name)
@@ -178,7 +186,7 @@ extension SessionRunner {
     /// Moves the scrubber to the segment being played, at its question or its answer.
     private func showPlace(answer: Bool) {
         guard let state = sceneState else { return }
-        emit(.timeline(SessionTimeline(stops: state.stops, position: state.stop(segment: cursor, answer: answer))))
+        showPosition(local: state.stop(segment: cursor, answer: answer))
     }
 
     /// `fromAnswer`: chosen on the scrubber — skip the question and go straight to the learner's line.

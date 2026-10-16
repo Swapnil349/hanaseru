@@ -257,7 +257,7 @@ struct TimelineScrubber: View {
                 Spacer(minLength: 4)
                 if dragging != nil {
                     Text(stop.japanese).font(.caption).foregroundStyle(Palette.inkSecondary).lineLimit(1)
-                } else if !stop.isAnswer && stop.line != nil && shownIndex + 1 < timeline.stops.count {
+                } else if !stop.isAnswer && shownIndex + 1 < timeline.stops.count && timeline.stops[shownIndex + 1].isAnswer {
                     Button { onSeek(shownIndex + 1) } label: {
                         Label("Go to the answer", systemImage: "arrow.right.to.line")
                     }
@@ -275,7 +275,7 @@ struct TimelineScrubber: View {
                        dragging = nil
                        onSeek(Int(value.rounded()))
                    })
-                .accessibilityLabel("Place in the conversation")
+                .accessibilityLabel("Place in the session")
                 .accessibilityValue(title(stop))
                 .accessibilityIdentifier("timeline")
             steps
@@ -283,18 +283,28 @@ struct TimelineScrubber: View {
     }
 
     private func title(_ stop: SessionTimeline.Stop) -> String {
-        guard let line = stop.line else { return stop.step }
-        return "\(stop.step) · line \(line) · " + (stop.isAnswer ? "your answer" : "question")
+        var parts: [String] = []
+        if let part = stop.part { parts.append("Part \(part)") }
+        parts.append(stop.step)
+        if let line = stop.line {
+            parts.append("line \(line)")
+            parts.append(stop.isAnswer ? "your answer" : "question")
+        } else if stop.isAnswer {
+            parts.append("answer")
+        }
+        return parts.joined(separator: " · ")
     }
 
     /// The steps under the bar, each as wide as its share of the stops.
     private var steps: some View {
+        // Steps of one scene, or the parts of a longer session.
         var groups: [(name: String, count: Int)] = []
         for stop in timeline.stops {
-            if let last = groups.last, last.name == stop.step {
+            let name = stop.part.map { "Part \($0)" } ?? stop.step
+            if let last = groups.last, last.name == name {
                 groups[groups.count - 1].count += 1
             } else {
-                groups.append((stop.step, 1))
+                groups.append((name, 1))
             }
         }
         let total = max(1, timeline.stops.count)

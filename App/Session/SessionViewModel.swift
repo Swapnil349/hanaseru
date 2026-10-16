@@ -36,6 +36,9 @@ final class SessionViewModel {
     private(set) var micLevel: Float = 0
     private(set) var startedAt = Date()
     private(set) var isPaused = false
+    /// Time spent paused, so the timer stops while paused.
+    private(set) var pausedTotal: TimeInterval = 0
+    private(set) var pausedSince: Date?
     /// What the learner is being asked to say right now (English cue, how much Japanese to show).
     private(set) var focusInfo: FocusInfo?
     /// The answer after the latest turn.
@@ -103,7 +106,8 @@ final class SessionViewModel {
                                      briefIntro: scene != nil || defaults.integer(forKey: SettingsKey.completedSessions) >= 3,
                                      answerDisplay: AnswerDisplay(rawValue: defaults.string(forKey: SettingsKey.answerDisplay) ?? "")
                                          ?? .whileLearning,
-                                     playAsPartner: scene?.playAsPartner ?? false)
+                                     playAsPartner: scene?.playAsPartner ?? false,
+                                     resumeAt: scene?.resumeAt, untimed: scene != nil)
         let runner = SessionRunner(plan: plan, library: library, voice: voice,
                                    ai: app.makeAIProvider(), repository: app.repository, options: options)
         runner.onEvent = { [weak self] event in self?.handle(event) }
@@ -229,6 +233,12 @@ final class SessionViewModel {
         case .activity(let activity):
             self.activity = activity
             isPaused = activity == .paused
+            if isPaused && pausedSince == nil {
+                pausedSince = Date()
+            } else if !isPaused, let since = pausedSince {
+                pausedTotal += Date().timeIntervalSince(since)
+                pausedSince = nil
+            }
             if activity != .speaking { stageVoice = nil }
             if activity == .listening { partialTranscript = "" }
             updateNowPlaying()
@@ -278,6 +288,11 @@ final class SessionViewModel {
             listenStartedAt = Date()
         case .timeline(let place):
             timeline = place
+            // A scene remembers where you are, to continue from there next time.
+            if let scene, let place, place.stops.indices.contains(place.position) {
+                SceneResume.save(place.stops[place.position], scenarioID: scene.scenarioID, asPartner: scene.playAsPartner,
+                                 atStart: place.position == 0)
+            }
         case .stage(let info):
             if info != stage { partnerLine = nil }
             stage = info
@@ -290,6 +305,10 @@ final class SessionViewModel {
             if summary.completedNormally {
                 let defaults = UserDefaults.standard
                 defaults.set(defaults.integer(forKey: SettingsKey.completedSessions) + 1, forKey: SettingsKey.completedSessions)
+            }
+            // Finished: next time the scene starts from the beginning.
+            if summary.completedNormally, let scene {
+                SceneResume.clear(scenarioID: scene.scenarioID, asPartner: scene.playAsPartner)
             }
             if summary.completedNormally && minutes >= 5 && scene == nil {
                 UserDefaults.standard.set(true, forKey: SettingsKey.helpOnboardingDone)

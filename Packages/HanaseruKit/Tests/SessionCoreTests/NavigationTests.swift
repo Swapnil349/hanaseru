@@ -136,6 +136,51 @@ struct NavigationTests {
         #expect(!summary.results.contains { $0.lineID == lines[1].id })
     }
 
+    func timelines(_ harness: Harness) -> [SessionTimeline] {
+        harness.events.compactMap { event -> SessionTimeline? in
+            if case .timeline(let place?) = event { return place }
+            return nil
+        }
+    }
+
+    @Test func theScrubberCoversTheWholeSession() async throws {
+        let library = try ContentLibrary.bundled()
+        let scenario = try #require(library.scenario(id: "s.weekend.chat"))
+        let lines = library.lines(in: scenario, learnerName: "")
+        let mixed = SessionPlan(minutes: 10, focus: .surprise, track: .everyday,
+                                exercises: [.recall(itemID: "e.past.tokyo"), .shadowing(itemID: "w.confirm.will"),
+                                            .conversation(scenarioID: "s.weekend.chat", turns: 10)],
+                                closingItemID: nil)
+        let harness = Harness(plan: mixed, answers: [], library: library, options: SessionOptions(sceneMode: .conversationOnly))
+        harness.recognizer.delay = 20_000_000
+        harness.runner.start()
+        try await waitUntil { harness.recognizer.listenCount > 0 }
+        let timeline = try #require(timelines(harness).last)
+        // A question and an answer for the phrase, one stop for "say it with me", then every stop of the scene.
+        #expect(timeline.stops.count == 2 + 1 + (2 + 2 * lines.count))
+        #expect(timeline.stops.first?.part == 1)
+        // From the first phrase straight to the scene's second line.
+        let target = try #require(timeline.stops.firstIndex { $0.part == 3 && $0.line == 2 && !$0.isAnswer })
+        harness.runner.move(.seek(target))
+        let summary = try await finish(harness)
+        #expect(harness.synthesizer.count(partner(lines[0])) == 0)
+        #expect(harness.synthesizer.count(partner(lines[1])) == 1)
+        #expect(summary.conversationTurns == lines.count - 1)
+    }
+
+    @Test func aSceneContinuesWhereItStopped() async throws {
+        let library = try ContentLibrary.bundled()
+        let scenario = try #require(library.scenario(id: "s.weekend.chat"))
+        let lines = library.lines(in: scenario, learnerName: "")
+        let stopped = SessionTimeline.Stop(step: "Conversation", line: 3, isAnswer: false, japanese: "")
+        let harness = Harness(plan: plan, answers: [], library: library,
+                              options: SessionOptions(sceneMode: .conversationOnly, resumeAt: stopped, untimed: true))
+        _ = try #require(await harness.runToCompletion())
+        #expect(harness.synthesizer.count(partner(lines[0])) == 0)
+        #expect(harness.synthesizer.count(partner(lines[1])) == 0)
+        #expect(harness.synthesizer.count(partner(lines[2])) == 1)
+    }
+
     @Test func theScriptCanBeWrittenOutInThreeWays() throws {
         let library = try ContentLibrary.bundled()
         let scenario = try #require(library.scenario(id: "s.weekend.chat"))

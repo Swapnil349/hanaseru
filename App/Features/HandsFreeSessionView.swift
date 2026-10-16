@@ -141,7 +141,8 @@ struct HandsFreeSessionView: View {
                     Text(model.stepTitle).font(.caption).foregroundStyle(Palette.inkSecondary)
                         .accessibilityIdentifier("step-title")
                 }
-                SessionTimerView(startedAt: model.startedAt, plannedMinutes: model.minutes)
+                SessionTimerView(startedAt: model.startedAt, plannedMinutes: model.scene == nil ? model.minutes : nil,
+                                 pausedTotal: model.pausedTotal, pausedSince: model.pausedSince)
             }
             Spacer()
             if model.exerciseTotal > 0 {

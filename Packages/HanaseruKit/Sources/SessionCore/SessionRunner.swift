@@ -53,15 +53,22 @@ public struct SessionOptions: Sendable {
     public var answerDisplay: AnswerDisplay
     /// In scenes, the learner plays the colleague and the app says the learner's usual lines.
     public var playAsPartner: Bool
+    /// Start at this place of the timeline (where the learner stopped last time).
+    public var resumeAt: SessionTimeline.Stop?
+    /// No time limit: a scene chosen by the learner plays to its end however long it takes.
+    public var untimed: Bool
 
     public init(includeHelpOnboarding: Bool = false, sceneMode: SceneMode = .automatic, sceneStartBeat: Int = 0,
-                briefIntro: Bool = false, answerDisplay: AnswerDisplay = .whileLearning, playAsPartner: Bool = false) {
+                briefIntro: Bool = false, answerDisplay: AnswerDisplay = .whileLearning, playAsPartner: Bool = false,
+                resumeAt: SessionTimeline.Stop? = nil, untimed: Bool = false) {
         self.includeHelpOnboarding = includeHelpOnboarding
         self.sceneMode = sceneMode
         self.sceneStartBeat = sceneStartBeat
         self.briefIntro = briefIntro
         self.answerDisplay = answerDisplay
         self.playAsPartner = playAsPartner
+        self.resumeAt = resumeAt
+        self.untimed = untimed
     }
 }
 
@@ -166,6 +173,18 @@ public final class SessionRunner {
     var answerFirst = false
     /// Inside a scene, after its one explanation, the coach speaks Japanese only; the English is on screen.
     var japaneseOnly = false
+
+    // The scrubber over the whole session.
+    var sessionStops: [SessionTimeline.Stop] = []
+    var sessionTargets: [SessionTarget] = []
+    /// Where each part's stops begin in `sessionStops`.
+    var partOffsets: [Int] = []
+    /// Every scene part, worked out at the start so the scrubber covers the whole session.
+    var sceneStates: [Int: SceneState] = [:]
+    var timelineBuilt = false
+    /// For a part about to start: the segment, and whether at its answer, chosen on the scrubber.
+    var pendingSegment: Int?
+    var pendingAnswer = false
 
     // Teaching state.
     /// Lines whose English and Japanese have both been spoken this session (the exposure ledger).
@@ -298,9 +317,20 @@ public final class SessionRunner {
                 userChosePart = true
             }
         case .seek(let stop):
-            guard stage == .exercise, let state = sceneState, state.targets.indices.contains(stop) else { return }
-            cursor = state.targets[stop].segment
-            answerFirst = state.targets[stop].answer
+            guard sessionTargets.indices.contains(stop) else { return }
+            let target = sessionTargets[stop]
+            introDone = true
+            onboardingDone = true
+            if stage == .exercise && target.part == currentExerciseIndex {
+                cursor = target.segment
+                answerFirst = target.answer
+            } else {
+                pendingStartIndex = target.part
+                pendingSegment = target.segment
+                pendingAnswer = target.answer
+                cursorPart = -1
+                userChosePart = true
+            }
         }
         restart()
     }
@@ -478,6 +508,18 @@ public final class SessionRunner {
                 learner = await repository.snapshot()
                 learnerLoaded = true
             }
+            if !timelineBuilt {
+                timelineBuilt = true
+                await buildTimeline()
+                // Where the learner stopped last time.
+                if let point = options.resumeAt, let index = stopIndex(matching: point) {
+                    let target = sessionTargets[index]
+                    nextExerciseIndex = target.part
+                    pendingSegment = target.segment
+                    pendingAnswer = target.answer
+                    userChosePart = true
+                }
+            }
             if !introDone {
                 stage = .intro
                 try await intro()
@@ -502,15 +544,18 @@ public final class SessionRunner {
                     // A new part starts at its beginning (or at the line chosen in the script). Resuming the
                     // same part keeps its place.
                     cursorPart = currentExerciseIndex
-                    cursor = 0
+                    cursor = pendingSegment ?? 0
+                    answerFirst = pendingAnswer
                     segmentCount = 1
                     sceneState = nil
                     startLine = pendingLine
                 }
                 pendingLine = nil
+                pendingSegment = nil
+                pendingAnswer = false
                 japaneseOnly = false
-                emit(.timeline(nil))
                 emit(.stage(nil))
+                if sceneStates[currentExerciseIndex] == nil { showPosition(local: answerFirst ? 1 : 0) }
                 let exercise = plan.exercises[currentExerciseIndex]
                 emit(.exerciseStarted(index: currentExerciseIndex, total: plan.exercises.count,
                                       kind: exercise.kind, title: title(for: exercise)))
@@ -524,6 +569,7 @@ public final class SessionRunner {
                 try await perform(exercise, startLine: startLine)
                 japaneseOnly = false
                 try Task.checkCancellation()
+                answerFirst = false
                 nextExerciseIndex = currentExerciseIndex + 1
                 // A line taught or missed earlier comes back after at least one other exercise.
                 if !timeIsUp() {
@@ -549,7 +595,7 @@ public final class SessionRunner {
     }
 
     func timeIsUp(reserve: TimeInterval = 20) -> Bool {
-        guard let startedAt, !results.isEmpty else { return false }
+        guard !options.untimed, let startedAt, !results.isEmpty else { return false }
         let elapsed = now().timeIntervalSince(startedAt) - pausedTotal
         return elapsed > Double(plan.minutes * 60) - reserve
     }

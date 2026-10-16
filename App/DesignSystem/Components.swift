@@ -153,17 +153,23 @@ struct DifficultyIndicator: View {
     }
 }
 
-/// Elapsed time in a session (spec §73: SessionTimer).
+/// Time practised in a session (spec §73: SessionTimer). It stops while the session is paused.
 struct SessionTimerView: View {
     let startedAt: Date
-    let plannedMinutes: Int
+    /// Nil: no time limit (a scene plays to its end).
+    let plannedMinutes: Int?
+    /// Time spent paused so far, and since when it's paused now.
+    var pausedTotal: TimeInterval = 0
+    var pausedSince: Date?
 
     var body: some View {
         TimelineView(.periodic(from: startedAt, by: 1)) { context in
-            let elapsed = max(0, Int(context.date.timeIntervalSince(startedAt)))
-            Text(String(format: "%d:%02d / %d:00", elapsed / 60, elapsed % 60, plannedMinutes))
+            let now = pausedSince ?? context.date
+            let elapsed = max(0, Int(now.timeIntervalSince(startedAt) - pausedTotal))
+            let clock = String(format: "%d:%02d", elapsed / 60, elapsed % 60)
+            Text(plannedMinutes.map { clock + " / \($0):00" } ?? clock)
                 .font(.footnote.monospacedDigit())
-                .foregroundStyle(Palette.inkSecondary)
+                .foregroundStyle(pausedSince == nil ? Palette.inkSecondary : Palette.caution)
         }
     }
 }

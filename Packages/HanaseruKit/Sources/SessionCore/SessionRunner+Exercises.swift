@@ -10,6 +10,10 @@ extension SessionRunner {
     /// a known phrase gets one turn at the level its history earns.
     func runRecall(_ item: LearningItem) async throws {
         let line = library.practiceLine(item: item)
+        if answerFirst {
+            try await playAnswer(line)
+            return
+        }
         if let entry = await entryLevel(for: line) {
             try await runSayIt(line, level: entry, mode: .drill)
         } else {
@@ -27,6 +31,17 @@ extension SessionRunner {
         let line = library.practiceLine(item: item)
         lastLineID = line.id
         let voiceGender = line.partner?.gender
+        if answerFirst {
+            // Straight to the answer (from the scrubber): not graded.
+            let answerEnglish = check.modelAnswerEn.isEmpty ? check.modelAnswer : check.modelAnswerEn
+            emit(.reveal(RevealInfo(lineID: item.id, japanese: item.japanese, kana: item.kana, english: item.english,
+                                    heard: "", outcome: .skipped)))
+            try await coach(.itWas, ["english": answerEnglish])
+            try await speak(check.modelAnswer, .japanese, rate: 0.9, voiceRole: .coachJapanese)
+            try await partnerSays(item.japanese, kana: item.kana, english: item.english, gender: voiceGender, rate: 1.0)
+            exposed.insert(line.id)
+            return
+        }
         let topic = check.topicEn ?? ("Then I'll ask: " + check.questionEn)
         let stored = await repository.knowledge(for: [item.id])[item.id]
         let listeningStrength = stored?.state(.listening).strength ?? 0
@@ -127,6 +142,7 @@ extension SessionRunner {
         // Always reveal the sentence and its meaning.
         emit(.reveal(RevealInfo(lineID: item.id, japanese: item.japanese, kana: item.kana, english: item.english,
                                 heard: transcript, outcome: correct ? .clean : .modelNeeded)))
+        showPosition(local: 1)
         emit(.feedback(FeedbackNote(verdict: correct ? .acceptable : .incorrect,
                                     headline: correct ? "You caught it" : "Here's what was said",
                                     detail: check.questionEn, suggestion: check.modelAnswer, heard: transcript)))

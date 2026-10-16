@@ -10,6 +10,39 @@ struct SceneStart: Hashable {
     var mode: SceneMode
     /// You play the colleague; the app says your usual lines.
     var playAsPartner = false
+    /// Continue from where you stopped last time.
+    var resumeAt: SessionTimeline.Stop?
+}
+
+/// Where you stopped in a scene, to continue from there next time.
+enum SceneResume {
+    private static func key(_ scenarioID: String, _ asPartner: Bool) -> String {
+        "sceneResume.\(scenarioID).\(asPartner ? "partner" : "you")"
+    }
+
+    static func save(_ stop: SessionTimeline.Stop, scenarioID: String, asPartner: Bool, atStart: Bool) {
+        guard !atStart else { return }
+        UserDefaults.standard.set(["step": stop.step, "line": stop.line ?? -1, "answer": stop.isAnswer] as [String: Any],
+                                  forKey: key(scenarioID, asPartner))
+    }
+
+    static func load(scenarioID: String, asPartner: Bool) -> SessionTimeline.Stop? {
+        guard let saved = UserDefaults.standard.dictionary(forKey: key(scenarioID, asPartner)),
+              let step = saved["step"] as? String else { return nil }
+        let line = saved["line"] as? Int ?? -1
+        return SessionTimeline.Stop(step: step, line: line < 0 ? nil : line, isAnswer: saved["answer"] as? Bool ?? false,
+                                    japanese: "")
+    }
+
+    static func clear(scenarioID: String, asPartner: Bool) {
+        UserDefaults.standard.removeObject(forKey: key(scenarioID, asPartner))
+    }
+
+    /// "Conversation · line 5 · question"
+    static func title(_ stop: SessionTimeline.Stop) -> String {
+        guard let line = stop.line else { return stop.step }
+        return "\(stop.step) · line \(line)" + (stop.isAnswer ? " · your answer" : "")
+    }
 }
 
 extension SceneMode {
@@ -127,6 +160,15 @@ struct SceneDetailView: View {
                     ForEach(SceneMode.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
                 }
                 Text(mode.detail).font(.caption).foregroundStyle(Palette.inkSecondary)
+                if let stopped = SceneResume.load(scenarioID: scenario.id, asPartner: playAsPartner) {
+                    Button {
+                        session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: 0, mode: mode,
+                                                                 playAsPartner: playAsPartner, resumeAt: stopped))
+                    } label: {
+                        Label("Continue where you stopped: \(SceneResume.title(stopped))", systemImage: "forward.fill")
+                    }
+                    .accessibilityIdentifier("scene-continue")
+                }
                 Button {
                     session = SceneSession(start: SceneStart(scenarioID: scenario.id, startBeat: 0, mode: mode, playAsPartner: playAsPartner))
                 } label: {

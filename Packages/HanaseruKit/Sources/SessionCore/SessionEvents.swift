@@ -128,9 +128,10 @@ public struct RevealInfo: Equatable, Sendable {
     }
 }
 
-/// The scrubber over a scene: for every line of every step, a stop at its question and one at its answer.
+/// The scrubber over the whole session: for every part — and in a scene, every line of every step — a stop
+/// at its question and one at its answer.
 public struct SessionTimeline: Equatable, Sendable {
-    public struct Stop: Equatable, Sendable {
+    public struct Stop: Hashable, Sendable {
         /// "Listen", "Practise" or "Conversation"; "Start" and "End" around them.
         public var step: String
         /// The line's number in the scene (1 = the first), for stops at a line.
@@ -139,12 +140,15 @@ public struct SessionTimeline: Equatable, Sendable {
         public var isAnswer: Bool
         /// What is heard there.
         public var japanese: String
+        /// The part of the session it's in (1 = the first), when the session has more than one.
+        public var part: Int?
 
-        public init(step: String, line: Int?, isAnswer: Bool, japanese: String) {
+        public init(step: String, line: Int?, isAnswer: Bool, japanese: String, part: Int? = nil) {
             self.step = step
             self.line = line
             self.isAnswer = isAnswer
             self.japanese = japanese
+            self.part = part
         }
     }
 

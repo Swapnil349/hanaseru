@@ -70,10 +70,24 @@ final class HandsFreeSessionUITests: XCTestCase {
         XCTAssertTrue(watch.waitForExistence(timeout: 10))
         screenshot(app, "30-scene-detail")
         watch.tap()
-        for shot in 1...3 {
+        for shot in 1...2 {
             sleep(4)
             screenshot(app, "31-scene-stage-\(shot)")
         }
+
+        // Pause and play carry on from the same place, never from the start.
+        let scrubber = app.sliders["timeline"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 10), "No scrubber in the session")
+        let pause = app.buttons["transport-pause"]
+        pause.tap()
+        let before = scrubber.value as? String ?? ""
+        screenshot(app, "32-scene-paused")
+        sleep(2)
+        pause.tap()
+        sleep(1)
+        let after = scrubber.value as? String ?? ""
+        XCTAssertFalse(before != "Start" && after == "Start", "Play went back to the start (\(before) → \(after))")
+        screenshot(app, "33-scene-resumed")
         XCTAssertTrue(app.buttons["summary-done"].waitForExistence(timeout: 120), "Watching the scene never finished")
     }
 
