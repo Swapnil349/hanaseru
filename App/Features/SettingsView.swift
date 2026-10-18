@@ -1,5 +1,6 @@
 import AVFoundation
 import ConversationCore
+import LearningCore
 import SessionCore
 import SwiftData
 import SwiftUI

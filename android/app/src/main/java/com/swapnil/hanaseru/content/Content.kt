@@ -59,7 +59,7 @@ data class Scenario(
     fun beatID(index: Int): String = beats.getOrNull(index)?.id ?: "b${index + 1}"
 
     /** "engineering" or "finance", or null for everyday life that suits anyone. */
-    val workField: String? get() = field ?: if (track == "work") "engineering" else null
+    val workField: String? get() = this.field ?: if (track == "work") "engineering" else null
 }
 
 @Serializable

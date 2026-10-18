@@ -51,13 +51,13 @@ class Prefs(context: Context) {
     private val store = context.getSharedPreferences("hanaseru", Context.MODE_PRIVATE)
     private val english = mutableStateOf(store.getBoolean("showEnglish", true))
     private val romaji = mutableStateOf(store.getBoolean("showRomaji", false))
-    private val field = mutableStateOf(store.getString("workField", "engineering") ?: "engineering")
+    private val fieldChoice = mutableStateOf(store.getString("workField", "engineering") ?: "engineering")
 
     /** "engineering" or "finance": whose work scenes come first. */
     var workField: String
-        get() = field.value
+        get() = fieldChoice.value
         set(value) {
-            field.value = value
+            fieldChoice.value = value
             store.edit().putString("workField", value).apply()
         }
 
