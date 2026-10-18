@@ -239,6 +239,11 @@ fun SceneScreen(
                     heard = heard[entry.id],
                     onReveal = { revealed.add(entry.id) },
                     onPlay = { play(listOf(entry)) },
+                    words = {
+                        WordsButton(library, listOf(WordsLine(if (entry.isLearner) "Your line" else "Their line",
+                                                              entry.japanese, entry.english)),
+                                    onSay = { word -> scope.launch { speaker.speak(word, Speaker.Voice.COACH_JAPANESE, 0.9f) } })
+                    },
                     onSay = {
                         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                             PackageManager.PERMISSION_GRANTED
@@ -284,6 +289,7 @@ private fun ScriptRow(
     onReveal: () -> Unit,
     onPlay: () -> Unit,
     onSay: () -> Unit,
+    words: @Composable () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     Card(
@@ -321,6 +327,7 @@ private fun ScriptRow(
                     Spacer(Modifier.width(4.dp))
                     Text(if (listening) "Listening…" else "Say it")
                 }
+                if (!hidden) words()
             }
             if (heard != null) {
                 val similarity = if (heard.isEmpty()) 0.0 else JapaneseText.bestSimilarity(heard, listOf(entry.japanese, entry.kana))

@@ -202,6 +202,24 @@ struct CharacterLook {
         case "p.nakamura":
             look = CharacterLook(skin: .rgb(0xF3D0B5), hair: .rgb(0x5A3A28), hairStyle: .long, jacket: .rgb(0x8FB8DE),
                                  shirt: .white)
+        case "p.yamada":
+            look = CharacterLook(skin: .rgb(0xEEC6A0), hair: .rgb(0x4A4A4A), hairStyle: .short, jacket: .rgb(0x1F2A3C),
+                                 shirt: .white, tie: .rgb(0x8A1C2B), glasses: true)
+        case "p.mori":
+            look = CharacterLook(skin: .rgb(0xF5D3B8), hair: .rgb(0x221A16), hairStyle: .bob, jacket: .rgb(0x2F3A4A),
+                                 shirt: .rgb(0xEAF0F6), glasses: true)
+        case "p.ogawa":
+            look = CharacterLook(skin: .rgb(0xF3D0B5), hair: .rgb(0x6B4430), hairStyle: .long, jacket: .rgb(0xC9A27E),
+                                 shirt: .white)
+        case "p.inoue":
+            look = CharacterLook(skin: .rgb(0xE8BE98), hair: .rgb(0x2B2B2B), hairStyle: .short, jacket: .rgb(0x3B3F46),
+                                 shirt: .rgb(0xDDE6F0), tie: .rgb(0x2F6B4F))
+        case "p.shimizu":
+            look = CharacterLook(skin: .rgb(0xEFC9A6), hair: .rgb(0x161616), hairStyle: .short, jacket: .rgb(0x25282E),
+                                 shirt: .white, tie: .rgb(0x3A3A3A), glasses: true)
+        case "p.kimura":
+            look = CharacterLook(skin: .rgb(0xF6D6BE), hair: .rgb(0x2E211A), hairStyle: .bob, jacket: .rgb(0x1E4D8C),
+                                 shirt: .white)
         default:
             look = stage.partnerGender == .female
                 ? CharacterLook(skin: .rgb(0xF3CFB0), hair: .rgb(0x3B2A20), hairStyle: .bob, jacket: .rgb(0x3C3C46), shirt: .white)
@@ -386,7 +404,7 @@ enum StageSetting: Equatable {
             self = .site
         } else if place.contains("end of the day") || place.contains("evening") || place.contains("restaurant") {
             self = .evening
-        } else if place.contains("office") {
+        } else if place.contains("office") || place.contains("desk") || place.contains("counter") || place.contains("phone") {
             self = .office
         } else {
             self = .meetingRoom

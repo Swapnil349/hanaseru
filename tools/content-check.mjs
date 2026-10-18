@@ -15,6 +15,7 @@ const scenarios = load('scenarios');
 const personas = load('personas');
 const vocabulary = load('vocabulary');
 const cues = load('cues');
+const glossary = load('glossary');
 
 const errors = [];
 const warnings = [];
@@ -162,6 +163,20 @@ for (const it of items) {
     if (l.choiceQuestionJa && !l.choiceQuestionEn) fail(`${where}: choice question needs English`);
   }
 }
+
+// --- Glossary: every line's words, joined in order, spell the line ---
+const STRIP = new Set([...'、。，．？！?!,.・「」『』（）()〜~…:：;；"\' 　']);
+const strip = (t) => [...t].filter((c) => !STRIP.has(c)).join('');
+for (const [line, words] of Object.entries(glossary)) {
+  const joined = words.map((w) => w.ja).join('');
+  if (joined !== strip(line)) fail(`glossary 「${line}」: words join to 「${joined}」`);
+  for (const w of words) {
+    if (!w.ja || !w.kana || !w.en) fail(`glossary 「${line}」: incomplete word ${JSON.stringify(w)}`);
+    if (/[一-鿿]/.test(w.kana.replace(/\{name\}/g, ''))) fail(`glossary 「${line}」: kanji in kana ${w.kana}`);
+  }
+}
+const sceneLines = scenarios.flatMap((s) => [s.closingLine, ...s.beats.flatMap((b) => [b.line, ...(b.responses ?? []).map((r) => r.japanese)])]);
+for (const line of sceneLines) if (line && !glossary[line]) warn(`no word list for 「${line}」`);
 
 // --- Cues ---
 const PLACEHOLDERS = new Set(['english', 'intent', 'name', 'nameJa', 'title', 'canDo', 'place', 'n', 'k', 'minutes', 'agenda', 'topic']);

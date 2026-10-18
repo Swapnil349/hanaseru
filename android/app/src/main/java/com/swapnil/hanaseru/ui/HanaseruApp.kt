@@ -59,7 +59,7 @@ fun HanaseruApp(library: ContentLibrary, speaker: Speaker, listener: Listener, p
             )
         }
         composable("scenes") {
-            ScenesScreen(library = library, onBack = { navigation.popBackStack() },
+            ScenesScreen(library = library, prefs = prefs, onBack = { navigation.popBackStack() },
                          onOpen = { id -> navigation.navigate("scene/$id") })
         }
         composable("scene/{id}") { entry ->

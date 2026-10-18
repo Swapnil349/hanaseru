@@ -125,6 +125,10 @@ fun PracticeScreen(
                         name = other,
                         active = state.speaking == ScenePractice.Who.OTHER,
                         onHear = { practice.hear(state.otherJapanese, yours = false) },
+                        words = {
+                            WordsButton(library, listOf(WordsLine(other, state.otherJapanese, state.otherEnglish)),
+                                        onSay = { practice.hear(it, yours = true) }, onOpen = { practice.pause() })
+                        },
                     ) {
                         JapaneseBlock(state.otherJapanese, state.otherKana, Romaji.of(state.otherJapanese, state.otherKana),
                                       state.otherEnglish, prefs.showRomaji, prefs.showEnglish)
@@ -138,6 +142,12 @@ fun PracticeScreen(
                         active = state.speaking == ScenePractice.Who.YOU,
                         onHear = { practice.hear(line.japanese, yours = true) },
                         onHearSlowly = { practice.hear(line.japanese, yours = true, slowly = true) },
+                        words = {
+                            if (state.answerShown) {
+                                WordsButton(library, listOf(WordsLine("Your line", line.japanese, line.english)),
+                                            onSay = { practice.hear(it, yours = true) }, onOpen = { practice.pause() })
+                            }
+                        },
                     ) {
                         Text(line.cueEn, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         if (state.answerShown) {
@@ -196,6 +206,7 @@ private fun SpeakerCard(
     active: Boolean,
     onHear: () -> Unit,
     onHearSlowly: (() -> Unit)? = null,
+    words: @Composable () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -227,6 +238,7 @@ private fun SpeakerCard(
             if (onHearSlowly != null) {
                 OutlinedButton(onClick = onHearSlowly) { Text("Slowly") }
             }
+            words()
         }
     }
 }

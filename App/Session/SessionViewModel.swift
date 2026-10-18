@@ -94,7 +94,7 @@ final class SessionViewModel {
                                closingItemID: nil)
             library = app.library
         } else {
-            let prepared = await SessionPreparer(library: app.library, repository: app.repository)
+            let prepared = await SessionPreparer(library: app.library.forField(.current), repository: app.repository)
                 .prepare(minutes: minutes, focus: focus)
             plan = prepared.plan
             library = prepared.library

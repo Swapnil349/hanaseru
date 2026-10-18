@@ -354,8 +354,26 @@ struct HandsFreeSessionView: View {
                     .accessibilityIdentifier("hear-answer")
                 HearButton(title: "Slowly", systemImage: "tortoise.fill") { model.listen(to: focus.answerAudio, slowly: true) }
             }
+            WordsButton(lines: wordsLines(focus)) {
+                // Reading the words: the session waits.
+                if !model.isPaused { model.togglePause(reason: "words") }
+            }
         }
         .padding(.top, 2)
+    }
+
+    /// The lines whose words can be looked at: the other person's, and yours once it's on screen.
+    private func wordsLines(_ focus: FocusInfo) -> [WordsLine] {
+        var lines: [WordsLine] = []
+        if !focus.partnerJapanese.isEmpty {
+            lines.append(WordsLine(title: focus.partnerName.isEmpty ? "Their line" : focus.partnerName,
+                                   japanese: focus.partnerJapanese, english: focus.partnerEnglish))
+        }
+        let yoursShown = focus.answerShown || model.peekedLineID == focus.lineID || model.reveal?.lineID == focus.lineID
+        if yoursShown {
+            lines.append(WordsLine(title: "Your line", japanese: focus.japanese, english: focus.english))
+        }
+        return lines
     }
 
     /// After the turn: the full line, what was heard, and which parts were right. No red, no "wrong".

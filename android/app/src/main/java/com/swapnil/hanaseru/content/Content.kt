@@ -53,8 +53,13 @@ data class Scenario(
     val closingLine: String = "",
     val closingKana: String = "",
     val closingEnglish: String = "",
+    /** The line of work ("finance"); work scenes without one are railway engineering. */
+    val field: String? = null,
 ) {
     fun beatID(index: Int): String = beats.getOrNull(index)?.id ?: "b${index + 1}"
+
+    /** "engineering" or "finance", or null for everyday life that suits anyone. */
+    val workField: String? get() = field ?: if (track == "work") "engineering" else null
 }
 
 @Serializable
@@ -159,13 +164,39 @@ data class PracticeLine(
 }
 
 /** Everything the app teaches, loaded once. */
+/** One word (or set phrase) of a line, with its reading and its meaning in that line. */
+@Serializable
+data class WordGloss(val ja: String, val kana: String, val en: String) {
+    /** The reading in English letters, with particles as they're said (は → wa). */
+    val romaji: String
+        get() = if (kana.any { Romaji.toHiragana(it) in '\u3041'..'\u309F' }) Romaji.romanize(kana) else kana
+}
+
 class ContentLibrary(
     val items: List<LearningItem>,
     val scenarios: List<Scenario>,
     val personas: List<Persona>,
     val vocabulary: List<VocabularyTerm>,
     val cues: Map<String, CoachCue>,
+    /** Every line's words with their meanings, by the line's Japanese. */
+    val glossary: Map<String, List<WordGloss>> = emptyMap(),
 ) {
+    private val namedLines = glossary.filterKeys { it.contains("{name}") }
+
+    /** The words of a line in order, or empty. A line with the learner's name in it is found whatever the name. */
+    fun words(japanese: String): List<WordGloss> {
+        glossary[japanese]?.let { return it }
+        for ((key, words) in namedLines) {
+            val parts = key.split("{name}")
+            if (parts.size != 2 || japanese.length < parts[0].length + parts[1].length) continue
+            if (!japanese.startsWith(parts[0]) || !japanese.endsWith(parts[1])) continue
+            val name = japanese.substring(parts[0].length, japanese.length - parts[1].length)
+            if (name.isEmpty()) continue
+            return words.map { if (it.ja == "{name}") WordGloss(name, name, it.en) else it }
+        }
+        return emptyList()
+    }
+
     private val personaByID = personas.associateBy { it.id }
     private val scenarioByID = scenarios.associateBy { it.id }
     private val itemByID = items.associateBy { it.id }
@@ -294,6 +325,7 @@ class ContentLibrary(
             personas = json.decodeFromString(read("personas.json")),
             vocabulary = json.decodeFromString(read("vocabulary.json")),
             cues = json.decodeFromString(read("cues.json")),
+            glossary = json.decodeFromString(read("glossary.json")),
         )
     }
 }

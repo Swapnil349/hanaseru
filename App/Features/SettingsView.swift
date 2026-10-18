@@ -30,6 +30,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.coachServerURL) private var coachServerURL = ""
     @AppStorage(SettingsKey.onboardingDone) private var onboardingDone = true
     @AppStorage(SettingsKey.lastBackupAt) private var lastBackupAt = 0.0
+    @AppStorage(SettingsKey.workField) private var workField = WorkField.engineering.rawValue
 
     @State private var name = ""
     @State private var token = ""
@@ -46,9 +47,16 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("You") {
+                Section {
                     TextField("Your name", text: $name)
                         .onSubmit { app.repository.setName(name) }
+                    Picker("My work", selection: $workField) {
+                        ForEach(WorkField.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+                    }
+                } header: {
+                    Text("You")
+                } footer: {
+                    Text("Daily sessions practise the work scenes for your field, and its scenes come first in Scenes.")
                 }
 
                 Section {

@@ -156,6 +156,11 @@ struct ScriptView: View {
                         .disabled(saying != nil)
                         .accessibilityIdentifier("script-say")
                     }
+                    if !hidden {
+                        WordsButton(lines: [WordsLine(title: entry.isLearner ? "Your line" : "Their line",
+                                                      japanese: entry.japanese, english: entry.english)],
+                                    bordered: true)
+                    }
                     if let line = entry.startLine, let onStart {
                         Button { onStart(part.index, line) } label: {
                             Label("From here", systemImage: "play.circle")

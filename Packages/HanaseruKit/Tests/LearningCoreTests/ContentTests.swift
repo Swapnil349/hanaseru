@@ -17,6 +17,36 @@ struct ContentTests {
         #expect(!library.grammar.isEmpty)
     }
 
+    /// Every line of every scene has its words with meanings, and they spell the line.
+    @Test func everySceneLineHasItsWords() {
+        for scenario in library.scenarios {
+            let lines = [scenario.closingLine] + scenario.beats.flatMap { [$0.line] + $0.responses.map(\.japanese) }
+            for line in lines where !line.isEmpty {
+                let words = library.words(in: line)
+                #expect(!words.isEmpty, "\(scenario.id): no words for 「\(line)」")
+                #expect(words.allSatisfy { !$0.en.isEmpty && !$0.romaji.isEmpty }, "\(scenario.id): 「\(line)」")
+            }
+        }
+    }
+
+    @Test func wordsAreFoundWithTheLearnersName() {
+        let words = library.words(in: "お電話ありがとうございます。Swapnilです。いつもお世話になっております。")
+        #expect(words.contains { $0.ja == "Swapnil" })
+        #expect(words.first { $0.ja == "は" }?.romaji ?? "wa" == "wa")
+        let topic = library.words(in: "はじめまして。財務部の山田です。")
+        #expect(topic.map(\.ja) == ["はじめまして", "財務部", "の", "山田", "です"])
+    }
+
+    @Test func financeScenesAreKeptToTheirField() {
+        let finance = library.forField(.finance).scenarios
+        #expect(finance.contains { $0.id == "f.month.end" })
+        #expect(!finance.contains { $0.id == "s.site.pier" })
+        #expect(finance.contains { $0.id == "s.weekend.chat" })
+        let engineering = library.forField(.engineering).scenarios
+        #expect(!engineering.contains { $0.workField == .finance })
+        #expect(engineering.contains { $0.id == "s.site.pier" })
+    }
+
     @Test func everyCueHasText() {
         for key in CueKey.allCases {
             let cue = library.cue(key)

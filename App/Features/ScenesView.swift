@@ -93,12 +93,32 @@ struct ScenesView: View {
         })
     }
 
+    @AppStorage(SettingsKey.workField) private var workFieldRaw = WorkField.engineering.rawValue
+
+    /// A group of scenes in the list.
+    private struct SceneGroup: Hashable {
+        var title: String
+        var field: WorkField?
+        var track: Track
+    }
+
+    /// Your own field's scenes first, then everyday life, then the other field's.
+    private var groups: [SceneGroup] {
+        let mine = WorkField(rawValue: workFieldRaw) ?? .engineering
+        let railway = SceneGroup(title: "Railway work", field: .engineering, track: .work)
+        let finance = [SceneGroup(title: "Finance at work", field: .finance, track: .work),
+                       SceneGroup(title: "Money in Japan", field: .finance, track: .everyday)]
+        let everyday = SceneGroup(title: "Everyday", field: nil, track: .everyday)
+        return mine == .finance ? finance + [everyday, railway] : [railway, everyday] + finance
+    }
+
     var body: some View {
         List {
-            ForEach([Track.work, .everyday], id: \.self) { track in
-                let scenes = app.library.scenarios.filter { $0.track == track }.sorted { $0.level < $1.level }
+            ForEach(groups, id: \.self) { group in
+                let scenes = app.library.scenarios.filter { $0.track == group.track && $0.workField == group.field }
+                    .sorted { $0.level < $1.level }
                 if !scenes.isEmpty {
-                    Section(track == .work ? "Work" : "Everyday") {
+                    Section(group.title) {
                         ForEach(scenes) { scenario in
                             NavigationLink {
                                 SceneDetailView(scenario: scenario)

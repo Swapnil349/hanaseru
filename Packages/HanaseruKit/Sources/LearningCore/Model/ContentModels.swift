@@ -6,6 +6,19 @@ public enum Track: String, Codable, CaseIterable, Sendable {
     case everyday
 }
 
+/// The line of work a scene is written for. Each learner picks theirs; planned sessions use only its work scenes.
+public enum WorkField: String, CaseIterable, Sendable {
+    case engineering
+    case finance
+
+    public var title: String {
+        switch self {
+        case .engineering: "Railway engineering"
+        case .finance: "Finance"
+        }
+    }
+}
+
 /// Register of an expression (spec §12).
 public enum Politeness: String, Codable, CaseIterable, Sendable {
     case casual
@@ -567,6 +580,14 @@ public struct Scenario: Codable, Identifiable, Hashable, Sendable {
     /// The scene's can-do goal.
     public var canDoEn: String?
     public var missionsEn: [SceneMission]?
+    /// The line of work ("finance"); work scenes without one are railway engineering.
+    public var field: String?
+
+    /// The line of work the scene belongs to, or nil for everyday life that suits anyone.
+    public var workField: WorkField? {
+        if let field { return WorkField(rawValue: field) }
+        return track == .work ? .engineering : nil
+    }
 
     /// The beat's stable id ("problem"), or "b<n>" when the content has none.
     public func beatID(at index: Int) -> String {

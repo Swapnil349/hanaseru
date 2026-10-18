@@ -1,4 +1,5 @@
 import Foundation
+import LearningCore
 import Security
 
 /// UserDefaults keys. Views use `@AppStorage` with these; non-view code reads `UserDefaults.standard`.
@@ -26,6 +27,15 @@ enum SettingsKey {
     static let completedSessions = "completedSessions"
     /// When the Japanese of the learner's own line is on screen (`AnswerDisplay`; default: while learning it).
     static let answerDisplay = "answerDisplay"
+    /// The learner's line of work (`WorkField`): which work scenes daily sessions use and which come first.
+    static let workField = "workField"
+}
+
+extension WorkField {
+    /// The learner's chosen line of work (railway engineering unless changed in Settings).
+    static var current: WorkField {
+        WorkField(rawValue: UserDefaults.standard.string(forKey: SettingsKey.workField) ?? "") ?? .engineering
+    }
 }
 
 /// How much kanji to show (spec §41). Default: minimal.

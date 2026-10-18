@@ -33,6 +33,20 @@ class ContentTest {
     }
 
     @Test
+    fun everyLineHasItsWords() {
+        for (scenario in library.scenarios) {
+            for (line in library.lines(scenario, "Swapnil")) {
+                val words = library.words(line.japanese)
+                assertFalse("${line.id}: ${line.japanese}", words.isEmpty())
+                assertTrue(line.id, words.all { it.en.isNotEmpty() && it.romaji.isNotEmpty() })
+            }
+        }
+        val named = library.words("お電話ありがとうございます。Swapnilです。いつもお世話になっております。")
+        assertTrue(named.any { it.ja == "Swapnil" })
+        assertTrue(library.scenarios.any { it.workField == "finance" })
+    }
+
+    @Test
     fun theScriptHasEveryLineInThreeWays() {
         val scenario = library.scenario("s.weekend.chat")!!
         val entries = library.script(scenario, "")

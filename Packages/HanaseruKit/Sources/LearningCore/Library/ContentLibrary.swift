@@ -20,17 +20,21 @@ public struct ContentLibrary: Sendable {
     public let scenarios: [Scenario]
     public let personas: [Persona]
     public let cues: [CueKey: CoachCue]
+    /// Every line's words with their meanings, by the line's Japanese.
+    public let glossary: [String: [WordGloss]]
 
     private var itemIndex: [String: Int]
 
     public init(items: [LearningItem], vocabulary: [VocabularyTerm] = [], grammar: [GrammarPattern] = [],
-                scenarios: [Scenario] = [], personas: [Persona] = [], cues: [CueKey: CoachCue] = [:]) {
+                scenarios: [Scenario] = [], personas: [Persona] = [], cues: [CueKey: CoachCue] = [:],
+                glossary: [String: [WordGloss]] = [:]) {
         self.items = items
         self.vocabulary = vocabulary
         self.grammar = grammar
         self.scenarios = scenarios
         self.personas = personas
         self.cues = cues
+        self.glossary = glossary
         self.itemIndex = Dictionary(items.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
@@ -60,7 +64,8 @@ public struct ContentLibrary: Sendable {
             grammar: try decode("grammar", as: [GrammarPattern].self),
             scenarios: try decode("scenarios", as: [Scenario].self),
             personas: try decode("personas", as: [Persona].self),
-            cues: cues
+            cues: cues,
+            glossary: try decode("glossary", as: [String: [WordGloss]].self)
         )
     }
 
@@ -84,13 +89,23 @@ public struct ContentLibrary: Sendable {
         cues[key] ?? CoachCue(ja: "", kana: "", en: key.rawValue)
     }
 
+    /// The library as planned sessions see it for someone in this line of work: other fields' scenes are left out.
+    public func forField(_ field: WorkField) -> ContentLibrary {
+        ContentLibrary(
+            items: items, vocabulary: vocabulary, grammar: grammar,
+            scenarios: scenarios.filter { $0.workField == nil || $0.workField == field }, personas: personas, cues: cues,
+            glossary: glossary
+        )
+    }
+
     /// Returns a library that also contains the learner's personal phrases (spec §15).
     /// Personal items replace bundled items with the same id.
     public func merging(personal: [LearningItem]) -> ContentLibrary {
         let personalIDs = Set(personal.map(\.id))
         return ContentLibrary(
             items: items.filter { !personalIDs.contains($0.id) } + personal,
-            vocabulary: vocabulary, grammar: grammar, scenarios: scenarios, personas: personas, cues: cues
+            vocabulary: vocabulary, grammar: grammar, scenarios: scenarios, personas: personas, cues: cues,
+            glossary: glossary
         )
     }
 }
