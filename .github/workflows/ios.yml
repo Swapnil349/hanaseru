@@ -11,6 +11,8 @@ on:
     branches: [main]
     paths-ignore:
       - "android/**"
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
       - ".github/workflows/android.yml"
   pull_request:
   workflow_dispatch:

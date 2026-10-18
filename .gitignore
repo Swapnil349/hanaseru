@@ -26,3 +26,7 @@ android/build/
 android/app/build/
 android/local.properties
 android/.kotlin/
+
+# Desktop (Windows) app, built by .github/workflows/desktop.yml
+desktop/node_modules/
+desktop/dist/

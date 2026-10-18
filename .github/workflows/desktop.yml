@@ -1,0 +1,73 @@
+# Builds the Windows desktop app (an app installed from Microsoft Edge) and publishes it on GitHub Pages:
+#   https://swapnil349.github.io/hanaseru/
+# Open that address in Edge and choose "Install Hanaseru" (the icon at the right of the address bar).
+#
+# Artifacts on every run:
+#   hanaseru-desktop   the built app (the same files that are published)
+#
+# GitHub Pages must be switched on once: repository Settings › Pages › Source: GitHub Actions.
+name: Desktop
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - "Packages/HanaseruKit/Sources/LearningCore/Content/**"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hanaseru-desktop
+          path: desktop/dist
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: desktop/dist
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # Until GitHub Pages is switched on (Settings › Pages › Source: GitHub Actions) this step can't publish.
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
