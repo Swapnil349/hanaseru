@@ -300,6 +300,13 @@ main { flex: 1; overflow-y: auto; }
 .drill-card.your-turn { border: 2px solid var(--signal); }
 .drill-options { margin-top: 14px; }
 
+/* My scenes */
+textarea.describe { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--surface); color: var(--ink); resize: vertical; }
+.examples ul { margin: 6px 0 0; padding-left: 18px; }
+.examples li { margin: 2px 0; }
+.examples .link { text-align: left; font-weight: 500; }
+a.button { text-decoration: none; }
+
 @media (max-width: 860px) {
   .sidebar { width: 64px; padding: 14px 6px; }
   .nav-item span:last-child, .brand-name, .sidebar-foot { display: none; }

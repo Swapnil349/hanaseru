@@ -11,6 +11,8 @@ import { Home } from './home';
 import { MeetingPage } from './meeting';
 import { MeetingPractice } from './meeting-practice';
 import { Meetings } from './meetings';
+import { applyScenes } from '../myScenes';
+import { MySceneEditor } from './my-scene';
 import { Practice } from './practice';
 import { SceneDetail } from './scene';
 import { Scenes } from './scenes';
@@ -34,6 +36,8 @@ export function useApp(): AppServices {
 }
 
 let currentPrefs = loadPrefs();
+// The learner's own scenes join the course before anything is shown.
+applyScenes();
 const speaker = new WebSpeaker(() => ({ japanese: currentPrefs.japaneseVoice, english: currentPrefs.englishVoice }));
 const listener = new WebListener();
 const progress = new StoredProgress();
@@ -45,6 +49,7 @@ type Route =
   | { page: 'scene'; id: string }
   | { page: 'practice'; id: string; mode: Mode; partner: boolean; from: number | null }
   | { page: 'vocabulary' }
+  | { page: 'myScene'; editID?: string }
   | { page: 'meetings' }
   | { page: 'meeting'; id: string }
   | { page: 'meetingPractice'; id: string; which: 'all' | 'starred' }
@@ -63,6 +68,7 @@ function parse(hash: string): Route {
         : { page: 'scenes' };
     }
     case 'vocabulary': return { page: 'vocabulary' };
+    case 'my-scene': return { page: 'myScene', editID: parts[1] === 'edit' ? parts[2] : undefined };
     case 'meetings': return { page: 'meetings' };
     case 'meeting': return parts[1] ? { page: 'meeting', id: parts[1] } : { page: 'meetings' };
     case 'meeting-practice':
@@ -128,7 +134,7 @@ export function App() {
   }), [prefs]);
 
   const nav = (page: string, label: string, icon: string) => {
-    const active = route.page === page || (page === 'scenes' && (route.page === 'scene' || route.page === 'practice'))
+    const active = route.page === page || (page === 'scenes' && (route.page === 'scene' || route.page === 'practice' || route.page === 'myScene'))
       || (page === 'meetings' && (route.page === 'meeting' || route.page === 'meetingPractice'));
     return (
       <a class={'nav-item' + (active ? ' active' : '')} href={`#/${page === 'home' ? '' : page}`} aria-current={active ? 'page' : undefined}>
@@ -148,6 +154,7 @@ export function App() {
                        partner={route.partner} from={route.from} />;
       break;
     case 'vocabulary': page = <Vocabulary />; break;
+    case 'myScene': page = <MySceneEditor key={route.editID ?? 'new'} editID={route.editID} />; break;
     case 'meetings': page = <Meetings />; break;
     case 'meeting': page = <MeetingPage id={route.id} key={route.id} />; break;
     case 'meetingPractice': page = <MeetingPractice id={route.id} which={route.which} key={route.id + route.which} />; break;

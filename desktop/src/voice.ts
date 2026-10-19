@@ -1,3 +1,4 @@
+import { voiceLog } from './diagnostics';
 import type { VoiceRole } from './script';
 
 /** Speaks a line and resolves when it has been said (or stopped). */
@@ -93,8 +94,31 @@ export function voiceFor(role: VoiceRole, choice: VoiceChoice): { voice?: Speech
 
 // MARK: - Speaking
 
+type Attempt = 'ok' | 'stopped' | 'never-started' | 'too-fast' | 'error' | 'timeout';
+
+/** Ended so soon after starting that nothing can have been heard (a voice that failed without saying so). */
+export function endedTooFast(text: string, rate: number, milliseconds: number): boolean {
+  const characters = [...text.replace(/[\s、。，．？！?!,.「」]/g, '')].length;
+  return characters >= 6 && milliseconds < Math.max(250, (characters * 25) / Math.max(rate, 0.5));
+}
+
+/** A voice installed in Windows (works offline), for when an online voice fails. */
+function localVoice(role: VoiceRole): SpeechSynthesisVoice | undefined {
+  const list = role === 'english' ? englishVoices() : japaneseVoices();
+  return list.find((v) => v.localService) ?? list[list.length - 1];
+}
+
+/**
+ * Speaks through the browser's voices, guarding against the ways they go silent: a line spoken right after a stop
+ * is dropped, an online voice fails on a network blip, a voice never starts or "finishes" at once, or long speech
+ * stalls. Each time it notices, it tries once more (with a voice installed in Windows if the online one failed),
+ * logs it, and never waits for ever.
+ */
 export class WebSpeaker implements Speaker {
-  private pending: (() => void) | null = null;
+  private pending: ((result: Attempt) => void) | null = null;
+  /** Keeps the line being spoken alive: browsers lose its events if it's garbage-collected. */
+  private current: SpeechSynthesisUtterance | null = null;
+  private generation = 0;
 
   constructor(private readonly choice: () => VoiceChoice) {}
 
@@ -106,25 +130,70 @@ export class WebSpeaker implements Speaker {
     if (!text.trim() || !this.isAvailable) return;
     await voicesReady();
     this.stop();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const generation = this.generation;
+    // Chromium drops a line spoken straight after cancel(): give it a moment.
+    await wait(60);
+    if (generation !== this.generation) return;
     const { voice, pitch } = voiceFor(role, this.choice());
+    let result = await this.attempt(text, role, rate, voice, pitch);
+    if (result === 'ok' || result === 'stopped' || generation !== this.generation) return;
+    voiceLog(`speech ${result} with ${voice?.name ?? 'the default voice'}; trying again`);
+    speechSynthesis.cancel();
+    speechSynthesis.resume();
+    await wait(200);
+    if (generation !== this.generation) return;
+    // Second try: a voice installed in Windows if the first was an online one that failed.
+    const second = result === 'error' || result === 'never-started' ? localVoice(role) ?? voice : voice;
+    result = await this.attempt(text, role, rate, second, pitch);
+    if (result !== 'ok' && result !== 'stopped') voiceLog(`speech ${result} again with ${second?.name ?? 'the default voice'}; carrying on`);
+  }
+
+  private attempt(text: string, role: VoiceRole, rate: number, voice: SpeechSynthesisVoice | undefined, pitch: number): Promise<Attempt> {
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = role === 'english' ? (voice?.lang ?? 'en-US') : 'ja-JP';
     if (voice) utterance.voice = voice;
     utterance.pitch = pitch;
     utterance.rate = rate;
-    await new Promise<void>((resolve) => {
+    this.current = utterance;
+    return new Promise<Attempt>((resolve) => {
       let finished = false;
-      const finish = () => {
+      let startedAt = 0;
+      const timers: ReturnType<typeof setTimeout>[] = [];
+      const finish = (result: Attempt) => {
         if (finished) return;
         finished = true;
-        clearTimeout(watchdog);
+        timers.forEach(clearTimeout);
+        clearInterval(keepAlive);
         if (this.pending === finish) this.pending = null;
-        resolve();
+        if (this.current === utterance) this.current = null;
+        resolve(result);
       };
-      // A watchdog: if the voice never says it finished, carry on anyway.
-      const watchdog = setTimeout(finish, (text.length * 400) / Math.max(rate, 0.5) + 4000);
-      utterance.onend = finish;
-      utterance.onerror = finish;
+      utterance.onstart = () => {
+        startedAt = performance.now();
+      };
+      utterance.onend = () => {
+        if (!startedAt) finish('never-started');
+        else finish(endedTooFast(text, rate, performance.now() - startedAt) ? 'too-fast' : 'ok');
+      };
+      utterance.onerror = (event) => {
+        finish(event.error === 'interrupted' || event.error === 'canceled' ? 'stopped' : 'error');
+      };
+      // Never started: the voice is stuck or the line was dropped.
+      timers.push(setTimeout(() => {
+        if (!startedAt) {
+          speechSynthesis.cancel();
+          finish('never-started');
+        }
+      }, 2500));
+      // Never finished: carry on anyway.
+      timers.push(setTimeout(() => {
+        speechSynthesis.cancel();
+        finish('timeout');
+      }, (text.length * 400) / Math.max(rate, 0.5) + 6000));
+      // Chromium pauses long speech after ~15 s; a nudge keeps it going.
+      const keepAlive = setInterval(() => {
+        if (speechSynthesis.speaking) speechSynthesis.resume();
+      }, 5000);
       this.pending = finish;
       speechSynthesis.speak(utterance);
     });
@@ -132,11 +201,16 @@ export class WebSpeaker implements Speaker {
 
   stop() {
     if (!this.isAvailable) return;
+    this.generation++;
     const pending = this.pending;
     this.pending = null;
     speechSynthesis.cancel();
-    pending?.();
+    pending?.('stopped');
   }
+}
+
+function wait(milliseconds: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
 // MARK: - Listening
@@ -190,6 +264,7 @@ function chime() {
 /** Japanese speech recognition in Microsoft Edge (and Chrome). What you say becomes text; nothing is recorded. */
 export class WebListener implements Listener {
   private current: Recognition | null = null;
+  private generation = 0;
   /** The microphone was refused; the browser's site settings can allow it again. */
   denied = false;
 
@@ -197,12 +272,29 @@ export class WebListener implements Listener {
     return !!recognitionClass();
   }
 
-  listen(onPartial?: (text: string) => void): Promise<string> {
+  async listen(onPartial?: (text: string) => void): Promise<string> {
     const Recognition = recognitionClass();
-    if (!Recognition) return Promise.resolve('');
+    if (!Recognition) return '';
     this.cancel();
     this.denied = false;
+    const generation = ++this.generation;
     chime();
+    // A moment for the chime, and for a recognition that was just stopped to let go of the microphone.
+    await wait(250);
+    if (generation !== this.generation) return '';
+    let result = await this.attempt(Recognition, onPartial);
+    // The speech service dropped (network) or the microphone wasn't free yet: one more try, so the turn isn't lost.
+    if (result.retry && generation === this.generation) {
+      voiceLog(`listening ended early (${result.reason}); trying again`);
+      await wait(400);
+      if (generation !== this.generation) return '';
+      result = await this.attempt(Recognition, onPartial);
+      if (result.retry) voiceLog(`listening ended early again (${result.reason})`);
+    }
+    return result.text;
+  }
+
+  private attempt(Recognition: RecognitionConstructor, onPartial?: (text: string) => void): Promise<{ text: string; retry: boolean; reason: string }> {
     return new Promise((resolve) => {
       const recognition = new Recognition();
       this.current = recognition;
@@ -212,16 +304,21 @@ export class WebListener implements Listener {
       recognition.maxAlternatives = 3;
       let best = '';
       let done = false;
-      const finish = () => {
+      let error = '';
+      const startedAt = performance.now();
+      const finish = (cancelled = false) => {
         if (done) return;
         done = true;
         clearTimeout(timeout);
         if (this.current === recognition) this.current = null;
-        resolve(best.trim());
+        const quick = performance.now() - startedAt < 1500;
+        const retry = !cancelled && !best && quick && ['network', 'start-failed', 'aborted', ''].includes(error);
+        resolve({ text: best.trim(), retry, reason: error || 'no sound' });
       };
+      // Never listen for ever: stop after 25 s and take what was heard.
       const timeout = setTimeout(() => {
         try { recognition.stop(); } catch { /* already stopped */ }
-        setTimeout(finish, 800);
+        setTimeout(() => finish(), 800);
       }, 25_000);
       recognition.onresult = (event) => {
         let text = '';
@@ -232,24 +329,90 @@ export class WebListener implements Listener {
         }
       };
       recognition.onerror = (event) => {
+        error = event.error;
         if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(event.error)) this.denied = true;
+        if (event.error !== 'no-speech' && event.error !== 'aborted') voiceLog(`listening error: ${event.error}`);
         finish();
       };
-      recognition.onend = finish;
+      recognition.onend = () => finish();
+      (recognition as unknown as { cancelled?: () => void }).cancelled = () => finish(true);
       try {
-        // A moment for the chime before the microphone opens.
-        setTimeout(() => {
-          if (!done) recognition.start();
-        }, 220);
-      } catch {
+        recognition.start();
+      } catch (e) {
+        error = 'start-failed';
+        voiceLog(`listening could not start: ${(e as Error)?.name ?? e}`);
         finish();
       }
     });
   }
 
   cancel() {
+    this.generation++;
     const recognition = this.current;
     this.current = null;
+    (recognition as unknown as { cancelled?: () => void } | null)?.cancelled?.();
     try { recognition?.abort(); } catch { /* not started */ }
+  }
+}
+
+// MARK: - English dictation
+
+/** English speech to text, for describing your own scene: keeps listening until stopped. */
+export class EnglishDictation {
+  private recognition: Recognition | null = null;
+  private stopped = false;
+
+  static get isAvailable() {
+    return !!recognitionClass();
+  }
+
+  /** `onText` gets what was said so far in this dictation (final and in progress). */
+  start(onText: (text: string) => void, onEnd: () => void) {
+    const Recognition = recognitionClass();
+    if (!Recognition) return onEnd();
+    this.stopped = false;
+    let finals = '';
+    const begin = () => {
+      const recognition = new Recognition();
+      this.recognition = recognition;
+      recognition.lang = 'en-IN';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      recognition.maxAlternatives = 1;
+      let committed = finals;
+      recognition.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const text = event.results[i][0]?.transcript ?? '';
+          if (event.results[i].isFinal) final += text;
+          else interim += text;
+        }
+        finals = (committed + ' ' + final).trim();
+        onText((finals + ' ' + interim).trim());
+      };
+      recognition.onerror = (event) => {
+        if (event.error !== 'no-speech' && event.error !== 'aborted') voiceLog(`dictation error: ${event.error}`);
+        if (event.error === 'not-allowed' || event.error === 'audio-capture') this.stopped = true;
+      };
+      // Browsers end dictation after a pause; it carries on until you press Stop.
+      recognition.onend = () => {
+        committed = finals;
+        if (this.stopped) onEnd();
+        else setTimeout(begin, 150);
+      };
+      try {
+        recognition.start();
+      } catch {
+        this.stopped = true;
+        onEnd();
+      }
+    };
+    begin();
+  }
+
+  stop() {
+    this.stopped = true;
+    try { this.recognition?.stop(); } catch { /* not started */ }
   }
 }

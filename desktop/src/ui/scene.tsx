@@ -4,6 +4,7 @@ import { bestSimilarity } from '../japaneseText';
 import { Mode, MODES } from '../practice';
 import { romajiOf } from '../romaji';
 import { script, ScriptEntry, scriptText } from '../script';
+import { deleteScene, isMonologue, isOwn, savedScene } from '../myScenes';
 import { resumePoint } from '../store';
 import { go, practicePath, useApp } from './app';
 import { Chip, JapaneseBlock, PageHeader, WordsButton } from './common';
@@ -36,6 +37,25 @@ export function SceneDetail(props: { id: string }) {
   }
   const persona = library.persona(scenario.personaID);
   const colleague = persona?.nameEn || 'the colleague';
+  const own = isOwn(scenario.id);
+  const monologue = isMonologue(scenario);
+
+  function exportScene() {
+    const saved = savedScene(scenario!.id);
+    if (!saved) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(saved, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${scenario!.title}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function removeScene() {
+    if (!confirm(`Delete your scene “${scenario!.title}”? This can't be undone.`)) return;
+    deleteScene(scenario!.id);
+    go('scenes');
+  }
   const resume = resumePoint.load(scenario.id, asPartner);
 
   // Plays lines one after another in their speakers' voices, like the conversation itself.
@@ -95,17 +115,28 @@ export function SceneDetail(props: { id: string }) {
           {copied ? '✓ Copied' : 'Copy script'}
         </button>
         <button type="button" class="button" onClick={save}>Save as text</button>
+        {own && (
+          <>
+            <a class="button" href={`#/my-scene/edit/${encodeURIComponent(scenario.id)}`}>✎ Change this scene</a>
+            <button type="button" class="button" onClick={exportScene}>Export</button>
+            <button type="button" class="button danger" onClick={removeScene}>Delete</button>
+          </>
+        )}
       </PageHeader>
       <p class="lead">{scenario.situationEn}</p>
 
       <div class="two-column">
         <section class="card practise-card">
           <h2>Practise speaking</h2>
-          <div class="label">You play</div>
-          <div class="chips">
-            <Chip selected={!asPartner} onClick={() => setAsPartner(false)}>Yourself</Chip>
-            <Chip selected={asPartner} onClick={() => setAsPartner(true)}>{colleague}</Chip>
-          </div>
+          {!monologue && (
+            <>
+              <div class="label">You play</div>
+              <div class="chips">
+                <Chip selected={!asPartner} onClick={() => setAsPartner(false)}>Yourself</Chip>
+                <Chip selected={asPartner} onClick={() => setAsPartner(true)}>{colleague}</Chip>
+              </div>
+            </>
+          )}
           <div class="label">Lesson</div>
           <div class="chips">
             {MODES.map((option) => (

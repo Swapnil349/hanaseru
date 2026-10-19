@@ -13,11 +13,11 @@ export class CoachError extends Error {}
 
 const BATCH = 12;
 
-async function call(settings: CoachSettings, path: string, body?: unknown): Promise<unknown> {
+export async function call(settings: CoachSettings, path: string, body?: unknown, timeoutMs = 120_000): Promise<unknown> {
   if (!settings.url || !settings.token) throw new CoachError('Add the AI coach passphrase in Settings first.');
   const controller = new AbortController();
   // The free server sleeps when unused and takes up to a minute to wake.
-  const timeout = setTimeout(() => controller.abort(), 120_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(settings.url.replace(/\/$/, '') + path, {
       method: body === undefined ? 'GET' : 'POST',

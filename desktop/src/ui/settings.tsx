@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { voiceLogText } from '../diagnostics';
 import { checkCoach } from '../meetings/coach';
 import { MODELS } from '../meetings/transcriber';
 import { englishVoices, japaneseVoices, voicesReady } from '../voice';
@@ -11,6 +12,7 @@ export function Settings() {
   const [name, setName] = useState(prefs.name);
   const [token, setToken] = useState(prefs.coachToken);
   const [coachStatus, setCoachStatus] = useState('');
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     void voicesReady().then((list) => setLoaded(list.length));
   }, []);
@@ -109,6 +111,25 @@ export function Settings() {
             }
           }}>Check the connection</button>
           <span class="muted small">{coachStatus}</span>
+        </div>
+      </section>
+
+      <section class="card form">
+        <h2>Diagnostics</h2>
+        <p class="muted small">
+          If the app goes quiet, the voice log shows what happened (silences caught, retries, microphone errors). It
+          never contains what you said.
+        </p>
+        <div class="row">
+          <button type="button" class="button" onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(voiceLogText() || '(the log is empty)');
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            } catch {
+              setCopied(false);
+            }
+          }}>{copied ? '✓ Copied' : 'Copy the voice log'}</button>
         </div>
       </section>
 

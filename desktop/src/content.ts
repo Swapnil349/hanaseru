@@ -125,12 +125,13 @@ export function glossRomaji(word: WordGloss): string {
 export { fromKana };
 
 export class ContentLibrary {
-  readonly scenarios: Scenario[];
-  readonly personas: Persona[];
+  scenarios: Scenario[];
+  personas: Persona[];
   readonly vocabulary: VocabularyTerm[];
   readonly cues: Record<string, CoachCue>;
-  readonly glossary: Record<string, WordGloss[]>;
-  private readonly namedLines: [string, WordGloss[]][];
+  glossary: Record<string, WordGloss[]>;
+  private namedLines: [string, WordGloss[]][];
+  private readonly bundled: { scenarios: Scenario[]; personas: Persona[]; glossary: Record<string, WordGloss[]> };
 
   constructor(data: {
     scenarios: Scenario[];
@@ -145,6 +146,15 @@ export class ContentLibrary {
     this.cues = data.cues;
     this.glossary = data.glossary;
     this.namedLines = Object.entries(data.glossary).filter(([key]) => key.includes('{name}'));
+    this.bundled = { scenarios: data.scenarios, personas: data.personas, glossary: data.glossary };
+  }
+
+  /** The learner's own scenes, added to the course (replacing any added before). */
+  setOwn(own: { scenarios: Scenario[]; personas: Persona[]; glossary: Record<string, WordGloss[]> }) {
+    this.scenarios = [...own.scenarios, ...this.bundled.scenarios];
+    this.personas = [...this.bundled.personas, ...own.personas];
+    this.glossary = { ...this.bundled.glossary, ...own.glossary };
+    this.namedLines = Object.entries(this.glossary).filter(([key]) => key.includes('{name}'));
   }
 
   static bundled(): ContentLibrary {
