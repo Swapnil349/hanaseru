@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { CoachError, type Coach } from "./coach.ts";
-import { parseAnnotationRequest, parseEvaluationRequest, parseTranslationRequest, parseTurnRequest, ValidationError } from "./schemas.ts";
+import { parseAnnotationRequest, parseEvaluationRequest, parseSceneRequest, parseTranslationRequest, parseTurnRequest, ValidationError } from "./schemas.ts";
 
 /** Web pages allowed to call the coach from a browser: the Windows desktop app and its local preview. */
 const ALLOWED_ORIGINS = new Set(["https://swapnil349.github.io", "http://localhost:5173", "http://localhost:4173"]);
@@ -66,6 +66,8 @@ export function createCoachServer(options: ServerOptions): Server {
         return coach.translate(parseTranslationRequest(await readJSON(request)));
       case "/v1/annotate":
         return coach.annotate(parseAnnotationRequest(await readJSON(request)));
+      case "/v1/scene":
+        return coach.scene(parseSceneRequest(await readJSON(request)));
       default:
         throw new HttpError(404, "Not found");
     }

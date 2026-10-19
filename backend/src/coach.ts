@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   ANNOTATE_SYSTEM_PROMPT,
   buildAnnotationMessage,
+  buildSceneMessage,
+  SCENE_SYSTEM_PROMPT,
   buildEvaluationMessage,
   buildTranslationMessage,
   buildTurnMessage,
@@ -11,6 +13,9 @@ import {
 } from "./prompts.ts";
 import {
   annotationSchema,
+  sceneSchema,
+  type SceneRequest,
+  type SceneResult,
   evaluationSchema,
   type AnnotationRequest,
   type AnnotationResult,
@@ -39,6 +44,7 @@ export interface Coach {
   evaluate(request: EvaluationRequest): Promise<TurnEvaluation>;
   translate(request: TranslationRequest): Promise<TranslationResult>;
   annotate(request: AnnotationRequest): Promise<AnnotationResult>;
+  scene(request: SceneRequest): Promise<SceneResult>;
 }
 
 type Effort = "low" | "medium" | "high" | "xhigh" | "max";
@@ -58,7 +64,8 @@ export function createClaudeCoach(options: ClaudeCoachOptions = {}): Coach {
   const model = options.model || "claude-opus-5-5";
   const effort = options.effort ?? "low";
 
-  async function structured<T>(system: string, content: string, schema: Record<string, unknown>, maxTokens = 4000): Promise<T> {
+  async function structured<T>(system: string, content: string, schema: Record<string, unknown>, maxTokens = 4000,
+                               options: { effort?: Effort; timeout?: number } = {}): Promise<T> {
     let response: Anthropic.Beta.BetaMessage;
     try {
       response = await client.beta.messages.create({
@@ -68,9 +75,9 @@ export function createClaudeCoach(options: ClaudeCoachOptions = {}): Coach {
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
         system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-        output_config: { effort, format: { type: "json_schema", schema } },
+        output_config: { effort: options.effort ?? effort, format: { type: "json_schema", schema } },
         messages: [{ role: "user", content }],
-      });
+      }, options.timeout ? { timeout: options.timeout } : undefined);
     } catch (error) {
       if (error instanceof Anthropic.RateLimitError) throw new CoachError(429, "Claude rate limit reached");
       if (error instanceof Anthropic.AuthenticationError) throw new CoachError(502, "Proxy misconfigured: Anthropic authentication failed");
@@ -99,6 +106,9 @@ export function createClaudeCoach(options: ClaudeCoachOptions = {}): Coach {
       structured<TranslationResult>(TRANSLATE_SYSTEM_PROMPT, buildTranslationMessage(request), translationSchema),
     annotate: (request) =>
       structured<AnnotationResult>(ANNOTATE_SYSTEM_PROMPT, buildAnnotationMessage(request), annotationSchema, 16000),
+    // A whole scene is written once and studied for weeks: worth more thought and time than a turn.
+    scene: (request) =>
+      structured<SceneResult>(SCENE_SYSTEM_PROMPT, buildSceneMessage(request), sceneSchema, 32000, { effort: "medium", timeout: 180_000 }),
   };
 }
 
@@ -142,6 +152,27 @@ export function createMockCoach(): Coach {
         backTranslation: `I'll check it in advance. (mock for: ${request.english})`,
         notes: "",
         alternatives: [],
+      };
+    },
+    async scene(request) {
+      const line = (japanese: string, english: string) => ({
+        japanese, kana: japanese, english, words: [{ ja: japanese.replace(/[、。？！\s]/g, ""), kana: japanese, en: english }],
+      });
+      const empty = { japanese: "", kana: "", english: "", words: [] };
+      const monologue = request.kind === "monologue";
+      return {
+        title: monologue ? "My self-introduction" : "My scene",
+        titleJa: monologue ? "自己紹介" : "私の場面",
+        situationEn: `(mock) ${request.description}`,
+        placeEn: "in the office",
+        partnerNameJa: "田中さん", partnerNameEn: "Tanaka-san", partnerRole: "Colleague", partnerGender: "female",
+        track: "everyday",
+        beats: Array.from({ length: request.length }, (_, i) => ({
+          partner: monologue ? empty : line("はい。", "Yes."),
+          learner: line(`{name}です。${i + 1}`, `I'm {name}. ${i + 1}`),
+          hintEn: "Say your name",
+        })),
+        closing: monologue ? empty : line("ありがとうございました。", "Thank you."),
       };
     },
     async annotate(request) {

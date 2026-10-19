@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { after, before, describe, it } from "node:test";
 import { createMockCoach } from "../src/coach.ts";
 import { buildTurnMessage, TURN_SYSTEM_PROMPT } from "../src/prompts.ts";
-import { annotationSchema, parseTurnRequest, turnSchema } from "../src/schemas.ts";
+import { annotationSchema, parseTurnRequest, sceneSchema, turnSchema } from "../src/schemas.ts";
 import { createCoachServer } from "../src/server.ts";
 
 const TOKEN = "test-token-0123456789";
@@ -106,6 +106,20 @@ describe("coach proxy", () => {
     assert.equal((await post("/v1/annotate", { lines: Array(13).fill("はい") })).status, 400);
   });
 
+  it("writes the learner's own scene", async () => {
+    const response = await post("/v1/scene", { description: "Introduce myself to the new team", kind: "monologue", length: 4, learnerName: "Swapnil" });
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.equal(json.beats.length, 4);
+    assert.equal(json.beats[0].partner.japanese, "");
+    assert.ok(json.beats[0].learner.japanese.includes("{name}"));
+    const conversation = await (await post("/v1/scene", { description: "Ask the bank about a transfer" })).json();
+    assert.equal(conversation.beats.length, 6);
+    assert.notEqual(conversation.beats[0].partner.japanese, "");
+    assert.equal((await post("/v1/scene", { description: "" })).status, 400);
+    assert.equal((await post("/v1/scene", { description: "x", kind: "poem" })).status, 400);
+  });
+
   it("lets only the desktop app's address call it from a browser", async () => {
     const allowed = await fetch(`${base}/v1/annotate`, { method: "OPTIONS", headers: { Origin: "https://swapnil349.github.io" } });
     assert.equal(allowed.status, 204);
@@ -163,5 +177,6 @@ describe("request handling", () => {
     };
     check(turnSchema);
     check(annotationSchema);
+    check(sceneSchema);
   });
 });

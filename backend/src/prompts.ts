@@ -1,4 +1,4 @@
-import type { AnnotationRequest, EvaluationRequest, TranslationRequest, TurnRequest } from "./schemas.ts";
+import type { AnnotationRequest, EvaluationRequest, SceneRequest, TranslationRequest, TurnRequest } from "./schemas.ts";
 
 // System prompts are stable strings (no timestamps or per-request data) so they can be prompt-cached.
 
@@ -139,4 +139,34 @@ For each line, in the same order, return exactly one entry:
 export function buildAnnotationMessage(request: AnnotationRequest): string {
   const lines = request.lines.map((line, index) => `${index + 1}. ${line}`);
   return [request.context ? `Meeting: ${request.context}` : "", "Lines:", ...lines].filter(Boolean).join("\n");
+}
+
+export const SCENE_SYSTEM_PROMPT = `You write the learner's own practice scenes for Hanaseru, a spoken Japanese coach.
+
+${LEARNER}
+
+The learner describes, in English and often by voice (so expect speech-recognition slips), a situation from their life they want to be ready for: either a conversation with someone (a colleague, a client, a shop assistant, a neighbour) or a monologue they will give (a self-introduction, a short presentation, a toast, a status report). You turn it into a scene the app teaches line by line: the learner hears each line, learns it, then says it from memory.
+
+How to write it:
+- Japanese a real person would say in that situation: natural, idiomatic, the right register for who is speaking to whom. Short, speakable sentences (one or two per line, about 8–25 morae each at the learner's level). Use the set phrases Japanese uses for the moment.
+- Level 1–2 means very simple です/ます sentences; 3–4 everyday workplace Japanese; 5+ fuller sentences and keigo where the situation needs it. Politeness: "casual" plain speech with friends; "professional" です/ます at work; "veryPolite" keigo for clients and seniors.
+- Follow what the learner described: their facts, names, numbers and goals. Fill in sensible details where they gave none. Use the learner's own name as {name} wherever they say it (e.g. 「{name}です」), in japanese and kana alike.
+- conversation: exactly the number of exchanges asked for. Each beat is the other person's line (partner) and then the learner's answer (learner). The partner's lines should lead the learner through the situation; the learner's lines are what the learner needs to say. closing is the other person's natural last line. If the learner should speak first, make the first partner line a natural opener (a greeting or a question) anyway.
+- monologue: exactly the number of sentences asked for, each one beat with the learner's sentence; partner and closing have every field empty ("" and no words). partnerNameEn etc. describe the audience (e.g. "the team", "チームの皆さん").
+- For every line: japanese (no romaji); kana: the full reading in hiragana/katakana with the same punctuation; english: a natural translation; words: the line split into learner-sized words in order so that the ja values joined equal the japanese without punctuation or spaces (conjugated verbs whole, set phrases whole, particles separate, {name} as its own word with kana "{name}"), each with kana and a short English meaning as used here (at most 8 words; for particles say what they do).
+- hintEn: a short English instruction for the learner's line ("Say when it will be ready"), at most 8 words.
+- title: a short English title (2–5 words); titleJa its Japanese; situationEn: one or two English sentences setting the scene, addressed to the learner ("You're at the bank to…"); placeEn a short place phrase ("at the bank", "in the meeting room", "at the site"); track "work" for work situations, otherwise "everyday".
+- When a previous version is given, change it as the learner asks and keep everything else the same.`;
+
+export function buildSceneMessage(request: SceneRequest): string {
+  const lines = [
+    `Kind: ${request.kind}`,
+    `${request.kind === "monologue" ? "Sentences" : "Exchanges"}: ${request.length}`,
+    `Learner's name: ${request.learnerName || "(not given; use {name})"}`,
+    `Learner level: ${request.learnerLevel}`,
+    `Politeness: ${request.politeness}`,
+  ];
+  if (request.previous) lines.push("", "Previous version of the scene (JSON):", request.previous, "", `Change it like this: ${request.description}`);
+  else lines.push("", `What the learner wants: ${request.description}`);
+  return lines.join("\n");
 }

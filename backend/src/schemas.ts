@@ -223,6 +223,93 @@ export const annotationSchema = {
   additionalProperties: false,
 };
 
+/**
+ * The learner's own scene, described in English (often by voice): a conversation with someone, or a monologue
+ * (a self-introduction, a short presentation, a speech). With `previous`, the scene is revised as described.
+ */
+export interface SceneRequest {
+  description: string;
+  kind: "conversation" | "monologue";
+  learnerName: string;
+  learnerLevel: number;
+  politeness: Politeness;
+  /** How many exchanges (conversation) or sentences (monologue). */
+  length: number;
+  /** A scene made before, to change as the description says. */
+  previous?: string;
+}
+
+export interface SceneLine {
+  japanese: string;
+  kana: string;
+  english: string;
+  words: AnnotatedWord[];
+}
+
+export interface SceneBeat {
+  /** The other person's line; empty in a monologue. */
+  partner: SceneLine;
+  /** What the learner says next. */
+  learner: SceneLine;
+  /** A short English hint for the learner's line ("Say when it will be ready"). */
+  hintEn: string;
+}
+
+export interface SceneResult {
+  title: string;
+  titleJa: string;
+  situationEn: string;
+  placeEn: string;
+  partnerNameJa: string;
+  partnerNameEn: string;
+  partnerRole: string;
+  partnerGender: "male" | "female";
+  track: "work" | "everyday";
+  beats: SceneBeat[];
+  /** The other person's last line (empty in a monologue). */
+  closing: SceneLine;
+}
+
+const sceneLineSchema = {
+  type: "object",
+  properties: {
+    japanese: { type: "string" },
+    kana: { type: "string" },
+    english: { type: "string" },
+    words: { type: "array", items: annotatedWordSchema },
+  },
+  required: ["japanese", "kana", "english", "words"],
+  additionalProperties: false,
+};
+
+export const sceneSchema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    titleJa: { type: "string" },
+    situationEn: { type: "string" },
+    placeEn: { type: "string" },
+    partnerNameJa: { type: "string" },
+    partnerNameEn: { type: "string" },
+    partnerRole: { type: "string" },
+    partnerGender: { type: "string", enum: ["male", "female"] },
+    track: { type: "string", enum: ["work", "everyday"] },
+    beats: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { partner: sceneLineSchema, learner: sceneLineSchema, hintEn: { type: "string" } },
+        required: ["partner", "learner", "hintEn"],
+        additionalProperties: false,
+      },
+    },
+    closing: sceneLineSchema,
+  },
+  required: ["title", "titleJa", "situationEn", "placeEn", "partnerNameJa", "partnerNameEn", "partnerRole", "partnerGender",
+             "track", "beats", "closing"],
+  additionalProperties: false,
+};
+
 // Request validation. The app is the only client, but the proxy is on the internet, so bound every input.
 
 export class ValidationError extends Error {}
@@ -313,6 +400,24 @@ export function parseEvaluationRequest(body: unknown): EvaluationRequest {
     learnerUtterance: text(root.learnerUtterance, "learnerUtterance", { optional: true }),
     learnerLevel: Math.round(number(root.learnerLevel, "learnerLevel", 1, 8)),
     politeness: root.politeness === undefined ? "professional" : politeness(root.politeness, "politeness"),
+  };
+}
+
+export function parseSceneRequest(body: unknown): SceneRequest {
+  const root = object(body, "body");
+  const description = typeof root.description === "string" ? root.description.trim().slice(0, 2000) : "";
+  if (!description) throw new ValidationError("description is required");
+  const kind = root.kind === "monologue" ? "monologue" : root.kind === undefined || root.kind === "conversation" ? "conversation" : null;
+  if (!kind) throw new ValidationError("kind must be conversation or monologue");
+  const previous = typeof root.previous === "string" ? root.previous.slice(0, 12_000) : undefined;
+  return {
+    description,
+    kind,
+    learnerName: text(root.learnerName, "learnerName", { optional: true }).slice(0, 40),
+    learnerLevel: root.learnerLevel === undefined ? 3 : Math.round(number(root.learnerLevel, "learnerLevel", 1, 8)),
+    politeness: root.politeness === undefined ? "professional" : politeness(root.politeness, "politeness"),
+    length: root.length === undefined ? 6 : Math.round(number(root.length, "length", 2, 12)),
+    previous: previous || undefined,
   };
 }
 
