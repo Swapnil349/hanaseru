@@ -25,10 +25,16 @@ export interface Prefs {
   showRomaji: boolean;
   japaneseVoice: string;
   englishVoice: string;
+  /** The AI coach server and its passphrase (kept on this computer only). */
+  coachURL: string;
+  coachToken: string;
+  /** The Whisper model used to transcribe meetings. */
+  whisperModel: string;
 }
 
 const DEFAULT_PREFS: Prefs = {
   name: '', workField: 'engineering', showEnglish: true, showRomaji: false, japaneseVoice: '', englishVoice: '',
+  coachURL: 'https://hanaseru-coach.onrender.com', coachToken: '', whisperModel: 'onnx-community/whisper-small',
 };
 
 export function loadPrefs(): Prefs {

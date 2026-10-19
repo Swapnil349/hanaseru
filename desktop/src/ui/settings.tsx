@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
+import { checkCoach } from '../meetings/coach';
+import { MODELS } from '../meetings/transcriber';
 import { englishVoices, japaneseVoices, voicesReady } from '../voice';
 import { useApp } from './app';
 import { Chip, PageHeader } from './common';
@@ -7,6 +9,8 @@ export function Settings() {
   const { prefs, setPrefs, speaker, listener } = useApp();
   const [, setLoaded] = useState(0);
   const [name, setName] = useState(prefs.name);
+  const [token, setToken] = useState(prefs.coachToken);
+  const [coachStatus, setCoachStatus] = useState('');
   useEffect(() => {
     void voicesReady().then((list) => setLoaded(list.length));
   }, []);
@@ -70,6 +74,42 @@ export function Settings() {
           Microsoft Edge has the most natural voices (the ones marked "Online (Natural)"). They need an internet
           connection; the voices installed in Windows work offline.
         </p>
+      </section>
+
+      <section class="card form">
+        <h2>Meetings</h2>
+        <div class="label">Speech model for transcribing meetings</div>
+        <div class="chips">
+          {MODELS.map((m) => (
+            <Chip key={m.id} selected={prefs.whisperModel === m.id} onClick={() => setPrefs({ whisperModel: m.id })} title={m.detail}>{m.title}</Chip>
+          ))}
+        </div>
+        <p class="muted small">{MODELS.find((m) => m.id === prefs.whisperModel)?.detail} It runs on this computer; the meeting audio is never uploaded.</p>
+      </section>
+
+      <section class="card form">
+        <h2>AI coach</h2>
+        <p class="muted small">
+          Explains meeting lines (kana, English and the meaning of each word) with Claude, through your own coach
+          server. Use the same passphrase as on the iPhone. It is kept on this computer only.
+        </p>
+        <label>
+          Passphrase
+          <input type="password" value={token} autoComplete="off" onInput={(e) => setToken((e.target as HTMLInputElement).value)}
+                 onBlur={() => setPrefs({ coachToken: token.trim() })} />
+        </label>
+        <div class="row">
+          <button type="button" class="button" onClick={async () => {
+            setPrefs({ coachToken: token.trim() });
+            setCoachStatus('Checking… (the server can take a minute to wake up)');
+            try {
+              setCoachStatus(`✓ Connected (${await checkCoach({ url: prefs.coachURL, token: token.trim() })})`);
+            } catch (e) {
+              setCoachStatus((e as Error).message);
+            }
+          }}>Check the connection</button>
+          <span class="muted small">{coachStatus}</span>
+        </div>
       </section>
 
       <section class="card form">

@@ -268,6 +268,38 @@ main { flex: 1; overflow-y: auto; }
 .button.play { flex: 1; max-width: 360px; justify-content: center; padding: 12px; font-size: 16px; }
 .control-row .chips { margin-left: auto; }
 
+/* Meetings */
+.transcriber-line { margin: -6px 0 14px; }
+.error-text { color: #c0392b; }
+.rec-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #d62828; vertical-align: middle; }
+.rec-dot.big { width: 16px; height: 16px; animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .rec-dot.big { animation: none; } }
+.button.record { color: #d62828; }
+.button.danger { color: #c0392b; }
+.recording-banner { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 600; margin-bottom: 14px; }
+.recording-panel { margin-bottom: 14px; }
+.rec-time { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 72px; }
+.meter { flex: 1; min-width: 120px; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.meter div { height: 100%; background: var(--go); transition: width 0.08s linear; }
+.check { flex-direction: row !important; align-items: flex-start; gap: 10px !important; font-weight: 400 !important; }
+.check input { margin-top: 4px; }
+.check.inline { display: inline-flex; align-items: center; gap: 6px; }
+.file-button { position: relative; overflow: hidden; }
+.file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.meeting-tools { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.player { width: 100%; }
+.context { display: flex; flex-direction: column; gap: 4px; }
+.line-head { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.time { background: none; border: none; color: var(--line); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 2px 0; font-variant-numeric: tabular-nums; }
+.time:disabled { color: var(--ink-2); cursor: default; }
+.star { background: none; border: none; font-size: 18px; color: var(--ink-2); cursor: pointer; padding: 0 4px; margin-left: auto; }
+.star.on { color: var(--signal); }
+.edit textarea { width: 100%; font: inherit; font-size: 18px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.drill-card { display: flex; flex-direction: column; gap: 8px; min-height: 220px; }
+.drill-card.your-turn { border: 2px solid var(--signal); }
+.drill-options { margin-top: 14px; }
+
 @media (max-width: 860px) {
   .sidebar { width: 64px; padding: 14px 6px; }
   .nav-item span:last-child, .brand-name, .sidebar-foot { display: none; }

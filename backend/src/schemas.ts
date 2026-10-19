@@ -169,6 +169,60 @@ export const translationSchema = {
   additionalProperties: false,
 };
 
+/** Lines of a meeting transcript (Japanese speech recognition) to turn into study material. */
+export interface AnnotationRequest {
+  lines: string[];
+  /** Optional: what the meeting was about ("weekly progress meeting on the viaduct"). */
+  context?: string;
+}
+
+export interface AnnotatedWord {
+  ja: string;
+  kana: string;
+  en: string;
+}
+
+export interface AnnotatedLine {
+  /** The line as it was most likely said, punctuated (obvious recognition errors fixed). */
+  japanese: string;
+  kana: string;
+  english: string;
+  words: AnnotatedWord[];
+}
+
+export interface AnnotationResult {
+  lines: AnnotatedLine[];
+}
+
+const annotatedWordSchema = {
+  type: "object",
+  properties: { ja: { type: "string" }, kana: { type: "string" }, en: { type: "string" } },
+  required: ["ja", "kana", "en"],
+  additionalProperties: false,
+};
+
+export const annotationSchema = {
+  type: "object",
+  properties: {
+    lines: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          japanese: { type: "string" },
+          kana: { type: "string" },
+          english: { type: "string" },
+          words: { type: "array", items: annotatedWordSchema },
+        },
+        required: ["japanese", "kana", "english", "words"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["lines"],
+  additionalProperties: false,
+};
+
 // Request validation. The app is the only client, but the proxy is on the internet, so bound every input.
 
 export class ValidationError extends Error {}
@@ -259,6 +313,18 @@ export function parseEvaluationRequest(body: unknown): EvaluationRequest {
     learnerUtterance: text(root.learnerUtterance, "learnerUtterance", { optional: true }),
     learnerLevel: Math.round(number(root.learnerLevel, "learnerLevel", 1, 8)),
     politeness: root.politeness === undefined ? "professional" : politeness(root.politeness, "politeness"),
+  };
+}
+
+export const MAX_ANNOTATION_LINES = 12;
+
+export function parseAnnotationRequest(body: unknown): AnnotationRequest {
+  const root = object(body, "body");
+  if (!Array.isArray(root.lines) || root.lines.length === 0) throw new ValidationError("lines must be a non-empty array");
+  if (root.lines.length > MAX_ANNOTATION_LINES) throw new ValidationError(`at most ${MAX_ANNOTATION_LINES} lines per request`);
+  return {
+    lines: root.lines.map((line, index) => text(line, `lines[${index}]`).slice(0, 300)),
+    context: text(root.context, "context", { optional: true }) || undefined,
   };
 }
 

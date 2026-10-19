@@ -4,7 +4,13 @@ import { library } from '../content';
 import type { Mode } from '../practice';
 import { loadPrefs, Prefs, savePrefs, StoredProgress } from '../store';
 import { voicesReady, WebListener, WebSpeaker } from '../voice';
+import { pendingSegments, listMeetings, saveMeeting } from '../meetings/db';
+import { activeRecording } from '../meetings/session';
+import { transcriber } from '../meetings/transcriber';
 import { Home } from './home';
+import { MeetingPage } from './meeting';
+import { MeetingPractice } from './meeting-practice';
+import { Meetings } from './meetings';
 import { Practice } from './practice';
 import { SceneDetail } from './scene';
 import { Scenes } from './scenes';
@@ -39,6 +45,9 @@ type Route =
   | { page: 'scene'; id: string }
   | { page: 'practice'; id: string; mode: Mode; partner: boolean; from: number | null }
   | { page: 'vocabulary' }
+  | { page: 'meetings' }
+  | { page: 'meeting'; id: string }
+  | { page: 'meetingPractice'; id: string; which: 'all' | 'starred' }
   | { page: 'settings' };
 
 function parse(hash: string): Route {
@@ -54,6 +63,10 @@ function parse(hash: string): Route {
         : { page: 'scenes' };
     }
     case 'vocabulary': return { page: 'vocabulary' };
+    case 'meetings': return { page: 'meetings' };
+    case 'meeting': return parts[1] ? { page: 'meeting', id: parts[1] } : { page: 'meetings' };
+    case 'meeting-practice':
+      return parts[1] ? { page: 'meetingPractice', id: parts[1], which: parts[2] === 'starred' ? 'starred' : 'all' } : { page: 'meetings' };
     case 'settings': return { page: 'settings' };
     default: return { page: 'home' };
   }
@@ -67,6 +80,23 @@ export function practicePath(id: string, mode: Mode, partner: boolean, from?: nu
   return `practice/${encodeURIComponent(id)}/${mode}/${partner ? 'partner' : 'you'}` + (from != null ? `/${from}` : '');
 }
 
+/**
+ * When the app opens: a meeting left "recording" (the window was closed) is closed off, and anything still waiting
+ * to be transcribed carries on.
+ */
+async function resumeMeetings() {
+  try {
+    for (const meeting of await listMeetings()) {
+      if (meeting.status === 'recording' && activeRecording()?.meetingId !== meeting.id) {
+        await saveMeeting({ ...meeting, status: 'done' });
+      }
+    }
+    if ((await pendingSegments()).length) transcriber.start(currentPrefs.whisperModel);
+  } catch {
+    // No database (private window): meetings simply aren't available.
+  }
+}
+
 export function App() {
   const [route, setRoute] = useState(() => parse(location.hash));
   const [prefs, setPrefsState] = useState(currentPrefs);
@@ -76,6 +106,7 @@ export function App() {
     const onHash = () => setRoute(parse(location.hash));
     addEventListener('hashchange', onHash);
     void voicesReady().then((list) => setVoicesLoaded(list.length));
+    void resumeMeetings();
     return () => removeEventListener('hashchange', onHash);
   }, []);
 
@@ -97,7 +128,8 @@ export function App() {
   }), [prefs]);
 
   const nav = (page: string, label: string, icon: string) => {
-    const active = route.page === page || (page === 'scenes' && (route.page === 'scene' || route.page === 'practice'));
+    const active = route.page === page || (page === 'scenes' && (route.page === 'scene' || route.page === 'practice'))
+      || (page === 'meetings' && (route.page === 'meeting' || route.page === 'meetingPractice'));
     return (
       <a class={'nav-item' + (active ? ' active' : '')} href={`#/${page === 'home' ? '' : page}`} aria-current={active ? 'page' : undefined}>
         <span class="nav-icon" aria-hidden="true">{icon}</span>
@@ -116,6 +148,9 @@ export function App() {
                        partner={route.partner} from={route.from} />;
       break;
     case 'vocabulary': page = <Vocabulary />; break;
+    case 'meetings': page = <Meetings />; break;
+    case 'meeting': page = <MeetingPage id={route.id} key={route.id} />; break;
+    case 'meetingPractice': page = <MeetingPractice id={route.id} which={route.which} key={route.id + route.which} />; break;
     case 'settings': page = <Settings />; break;
   }
 
@@ -130,6 +165,7 @@ export function App() {
           {nav('home', 'Home', '⌂')}
           {nav('scenes', 'Scenes', '💬')}
           {nav('vocabulary', 'Vocabulary', '📖')}
+          {nav('meetings', 'Meetings', '⏺')}
           {nav('settings', 'Settings', '⚙')}
           <div class="sidebar-foot">{library.scenarios.length} scenes · {library.vocabulary.length} words</div>
         </nav>

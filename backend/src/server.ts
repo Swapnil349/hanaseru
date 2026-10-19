@@ -1,7 +1,10 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { CoachError, type Coach } from "./coach.ts";
-import { parseEvaluationRequest, parseTranslationRequest, parseTurnRequest, ValidationError } from "./schemas.ts";
+import { parseAnnotationRequest, parseEvaluationRequest, parseTranslationRequest, parseTurnRequest, ValidationError } from "./schemas.ts";
+
+/** Web pages allowed to call the coach from a browser: the Windows desktop app and its local preview. */
+const ALLOWED_ORIGINS = new Set(["https://swapnil349.github.io", "http://localhost:5173", "http://localhost:4173"]);
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -61,6 +64,8 @@ export function createCoachServer(options: ServerOptions): Server {
         return coach.evaluate(parseEvaluationRequest(await readJSON(request)));
       case "/v1/translate":
         return coach.translate(parseTranslationRequest(await readJSON(request)));
+      case "/v1/annotate":
+        return coach.annotate(parseAnnotationRequest(await readJSON(request)));
       default:
         throw new HttpError(404, "Not found");
     }
@@ -68,6 +73,20 @@ export function createCoachServer(options: ServerOptions): Server {
 
   return createServer(async (request, response) => {
     const started = Date.now();
+    // The desktop app runs in a browser: it may call the coach from its own address only. The token is still required.
+    const origin = request.headers.origin;
+    if (origin && ALLOWED_ORIGINS.has(origin)) {
+      response.setHeader("Access-Control-Allow-Origin", origin);
+      response.setHeader("Vary", "Origin");
+      response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+      response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      response.setHeader("Access-Control-Max-Age", "600");
+    }
+    if (request.method === "OPTIONS") {
+      response.writeHead(origin && ALLOWED_ORIGINS.has(origin) ? 204 : 403);
+      response.end();
+      return;
+    }
     try {
       send(response, 200, await route(request));
     } catch (error) {

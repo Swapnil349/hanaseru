@@ -1,6 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
-import { glossRomaji, library } from '../content';
+import { glossRomaji, library, WordGloss } from '../content';
 import { romajiOf } from '../romaji';
 
 /** Japanese with its reading, romaji (if chosen) and English (if chosen). */
@@ -53,12 +53,16 @@ export interface WordsLine {
   title: string;
   japanese: string;
   english: string;
+  /** The words, when they don't come from the course's word lists (a recorded meeting's lines). */
+  words?: WordGloss[];
 }
+
+const wordsOf = (line: WordsLine) => line.words ?? library.words(line.japanese);
 
 /** "Words": opens the meaning of every word in the lines. Hidden when none of them has a word list. */
 export function WordsButton(props: { lines: WordsLine[]; onSay: (word: string) => void; onOpen?: () => void }) {
   const [open, setOpen] = useState(false);
-  const available = props.lines.filter((l) => l.japanese && library.words(l.japanese).length);
+  const available = props.lines.filter((l) => l.japanese && wordsOf(l).length);
   if (!available.length) return null;
   return (
     <>
@@ -87,7 +91,7 @@ function WordsDialog(props: { lines: WordsLine[]; onSay: (word: string) => void;
               <div class="jp" lang="ja">{line.japanese}</div>
               {line.english && <div class="english">{line.english}</div>}
               <ul class="word-list">
-                {library.words(line.japanese).map((word, index) => (
+                {wordsOf(line).map((word, index) => (
                   <li key={index}>
                     <button type="button" class="word-row" onClick={() => props.onSay(word.ja)} title="Hear the word">
                       <span class="word-ja">

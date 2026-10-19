@@ -1,4 +1,4 @@
-import type { EvaluationRequest, TranslationRequest, TurnRequest } from "./schemas.ts";
+import type { AnnotationRequest, EvaluationRequest, TranslationRequest, TurnRequest } from "./schemas.ts";
 
 // System prompts are stable strings (no timestamps or per-request data) so they can be prompt-cached.
 
@@ -120,4 +120,23 @@ export function buildTranslationMessage(request: TranslationRequest): string {
   const lines = [`English: ${request.english}`, `Politeness: ${request.politeness}`];
   if (request.situation) lines.push(`Situation: ${request.situation}`);
   return lines.join("\n");
+}
+
+export const ANNOTATE_SYSTEM_PROMPT = `You turn lines from a recorded meeting into study material, inside Hanaseru, a spoken Japanese coach.
+
+${LEARNER}
+
+The learner records meetings where Japanese colleagues speak, transcribes them with speech recognition (Whisper), and studies the lines afterwards: hearing them, reading them and saying them aloud.
+
+The lines come from speech recognition, so expect wrong kanji for homophones, missing punctuation, filler words (えー, あの, まあ) and the occasional misheard word. Lines may stop mid-sentence where the recording was split.
+
+For each line, in the same order, return exactly one entry:
+- japanese: the line as it was most likely said, with natural punctuation (、。？). Fix only what is clearly a recognition error (a wrong homophone, a garbled technical term); keep the speaker's words, fillers and register. If a line is not Japanese or is unintelligible, return it unchanged.
+- kana: its full reading in hiragana and katakana, with the same punctuation; numbers written as they are read.
+- english: a natural English translation (what the speaker meant, not word for word).
+- words: the line split into learner-sized words in order, so that the ja values joined together equal the japanese line without punctuation or spaces. Keep conjugated verbs with their endings as one word (確認します, 届いていません), set phrases whole (よろしくお願いします, お疲れさまです), and particles as their own words. Each has kana (its reading) and en: a short meaning as used here, at most 8 words; for particles say what they do (は → "topic marker (as for)", を → "object marker").`;
+
+export function buildAnnotationMessage(request: AnnotationRequest): string {
+  const lines = request.lines.map((line, index) => `${index + 1}. ${line}`);
+  return [request.context ? `Meeting: ${request.context}` : "", "Lines:", ...lines].filter(Boolean).join("\n");
 }

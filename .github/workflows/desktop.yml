@@ -48,6 +48,14 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # Real Whisper on Japanese speech (a synthesised voice), with the app's exact transcription options.
+      - name: Transcription check
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng > /dev/null
+          espeak-ng -v ja -s 130 -w "$RUNNER_TEMP/ja.wav" "きょうは らいしゅうの こうていに ついて せつめいします。 よろしく おねがいします。"
+          WHISPER_AUDIO="$RUNNER_TEMP/ja.wav" npx vitest run test/whisper.smoke.test.ts
+
       - name: Build
         run: npm run build
 

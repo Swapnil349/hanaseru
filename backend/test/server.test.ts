@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { after, before, describe, it } from "node:test";
 import { createMockCoach } from "../src/coach.ts";
 import { buildTurnMessage, TURN_SYSTEM_PROMPT } from "../src/prompts.ts";
-import { parseTurnRequest, turnSchema } from "../src/schemas.ts";
+import { annotationSchema, parseTurnRequest, turnSchema } from "../src/schemas.ts";
 import { createCoachServer } from "../src/server.ts";
 
 const TOKEN = "test-token-0123456789";
@@ -95,6 +95,26 @@ describe("coach proxy", () => {
     assert.equal((await post("/v1/translate", {})).status, 400);
   });
 
+  it("annotates meeting lines for study", async () => {
+    const response = await post("/v1/annotate", { lines: ["えー来週の工程について説明します", "よろしくお願いします"] });
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.equal(json.lines.length, 2);
+    assert.equal(typeof json.lines[0].english, "string");
+    assert.ok(Array.isArray(json.lines[0].words));
+    assert.equal((await post("/v1/annotate", { lines: [] })).status, 400);
+    assert.equal((await post("/v1/annotate", { lines: Array(13).fill("はい") })).status, 400);
+  });
+
+  it("lets only the desktop app's address call it from a browser", async () => {
+    const allowed = await fetch(`${base}/v1/annotate`, { method: "OPTIONS", headers: { Origin: "https://swapnil349.github.io" } });
+    assert.equal(allowed.status, 204);
+    assert.equal(allowed.headers.get("access-control-allow-origin"), "https://swapnil349.github.io");
+    const other = await fetch(`${base}/v1/annotate`, { method: "OPTIONS", headers: { Origin: "https://example.com" } });
+    assert.equal(other.status, 403);
+    assert.equal(other.headers.get("access-control-allow-origin"), null);
+  });
+
   it("rejects malformed bodies with 400", async () => {
     assert.equal((await post("/v1/turn", "{not json")).status, 400);
     assert.equal((await post("/v1/turn", { context: {} })).status, 400);
@@ -142,5 +162,6 @@ describe("request handling", () => {
       }
     };
     check(turnSchema);
+    check(annotationSchema);
   });
 });

@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
+  ANNOTATE_SYSTEM_PROMPT,
+  buildAnnotationMessage,
   buildEvaluationMessage,
   buildTranslationMessage,
   buildTurnMessage,
@@ -8,7 +10,10 @@ import {
   TURN_SYSTEM_PROMPT,
 } from "./prompts.ts";
 import {
+  annotationSchema,
   evaluationSchema,
+  type AnnotationRequest,
+  type AnnotationResult,
   translationSchema,
   turnSchema,
   type EvaluationRequest,
@@ -33,6 +38,7 @@ export interface Coach {
   turn(request: TurnRequest): Promise<TurnResponse>;
   evaluate(request: EvaluationRequest): Promise<TurnEvaluation>;
   translate(request: TranslationRequest): Promise<TranslationResult>;
+  annotate(request: AnnotationRequest): Promise<AnnotationResult>;
 }
 
 type Effort = "low" | "medium" | "high" | "xhigh" | "max";
@@ -52,12 +58,12 @@ export function createClaudeCoach(options: ClaudeCoachOptions = {}): Coach {
   const model = options.model || "claude-opus-5-5";
   const effort = options.effort ?? "low";
 
-  async function structured<T>(system: string, content: string, schema: Record<string, unknown>): Promise<T> {
+  async function structured<T>(system: string, content: string, schema: Record<string, unknown>, maxTokens = 4000): Promise<T> {
     let response: Anthropic.Beta.BetaMessage;
     try {
       response = await client.beta.messages.create({
         model,
-        max_tokens: 4000,
+        max_tokens: maxTokens,
         // If a safety classifier declines a benign request, retry server-side on Anthropic's recommended model.
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
@@ -91,6 +97,8 @@ export function createClaudeCoach(options: ClaudeCoachOptions = {}): Coach {
     evaluate: (request) => structured<TurnEvaluation>(EVALUATE_SYSTEM_PROMPT, buildEvaluationMessage(request), evaluationSchema),
     translate: (request) =>
       structured<TranslationResult>(TRANSLATE_SYSTEM_PROMPT, buildTranslationMessage(request), translationSchema),
+    annotate: (request) =>
+      structured<AnnotationResult>(ANNOTATE_SYSTEM_PROMPT, buildAnnotationMessage(request), annotationSchema, 16000),
   };
 }
 
@@ -134,6 +142,16 @@ export function createMockCoach(): Coach {
         backTranslation: `I'll check it in advance. (mock for: ${request.english})`,
         notes: "",
         alternatives: [],
+      };
+    },
+    async annotate(request) {
+      return {
+        lines: request.lines.map((line) => ({
+          japanese: line,
+          kana: line,
+          english: `(mock translation of ${line})`,
+          words: [{ ja: line.replace(/[、。？！\s]/g, ""), kana: line, en: "(mock)" }],
+        })),
       };
     },
   };
