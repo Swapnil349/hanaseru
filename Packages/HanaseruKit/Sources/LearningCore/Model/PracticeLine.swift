@@ -159,12 +159,15 @@ public extension ContentLibrary {
             references.append(text)
         }
         let cue = beat.cueEn ?? PracticeLine.defaultCue(english: first.english, japanese: first.japanese)
+        // In a speech no one speaks first: what to say next ("Say where you work") sets up each sentence instead.
+        let hint = beat.hintEn.trimmingCharacters(in: .whitespacesAndNewlines)
+        let situation: String? = scenario.isMonologue && !hint.isEmpty ? hint : nil
         return PracticeLine(
             id: "\(scenario.id)#\(scenario.beatID(at: beatIndex))",
             japanese: first.japanese, kana: first.kana, english: first.english,
             chunks: PracticeLine.chunks(first.chunks, japanese: first.japanese, kana: first.kana),
             noteEn: first.noteEn, level: first.level ?? scenario.level, cueEn: cue,
-            intentEn: beat.intentEn ?? beat.hintEn, situationEn: nil, partner: partner,
+            intentEn: beat.intentEn ?? beat.hintEn, situationEn: situation, partner: partner,
             references: references, keyTerms: beat.keyTerms, mistakes: CommonMistakes.general,
             politeness: persona?.formality ?? .professional, choiceVariant: beat.lineVariants?.choice
         )

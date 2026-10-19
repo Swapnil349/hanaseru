@@ -151,7 +151,7 @@ extension SessionRunner {
         switch exercise {
         case .conversation(let id, let turns):
             guard let scenario = library.scenario(id: id) else { return nil }
-            let swapped = options.playAsPartner
+            let swapped = options.playAsPartner && !scenario.isMonologue
             let count = swapped ? library.partnerSideLines(in: scenario, learnerName: learner.name).count
                 : library.lines(in: scenario, learnerName: learner.name).count
             guard count > 0 else { return nil }

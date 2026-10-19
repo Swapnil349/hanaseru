@@ -89,11 +89,13 @@ public struct ContentLibrary: Sendable {
         cues[key] ?? CoachCue(ja: "", kana: "", en: key.rawValue)
     }
 
-    /// The library as planned sessions see it for someone in this line of work: other fields' scenes are left out.
+    /// The library as planned sessions see it for someone in this line of work: other fields' scenes are left out
+    /// (the learner's own scenes always stay).
     public func forField(_ field: WorkField) -> ContentLibrary {
         ContentLibrary(
             items: items, vocabulary: vocabulary, grammar: grammar,
-            scenarios: scenarios.filter { $0.workField == nil || $0.workField == field }, personas: personas, cues: cues,
+            scenarios: scenarios.filter { $0.workField == nil || $0.workField == field || $0.isLearnersOwn },
+            personas: personas, cues: cues,
             glossary: glossary
         )
     }

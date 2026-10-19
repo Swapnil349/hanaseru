@@ -33,6 +33,16 @@ public struct RemoteAIProvider: AIProvider {
         try await post("v1/translate", body: request)
     }
 
+    /// The learner's own scene, written from an English description — or, with `previous`, changed as described
+    /// (see docs/MY-SCENES.md). Slow (up to a few minutes while a free server wakes up): give this provider a long timeout.
+    public func writeScene(_ request: SceneRequest) async throws -> SceneResult {
+        let result: SceneResult = try await post("v1/scene", body: request)
+        guard result.beats.contains(where: { !$0.learner.isEmpty }) else {
+            throw AIProviderError.badResponse("The coach returned an empty scene")
+        }
+        return result
+    }
+
     /// Cheap reachability + auth check. A free host may need up to a minute to wake the server.
     public func checkHealth(timeout: TimeInterval = 5) async throws {
         var request = URLRequest(url: baseURL.appendingPathComponent("health"), timeoutInterval: timeout)
@@ -159,6 +169,32 @@ public struct TranslationRequest: Codable, Equatable, Sendable {
         self.english = english
         self.politeness = politeness
         self.situation = situation
+    }
+}
+
+/// A scene to write for the learner (see backend /v1/scene and docs/MY-SCENES.md).
+public struct SceneRequest: Codable, Equatable, Sendable {
+    /// What the learner described, in English (for a change: what to change).
+    public var description: String
+    public var kind: MyScene.Kind
+    public var learnerName: String
+    /// 1–8, the learner's current level.
+    public var learnerLevel: Int
+    public var politeness: Politeness
+    /// How many exchanges (a conversation) or sentences (a speech), 2–12.
+    public var length: Int
+    /// The scene as written before (its JSON), to change as `description` says.
+    public var previous: String?
+
+    public init(description: String, kind: MyScene.Kind, learnerName: String, learnerLevel: Int,
+                politeness: Politeness = .professional, length: Int = 6, previous: String? = nil) {
+        self.description = description
+        self.kind = kind
+        self.learnerName = learnerName
+        self.learnerLevel = min(max(learnerLevel, 1), 8)
+        self.politeness = politeness
+        self.length = min(max(length, 2), 12)
+        self.previous = previous
     }
 }
 

@@ -17,9 +17,11 @@ public struct LearnerBackup: Codable, Equatable, Sendable {
     public var sessions: [Session]
     public var phrases: [Phrase]
     public var preferences: Preferences
+    /// The learner's own scenes (My scenes), in their shared file shape. Nil in backups made before them.
+    public var myScenes: [MyScene]?
 
     public init(exportedAt: Date, profile: Profile, knowledge: [Knowledge], mistakes: [Mistake], sessions: [Session],
-                phrases: [Phrase], preferences: Preferences) {
+                phrases: [Phrase], preferences: Preferences, myScenes: [MyScene]? = nil) {
         self.format = Self.formatName
         self.version = Self.currentVersion
         self.exportedAt = exportedAt
@@ -29,6 +31,7 @@ public struct LearnerBackup: Codable, Equatable, Sendable {
         self.sessions = sessions
         self.phrases = phrases
         self.preferences = preferences
+        self.myScenes = myScenes
     }
 
     public struct Profile: Codable, Equatable, Sendable {
@@ -214,7 +217,8 @@ public struct LearnerBackup: Codable, Equatable, Sendable {
     public var overview: String {
         func count(_ number: Int, _ noun: String) -> String { "\(number) \(noun)\(number == 1 ? "" : "s")" }
         let date = exportedAt.formatted(date: .abbreviated, time: .omitted)
+        let scenes = myScenes.map { $0.isEmpty ? "" : " · " + count($0.count, "own scene") } ?? ""
         return "\(date) · \(count(sessions.count, "session")) · \(count(knowledge.count, "line")) practised · "
-            + count(phrases.count, "phrase")
+            + count(phrases.count, "phrase") + scenes
     }
 }

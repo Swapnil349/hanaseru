@@ -267,7 +267,7 @@ extension SessionRunner {
         isListening = true
         let options = ListenOptions(startTimeout: timeout, endSilence: endSilence, maxDuration: 15,
                                     contextualStrings: Array(contextual.prefix(100)))
-        let result = await voice.recognizer.listen(options) { [weak self] partial in
+        let result = await hear(options) { [weak self] partial in
             self?.emit(.partialTranscript(partial))
         }
         isListening = false

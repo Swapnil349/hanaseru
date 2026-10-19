@@ -82,10 +82,14 @@ enum SayJapanese {
     }
 }
 
-/// Every conversation, ready to start from any line.
+/// Every conversation, ready to start from any line — the learner's own first.
 struct ScenesView: View {
     @Environment(AppEnvironment.self) private var app
     @Query private var knowledge: [KnowledgeRecord]
+    @State private var writingNew = false
+    /// A scene just written, opened once the sheet has closed.
+    @State private var written: String?
+    @State private var opened: String?
 
     private var practisedScenes: Set<String> {
         Set(knowledge.compactMap { record in
@@ -114,8 +118,10 @@ struct ScenesView: View {
 
     var body: some View {
         List {
+            MyScenesSection(practised: practisedScenes) { writingNew = true }
             ForEach(groups, id: \.self) { group in
-                let scenes = app.library.scenarios.filter { $0.track == group.track && $0.workField == group.field }
+                let scenes = app.library.scenarios
+                    .filter { !$0.isLearnersOwn && $0.track == group.track && $0.workField == group.field }
                     .sorted { $0.level < $1.level }
                 if !scenes.isEmpty {
                     Section(group.title) {
@@ -142,6 +148,23 @@ struct ScenesView: View {
             }
         }
         .navigationTitle("Scenes")
+        .sheet(isPresented: $writingNew, onDismiss: {
+            opened = written
+            written = nil
+        }) {
+            NavigationStack {
+                MySceneEditorView(previous: nil) { scene in
+                    written = scene.id
+                    writingNew = false
+                }
+            }
+        }
+        .navigationDestination(item: $opened) { id in
+            if let scenario = app.library.scenario(id: id) {
+                SceneDetailView(scenario: scenario)
+            }
+        }
+        .onAppear { app.refreshLibrary() }
     }
 }
 
@@ -165,17 +188,23 @@ struct SceneDetailView: View {
     private var mode: SceneMode { SceneMode(rawValue: modeRaw) ?? .automatic }
 
     var body: some View {
+        // The learner's own scenes can change while open.
+        let scenario = app.library.scenario(id: self.scenario.id) ?? self.scenario
         let lines = app.library.lines(in: scenario, learnerName: profiles.first?.name ?? "")
         let persona = app.library.persona(id: scenario.personaID)
+        let terms = app.library.vocabulary(in: scenario)
         List {
             Section {
                 Text(scenario.situationEn).font(.callout).foregroundStyle(Palette.ink)
-                Picker("You play", selection: $playAsPartner) {
-                    Text("Yourself").tag(false)
-                    Text(persona?.nameEn ?? "The colleague").tag(true)
+                // A speech has no other part to play.
+                if !scenario.isMonologue {
+                    Picker("You play", selection: $playAsPartner) {
+                        Text("Yourself").tag(false)
+                        Text(persona?.nameEn ?? "The colleague").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("scene-role")
                 }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("scene-role")
                 Picker("Lesson", selection: $modeRaw) {
                     ForEach(SceneMode.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
                 }
@@ -207,14 +236,20 @@ struct SceneDetailView: View {
                 .accessibilityIdentifier("scene-script")
             }
 
-            Section {
-                ForEach(app.library.vocabulary(in: scenario)) { term in
-                    WordRow(term: term)
+            if scenario.isLearnersOwn, let saved = app.myScenes.scene(id: scenario.id) {
+                MySceneActionsSection(scene: saved, scenario: scenario)
+            }
+
+            if !terms.isEmpty {
+                Section {
+                    ForEach(terms) { term in
+                        WordRow(term: term)
+                    }
+                } header: {
+                    Text("Words in this conversation")
+                } footer: {
+                    Text("Tap a word to hear it.")
                 }
-            } header: {
-                Text("Words in this conversation")
-            } footer: {
-                Text("Tap a word to hear it.")
             }
 
             Section("Lines — start from any of them") {

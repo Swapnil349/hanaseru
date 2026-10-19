@@ -50,7 +50,11 @@ struct SettingsView: View {
             Form {
                 Section {
                     TextField("Your name", text: $name)
-                        .onSubmit { app.repository.setName(name) }
+                        .onSubmit {
+                            app.repository.setName(name)
+                            // Your own scenes say your name.
+                            app.refreshLibrary()
+                        }
                     Picker("My work", selection: $workField) {
                         ForEach(WorkField.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
                     }
@@ -205,7 +209,8 @@ struct SettingsView: View {
 
     private func prepareBackup() {
         do {
-            let backup = app.repository.makeBackup()
+            var backup = app.repository.makeBackup()
+            backup.myScenes = app.myScenes.scenes
             backupDocument = BackupDocument(data: try backup.encoded())
             backupFileName = LearnerBackup.fileName(for: backup.exportedAt)
             showBackupExporter = true
@@ -231,6 +236,9 @@ struct SettingsView: View {
 
     private func restore(_ backup: LearnerBackup) {
         app.repository.restore(backup)
+        // Older backups have no scenes of your own: the ones on this iPhone stay.
+        if let scenes = backup.myScenes { app.myScenes.replaceAll(scenes) }
+        app.refreshLibrary()
         name = backup.profile.name
         pendingRestore = nil
         backupStatus = "Restored: \(backup.overview)."

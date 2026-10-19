@@ -16,6 +16,10 @@ final class AudioSessionController {
     var onInterruption: ((Interruption) -> Void)?
     /// Called when the current output route disappears (AirPods taken out, headphones unplugged).
     var onRouteLost: (() -> Void)?
+    /// Called when a new output appears (AirPods connected): what was being said may have been lost in the switch.
+    var onRouteAdded: (() -> Void)?
+    /// Called when iOS restarted its media services: every audio object must be brought back.
+    var onMediaReset: (() -> Void)?
 
     private var observers: [NSObjectProtocol] = []
 
@@ -84,8 +88,18 @@ final class AudioSessionController {
                   let reason = AVAudioSession.RouteChangeReason(rawValue: raw) else { return }
             let outputs = AVAudioSession.sharedInstance().currentRoute.outputs.map(\.portType.rawValue).joined(separator: ",")
             VoiceLog.add("audio route changed (reason \(reason.rawValue)) → \(outputs)")
-            guard reason == .oldDeviceUnavailable else { return }
-            Task { @MainActor in self?.onRouteLost?() }
+            switch reason {
+            case .oldDeviceUnavailable:
+                Task { @MainActor in self?.onRouteLost?() }
+            case .newDeviceAvailable:
+                Task { @MainActor in self?.onRouteAdded?() }
+            default:
+                break
+            }
+        })
+        observers.append(center.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main) { [weak self] _ in
+            VoiceLog.add("audio media services were reset")
+            Task { @MainActor in self?.onMediaReset?() }
         })
     }
 }

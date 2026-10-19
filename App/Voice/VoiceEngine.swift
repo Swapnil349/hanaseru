@@ -117,11 +117,16 @@ final class VoiceEngine {
 
     /// Microphone level 0...1, delivered on the main actor while a session is running.
     var onMicLevel: ((Float) -> Void)?
+    /// Several lines in a row made no sound, even after the audio was recovered.
+    var onSpeechLost: (() -> Void)?
 
     init() {
         synthesizer = AppleSpeechSynthesisProvider(engine: engineHost)
         recognizer = AppleSpeechRecognitionProvider(engine: engineHost, writing: writing)
         cues = CueFeedbackController(engine: engineHost)
+        // A line that made no sound is said again once the audio is back (see `SpeechGuard`).
+        synthesizer.onRecoverAudio = { [weak self] in await self?.recover() }
+        synthesizer.onSpeechLost = { [weak self] in self?.onSpeechLost?() }
     }
 
     var runnerVoice: SessionRunner.Voice {
@@ -142,13 +147,39 @@ final class VoiceEngine {
     }
 
     /// Brings audio back after a pause, an interruption or a route change, without blocking the screen.
-    func recover() async {
-        do {
-            try await audioSession.activateInBackground()
-            try await engineHost.startInBackground()
-            VoiceLog.add("audio recovered")
-        } catch {
-            VoiceLog.add("audio recovery failed: \(error.localizedDescription)")
+    /// `restartEngine`: stop and start the engine afresh (after the media services were reset). Never waits
+    /// more than a few seconds: a busy audio thread mustn't leave the session stuck on "resuming".
+    func recover(restartEngine: Bool = false) async {
+        let finished = await Self.waitAtMost(6) { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.audioSession.activateInBackground()
+                if restartEngine {
+                    try await self.engineHost.restartInBackground()
+                } else {
+                    try await self.engineHost.startInBackground()
+                }
+                VoiceLog.add("audio recovered")
+            } catch {
+                VoiceLog.add("audio recovery failed: \(error.localizedDescription)")
+            }
+        }
+        if !finished { VoiceLog.add("audio recovery still busy after 6 s; carrying on") }
+    }
+
+    /// Runs `work`, but returns after `seconds` even if it hasn't finished (false then).
+    private static func waitAtMost(_ seconds: Double, _ work: @escaping @MainActor () async -> Void) async -> Bool {
+        let gate = RecoveryGate()
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            gate.continuation = continuation
+            Task { @MainActor in
+                await work()
+                gate.open(true)
+            }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                gate.open(false)
+            }
         }
     }
 
@@ -159,5 +190,15 @@ final class VoiceEngine {
         engineHost.stop()
         remote.deactivate()
         audioSession.deactivate()
+    }
+}
+
+/// Resumes a waiting task once, with whichever result comes first (used on the main actor only).
+private final class RecoveryGate {
+    var continuation: CheckedContinuation<Bool, Never>?
+
+    func open(_ finished: Bool) {
+        continuation?.resume(returning: finished)
+        continuation = nil
     }
 }

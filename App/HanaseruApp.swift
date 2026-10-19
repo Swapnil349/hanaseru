@@ -38,21 +38,36 @@ struct HanaseruApp: App {
 @MainActor
 final class AppEnvironment {
     let container: ModelContainer
-    let library: ContentLibrary
+    /// The bundled content with the learner's own scenes in it: what every screen and session uses.
+    private(set) var library: ContentLibrary
     let contentError: String?
     let repository: SwiftDataLearnerRepository
     let voice = VoiceEngine()
+    /// The learner's own scenes (My scenes).
+    let myScenes = MySceneStore()
+    private let bundledLibrary: ContentLibrary
 
     init(container: ModelContainer) {
         self.container = container
+        let bundled: ContentLibrary
         do {
-            library = try ContentLibrary.bundled()
+            bundled = try ContentLibrary.bundled()
             contentError = nil
         } catch {
-            library = ContentLibrary(items: [])
+            bundled = ContentLibrary(items: [])
             contentError = String(describing: error)
         }
+        bundledLibrary = bundled
+        library = bundled
         repository = SwiftDataLearnerRepository(context: container.mainContext)
+        refreshLibrary()
+        myScenes.onChange = { [weak self] in self?.refreshLibrary() }
+    }
+
+    /// Puts the learner's own scenes into the library (after a change, or when their name changed).
+    func refreshLibrary() {
+        let name = (try? container.mainContext.fetch(FetchDescriptor<LearnerProfileRecord>()))?.first?.name ?? ""
+        library = bundledLibrary.including(myScenes.scenes, learnerName: name)
     }
 
     /// Claude via the coach proxy when configured, always backed by the offline engine (spec §59).

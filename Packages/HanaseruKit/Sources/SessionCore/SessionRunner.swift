@@ -218,6 +218,11 @@ public final class SessionRunner {
     var toPractise: [String] = []
     var closingLine: PracticeLine?
 
+    /// The longest the session waits for one utterance or one listen before it moves on without it, so a voice
+    /// that never comes back can't leave it silent (tests shorten these).
+    var speechDeadline: (SpeechRequest) -> TimeInterval = SpeechGuard.deadline(for:)
+    var listenDeadline: (ListenOptions) -> TimeInterval = SpeechGuard.listenDeadline(for:)
+
     public init(plan: SessionPlan, library: ContentLibrary, voice: Voice, ai: AIProvider,
                 repository: LearnerRepository, options: SessionOptions = SessionOptions(),
                 now: @escaping () -> Date = { Date() }) {
@@ -360,7 +365,7 @@ public final class SessionRunner {
                 }
             for part in parts {
                 guard !Task.isCancelled else { return }
-                await voice.synthesizer.speak(part)
+                await say(part)
             }
         }
     }
@@ -472,6 +477,84 @@ public final class SessionRunner {
         }
     }
 
+    /// Runs a voice call, but returns `fallback` once `seconds` have passed or the calling task is cancelled,
+    /// whichever comes first. The call itself is cancelled and left to wind down on its own: one that ignores
+    /// cancellation (an audio framework that hangs) can't hold the session.
+    static func bounded<T: Sendable>(_ seconds: TimeInterval, fallback: T,
+                                     _ operation: @escaping @MainActor () async -> T) async -> T {
+        let box = BoundedResult<T>()
+        let work = Task { @MainActor in box.finish(await operation()) }
+        let timer = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(max(0, seconds) * 1_000_000_000))
+            box.finish(fallback)
+        }
+        let result = await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<T, Never>) in
+                box.wait(continuation)
+            }
+        } onCancel: {
+            work.cancel()
+            Task { @MainActor in box.finish(fallback) }
+        }
+        timer.cancel()
+        return result
+    }
+
+    /// The first value wins; a waiter set before or after it gets that value exactly once. Only used on the
+    /// main actor.
+    final class BoundedResult<T>: @unchecked Sendable {
+        private var value: T?
+        private var continuation: CheckedContinuation<T, Never>?
+        private var done = false
+
+        func wait(_ continuation: CheckedContinuation<T, Never>) {
+            if let value {
+                continuation.resume(returning: value)
+            } else {
+                self.continuation = continuation
+            }
+        }
+
+        func finish(_ result: T) {
+            guard !done else { return }
+            done = true
+            if let continuation {
+                self.continuation = nil
+                continuation.resume(returning: result)
+            } else {
+                value = result
+            }
+        }
+    }
+
+    /// Says one utterance, never waiting past its deadline.
+    func say(_ request: SpeechRequest) async {
+        let synthesizer = voice.synthesizer
+        let limit = speechDeadline(request)
+        let finished = await Self.bounded(limit, fallback: false) {
+            await synthesizer.speak(request)
+            return true
+        }
+        guard !finished, !Task.isCancelled else { return }
+        synthesizer.stopSpeaking()
+        emit(.voiceIssue("speech didn't end within \(Int(limit)) s, moved on: \(request.text.prefix(40))"))
+    }
+
+    /// One listen, never waiting past its deadline: a recogniser that never hands back the turn counts as silence.
+    func hear(_ options: ListenOptions, onPartial: @escaping @MainActor (String) -> Void) async -> ListenResult {
+        let recognizer = voice.recognizer
+        let limit = listenDeadline(options)
+        let result = await Self.bounded(limit, fallback: ListenResult?.none) {
+            Optional(await recognizer.listen(options, onPartial: onPartial))
+        }
+        if let result { return result }
+        if !Task.isCancelled {
+            recognizer.cancelListening()
+            emit(.voiceIssue("listening didn't end within \(Int(limit)) s; the turn goes on without an answer"))
+        }
+        return .silence
+    }
+
     /// Listens for the learner saying one line of the script ("Say it"). The session pauses first; returns
     /// what was heard and how close it is to the line (0…1).
     public func sayLine(_ references: [String]) async -> (heard: String, similarity: Double) {
@@ -483,7 +566,7 @@ public final class SessionRunner {
         if let task { await Self.settle(task) }
         voice.feedback.play(.yourTurn)
         let options = ListenOptions(startTimeout: 6, endSilence: 1.2, maxDuration: 15, contextualStrings: references)
-        let result = await voice.recognizer.listen(options) { _ in }
+        let result = await hear(options) { _ in }
         let heard = result.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         return (heard, heard.isEmpty ? 0 : JapaneseText.bestSimilarity(heard, to: references))
     }

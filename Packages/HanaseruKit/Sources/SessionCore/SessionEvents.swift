@@ -230,6 +230,8 @@ public enum SessionEvent: Equatable, Sendable {
     case stage(StageInfo?)
     /// Who is speaking right now; nil between utterances.
     case voice(StageVoice?)
+    /// A voice call didn't come back in time and the session moved on without it (for the voice log).
+    case voiceIssue(String)
     case finished(SessionSummary)
 }
 

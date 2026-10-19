@@ -34,7 +34,10 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
         cancelled = false
         if writing.isEnabled { return await waitForWriting(options) }
         guard let recognizer, recognizer.isAvailable else {
-            VoiceLog.add("listen: Japanese recogniser unavailable")
+            VoiceLog.add("listen: Japanese recogniser unavailable; the turn keeps its length")
+            // Returning at once would rush through every turn without a pause: the learner still gets the think
+            // time, then hears the answer.
+            await waitOut(options.startTimeout)
             return ListenResult(transcript: "", outcome: .failed("Japanese speech recognition isn't available right now."))
         }
         cancelled = false
@@ -48,39 +51,34 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
             }
         }
 
-        let request = SFSpeechAudioBufferRecognitionRequest()
-        request.shouldReportPartialResults = true
-        request.taskHint = .dictation
-        request.contextualStrings = Array(options.contextualStrings.prefix(100))
-        request.addsPunctuation = false
-        if recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-        }
-        self.request = request
-
-        let state = ListenState()
         let startedAt = Date()
-        engine.setConsumer { buffer in request.append(buffer) }
+        var request = makeRequest(options, onDevice: recognizer.supportsOnDeviceRecognition)
+        var state = ListenState()
+        var restarts = 0
+        startRecognition(recognizer, request: request, state: state, onPartial: onPartial)
 
-        task = recognizer.recognitionTask(with: request) { result, error in
-            let text = result?.bestTranscription.formattedString
-            let isFinal = result?.isFinal ?? false
-            var confidence: Double?
-            if let segments = result?.bestTranscription.segments, isFinal, !segments.isEmpty {
-                confidence = Double(segments.map(\.confidence).reduce(0, +)) / Double(segments.count)
-            }
-            let failed = error != nil
-            Task { @MainActor in
-                state.update(text: text, isFinal: isFinal, confidence: confidence, failed: failed)
-                if let text, !text.isEmpty, !isFinal { onPartial(text) }
-            }
-        }
-
-        // End-pointing: stop after enough silence following speech, or if speech never starts.
+        // End-pointing: stop after enough silence following speech, or if speech never starts. Every path ends:
+        // the start timeout and the maximum duration bound the loop whatever the recogniser does.
         while true {
             try? await Task.sleep(nanoseconds: 100_000_000)
-            if Task.isCancelled || cancelled || state.isFinal || state.failed { break }
+            if Task.isCancelled || cancelled || state.isFinal { break }
             let now = Date()
+            if state.failed {
+                // An error before anything was heard (the speech service dropped, the microphone wasn't free yet):
+                // listen again for the rest of the turn instead of ending it at once.
+                let remaining = options.startTimeout - now.timeIntervalSince(startedAt)
+                guard state.firstSpeechAt == nil, restarts < 2, remaining > 1.5 else { break }
+                restarts += 1
+                VoiceLog.add(String(format: "listen: recogniser error after %.1f s, listening again",
+                                    now.timeIntervalSince(startedAt)))
+                engine.setConsumer(nil)
+                request.endAudio()
+                task?.cancel()
+                request = makeRequest(options, onDevice: recognizer.supportsOnDeviceRecognition)
+                state = ListenState()
+                startRecognition(recognizer, request: request, state: state, onPartial: onPartial)
+                continue
+            }
             if let first = state.firstSpeechAt {
                 if now.timeIntervalSince(state.lastChangeAt) >= options.endSilence { break }
                 if now.timeIntervalSince(first) >= options.maxDuration { break }
@@ -119,6 +117,46 @@ final class AppleSpeechRecognitionProvider: SpeechRecognitionProvider {
             speakingDuration: max(0, state.lastChangeAt.timeIntervalSince(firstSpeechAt)),
             outcome: .speech
         )
+    }
+
+    private func makeRequest(_ options: ListenOptions, onDevice: Bool) -> SFSpeechAudioBufferRecognitionRequest {
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.taskHint = .dictation
+        request.contextualStrings = Array(options.contextualStrings.prefix(100))
+        request.addsPunctuation = false
+        if onDevice {
+            request.requiresOnDeviceRecognition = true
+        }
+        return request
+    }
+
+    /// Feeds the microphone to `request` and collects what the recogniser hears into `state`.
+    private func startRecognition(_ recognizer: SFSpeechRecognizer, request: SFSpeechAudioBufferRecognitionRequest,
+                                  state: ListenState, onPartial: @escaping @MainActor (String) -> Void) {
+        self.request = request
+        engine.setConsumer { buffer in request.append(buffer) }
+        task = recognizer.recognitionTask(with: request) { result, error in
+            let text = result?.bestTranscription.formattedString
+            let isFinal = result?.isFinal ?? false
+            var confidence: Double?
+            if let segments = result?.bestTranscription.segments, isFinal, !segments.isEmpty {
+                confidence = Double(segments.map(\.confidence).reduce(0, +)) / Double(segments.count)
+            }
+            let failed = error != nil
+            Task { @MainActor in
+                state.update(text: text, isFinal: isFinal, confidence: confidence, failed: failed)
+                if let text, !text.isEmpty, !isFinal { onPartial(text) }
+            }
+        }
+    }
+
+    /// Waits `seconds`, or until the turn is cancelled.
+    private func waitOut(_ seconds: TimeInterval) async {
+        let until = Date().addingTimeInterval(seconds)
+        while Date() < until && !Task.isCancelled && !cancelled {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
     }
 
     /// Writing mode: the microphone stays off and the turn waits (up to 90 s) for the written answer.

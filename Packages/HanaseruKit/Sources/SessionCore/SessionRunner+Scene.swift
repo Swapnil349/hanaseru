@@ -165,7 +165,8 @@ extension SessionRunner {
 
     func makeSceneState(scenarioID: String, maxTurns: Int) async -> SceneState? {
         guard let scenario = library.scenario(id: scenarioID), let persona = library.persona(id: scenario.personaID) else { return nil }
-        let swapped = options.playAsPartner
+        // A speech has no other part to play.
+        let swapped = options.playAsPartner && !scenario.isMonologue
         let all = swapped ? library.partnerSideLines(in: scenario, learnerName: learner.name)
             : library.lines(in: scenario, learnerName: learner.name)
         guard !all.isEmpty else { return nil }
@@ -292,6 +293,10 @@ extension SessionRunner {
                     prefix = OfflineAIProvider.reaction(for: .acceptable, turn: index, nextLine: partner.japanese).ja
                 }
                 try await partnerSays(partner, rate: rate, prefix: prefix)
+            } else if state.scenario.isMonologue {
+                // A speech: no one speaks first, so the English cue says which sentence comes next (with the phone
+                // in a pocket, a chime alone wouldn't).
+                try await speakContext(line, rate: rate)
             }
             showPlace(answer: true)
             var outcome: TurnOutcome?

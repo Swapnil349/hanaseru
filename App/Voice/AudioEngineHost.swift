@@ -73,7 +73,9 @@ final class AudioEngineHost: @unchecked Sendable {
         engine.stop()
     }
 
-    /// Plays a recorded clip to the end, or until `stopClip()`. Returns false when it can't play.
+    /// Plays a recorded clip to the end, or until `stopClip()` or the calling task is cancelled (true). Returns
+    /// false when it couldn't be heard — the engine isn't running, it stopped (a route change) or the clip ended
+    /// far too soon — so the caller says the sentence with the iPhone voice instead of skipping it.
     func playClip(_ url: URL, volume: Float) async -> Bool {
         guard engine.isRunning, let file = try? AVAudioFile(forReading: url) else { return false }
         let format = file.processingFormat
@@ -87,17 +89,36 @@ final class AudioEngineHost: @unchecked Sendable {
         voicePlayer.volume = volume
         let duration = Double(file.length) / max(format.sampleRate, 1)
         let once = ResumeOnce()
-        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-            once.set(continuation)
-            let player = voicePlayer
-            voiceQueue.async {
-                player.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in
-                    once.resume(true)
+        let player = voicePlayer
+        let audioEngine = engine
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                once.set(continuation)
+                voiceQueue.async {
+                    // The engine can stop between the check above and here (a route change), and playing a node of
+                    // a stopped engine raises an exception.
+                    guard audioEngine.isRunning else {
+                        if once.resume(false) { VoiceLog.add("audio engine stopped before a recording could play") }
+                        return
+                    }
+                    let startedAt = Date()
+                    player.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { _ in
+                        // A clip "played back" in a fraction of its length was cut off (the engine stopped).
+                        let played = duration < 0.5 || Date().timeIntervalSince(startedAt) >= duration * 0.5
+                        if once.resume(played) && !played { VoiceLog.add("a recording was cut off") }
+                    }
+                    if !player.isPlaying { player.play() }
                 }
-                if !player.isPlaying { player.play() }
+                // If the engine stalls (route change) the clip never reports its end: don't wait in silence.
+                DispatchQueue.global().asyncAfter(deadline: .now() + duration + 3) { [weak self] in
+                    guard once.resume(false) else { return }
+                    VoiceLog.add("a recording didn't finish playing")
+                    self?.stopClip()
+                }
             }
-            // If the engine stalls (route change), don't wait forever.
-            DispatchQueue.global().asyncAfter(deadline: .now() + duration + 3) { once.resume(true) }
+        } onCancel: {
+            once.resume(true)
+            self.stopClip()
         }
     }
 
@@ -111,6 +132,28 @@ final class AudioEngineHost: @unchecked Sendable {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             voiceQueue.async {
                 do {
+                    try self.start()
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Stops and starts the engine afresh, away from the main thread (after the media services were reset).
+    /// The microphone consumer and level handler are kept.
+    func restartInBackground() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            voiceQueue.async {
+                do {
+                    if let observer = self.configurationObserver { NotificationCenter.default.removeObserver(observer) }
+                    self.configurationObserver = nil
+                    self.voicePlayer.stop()
+                    self.player.stop()
+                    self.engine.inputNode.removeTap(onBus: 0)
+                    self.engine.stop()
+                    self.engine.reset()
                     try self.start()
                     continuation.resume()
                 } catch {
@@ -149,20 +192,24 @@ final class AudioEngineHost: @unchecked Sendable {
         levelHandler(max(0, min(1, (decibels + 50) / 45)))
     }
 
-    /// Route changes (e.g. AirPods connecting) change the input format and stop the engine; rebuild the tap and restart.
+    /// Route changes (e.g. AirPods connecting) change the input format and stop the engine; rebuild the tap and
+    /// restart — on the voice queue, because starting audio hardware blocks and the screen must not.
     private func observeConfigurationChanges() {
         guard configurationObserver == nil else { return }
         configurationObserver = NotificationCenter.default.addObserver(
-            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil
         ) { [weak self] _ in
             guard let self else { return }
             VoiceLog.add("audio engine configuration changed; restarting the microphone")
-            try? self.installTap()
-            self.engine.prepare()
-            do {
-                try self.engine.start()
-            } catch {
-                VoiceLog.add("microphone restart failed: \(error.localizedDescription)")
+            self.voiceQueue.async {
+                do {
+                    try self.installTap()
+                    self.engine.prepare()
+                    try self.engine.start()
+                    VoiceLog.add("audio engine restarted after the configuration change")
+                } catch {
+                    VoiceLog.add("audio engine restart failed: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -196,20 +243,35 @@ final class AudioEngineHost: @unchecked Sendable {
     }
 }
 
-/// Resumes a continuation exactly once, whichever thread gets there first.
+/// Resumes a continuation exactly once, whichever thread gets there first. A value that arrives before the
+/// continuation is set (a task cancelled at once) is kept and delivered when it is.
 private final class ResumeOnce: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<Bool, Never>?
+    private var early: Bool?
+    private var done = false
 
     func set(_ continuation: CheckedContinuation<Bool, Never>) {
-        lock.withLock { self.continuation = continuation }
+        let value = lock.withLock { () -> Bool? in
+            if let early { return early }
+            self.continuation = continuation
+            return nil
+        }
+        if let value { continuation.resume(returning: value) }
     }
 
-    func resume(_ value: Bool) {
-        let pending = lock.withLock { () -> CheckedContinuation<Bool, Never>? in
-            defer { continuation = nil }
-            return continuation
+    /// True for the call that decided the result.
+    @discardableResult
+    func resume(_ value: Bool) -> Bool {
+        let (decided, pending) = lock.withLock { () -> (Bool, CheckedContinuation<Bool, Never>?) in
+            guard !done else { return (false, nil) }
+            done = true
+            let pending = continuation
+            continuation = nil
+            if pending == nil { early = value }
+            return (true, pending)
         }
         pending?.resume(returning: value)
+        return decided
     }
 }

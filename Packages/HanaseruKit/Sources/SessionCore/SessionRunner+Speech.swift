@@ -19,8 +19,8 @@ extension SessionRunner {
         emit(.activity(.speaking))
         emit(.voice(stageVoice))
         let began = now()
-        await voice.synthesizer.speak(SpeechRequest(text: spoken, language: language, rate: rate, pauseAfter: pauseAfter,
-                                                    voice: voiceRole, volume: volume))
+        await say(SpeechRequest(text: spoken, language: language, rate: rate, pauseAfter: pauseAfter,
+                                voice: voiceRole, volume: volume))
         if language == .japanese { secondsListening += now().timeIntervalSince(began) }
         emit(.voice(nil))
         try Task.checkCancellation()

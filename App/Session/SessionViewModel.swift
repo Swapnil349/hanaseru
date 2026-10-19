@@ -61,6 +61,8 @@ final class SessionViewModel {
     /// Play was pressed and audio is being brought back.
     private var resuming = false
     private var pausedByInterruption = false
+    /// When the audio was last brought back for a headphone switch or a media reset, so one switch replays once.
+    private var lastAudioRestart: Date?
     /// Scripted voice for Simulator/CI runs (see `DemoVoice`).
     private let demo = DemoVoice.isEnabled
 
@@ -317,6 +319,8 @@ final class SessionViewModel {
         case .step(let title):
             stepTitle = title
             if !title.isEmpty { VoiceLog.add("step: \(title)") }
+        case .voiceIssue(let message):
+            VoiceLog.add(message)
         case .finished(let summary):
             if summary.completedNormally {
                 let defaults = UserDefaults.standard
@@ -369,6 +373,40 @@ final class SessionViewModel {
         app.voice.audioSession.onRouteLost = { [weak self] in
             guard let self, !self.isPaused else { return }
             self.togglePause(reason: "headphones disconnected")
+        }
+        // Connecting AirPods restarts the audio engine, and whatever was being said is lost: say it again.
+        app.voice.audioSession.onRouteAdded = { [weak self] in
+            self?.restartAudioAndReplay(reason: "headphones connected")
+        }
+        // After a media services reset every audio object is dead: new synthesizer, engine restarted, line again.
+        app.voice.audioSession.onMediaReset = { [weak self] in
+            guard let self else { return }
+            self.restartAudioAndReplay(reason: "media services reset", restartEngine: true)
+            self.app.voice.synthesizer.replaceSynthesizer()
+        }
+        // Several lines in a row made no sound even after recovering: pause rather than go on in silence. Play
+        // brings the audio back and carries on from the same line.
+        app.voice.onSpeechLost = { [weak self] in
+            guard let self, !self.isPaused else { return }
+            self.togglePause(reason: "no sound from the voice")
+        }
+    }
+
+    /// Brings the audio back after it changed under a running session, and plays the line in progress again from
+    /// its start, so nothing said during the switch is lost.
+    private func restartAudioAndReplay(reason: String, restartEngine: Bool = false) {
+        guard let runner, !runner.isFinished, !isPaused, !resuming else { return }
+        if let lastAudioRestart, Date().timeIntervalSince(lastAudioRestart) < 3 { return }
+        lastAudioRestart = Date()
+        VoiceLog.add("\(reason): bringing the audio back and saying the line again")
+        resuming = true
+        runner.pause()
+        Task { @MainActor in
+            await app.voice.recover(restartEngine: restartEngine)
+            resuming = false
+            runner.resume()
+            isPaused = runner.isPaused
+            updateNowPlaying()
         }
     }
 
