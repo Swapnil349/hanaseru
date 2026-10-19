@@ -53,12 +53,11 @@ jobs:
       - name: Transcription check
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng > /dev/null
-          espeak-ng -v ja -s 130 -w "$RUNNER_TEMP/ja.wav" "きょうは らいしゅうの こうていに ついて せつめいします。 よろしく おねがいします。"             || echo "::warning title=Transcription check::espeak-ng could not make Japanese speech"
+          espeak-ng -v ja -s 130 -w "$RUNNER_TEMP/ja.wav" "きょうは らいしゅうの こうていに ついて せつめいします。 よろしく おねがいします。" || echo "::warning title=Transcription check::espeak-ng could not make Japanese speech"
           if WHISPER_AUDIO="$RUNNER_TEMP/ja.wav" npx vitest run test/whisper.smoke.test.ts > "$RUNNER_TEMP/whisper.log" 2>&1; then
             echo "::notice title=Whisper heard::$(grep -o 'Whisper heard: .*' "$RUNNER_TEMP/whisper.log" | head -c 600)"
           else
-            echo "::warning title=Transcription check failed::$(grep -E 'Error|error|FAIL|heard' "$RUNNER_TEMP/whisper.log" | head -5 | tr '
-' ' ' | head -c 600)"
+            echo "::warning title=Transcription check failed::$(grep -E 'Error|error|FAIL|heard' "$RUNNER_TEMP/whisper.log" | head -5 | tr -d '\n' | head -c 600)"
           fi
 
       - name: Build
