@@ -3,7 +3,7 @@
 
     <!-- Your turn to speak: transcribed to text, never recorded. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <!-- The AI coach server, when you set one up. -->
+    <!-- The AI coach server, when you set one up (Settings). -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <queries>
@@ -17,6 +17,8 @@
 
     <application
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="Hanaseru"
         android:supportsRtl="true"
@@ -30,5 +32,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Shares exported scenes as files. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
     </application>
 </manifest>

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -26,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.swapnil.hanaseru.coach.CoachClient
+import com.swapnil.hanaseru.coach.CoachSettings
+import com.swapnil.hanaseru.coach.MyScenesStore
 import com.swapnil.hanaseru.content.ContentLibrary
+import com.swapnil.hanaseru.content.including
 import com.swapnil.hanaseru.practice.Progress
 import com.swapnil.hanaseru.practice.ScenePractice
 import com.swapnil.hanaseru.voice.Listener
@@ -46,38 +52,77 @@ import com.swapnil.hanaseru.voice.Speaker
 import java.util.Calendar
 
 @Composable
-fun HanaseruApp(library: ContentLibrary, speaker: Speaker, listener: Listener, progress: Progress, prefs: Prefs) {
+fun HanaseruApp(
+    library: ContentLibrary,
+    speaker: Speaker,
+    listener: Listener,
+    progress: Progress,
+    prefs: Prefs,
+    coachSettings: CoachSettings,
+    coach: CoachClient,
+    myScenes: MyScenesStore,
+) {
     val navigation = rememberNavController()
+    // The course plus your own scenes, rebuilt whenever they change. Screens read `.value` so they always see the
+    // latest (the navigation graph keeps its first lambdas, so it mustn't capture a library itself).
+    val current = remember(library) { derivedStateOf { library.including(myScenes.scenes) } }
     NavHost(navController = navigation, startDestination = "home") {
         composable("home") {
             HomeScreen(
                 speaker = speaker,
-                sceneCount = library.scenarios.size,
-                wordCount = library.vocabulary.size,
+                sceneCount = current.value.scenarios.size,
+                wordCount = current.value.vocabulary.size,
                 onScenes = { navigation.navigate("scenes") },
                 onVocabulary = { navigation.navigate("vocabulary") },
+                onSettings = { navigation.navigate("settings") },
             )
         }
         composable("scenes") {
-            ScenesScreen(library = library, prefs = prefs, onBack = { navigation.popBackStack() },
-                         onOpen = { id -> navigation.navigate("scene/$id") })
+            ScenesScreen(library = current.value, prefs = prefs, myScenes = myScenes, onBack = { navigation.popBackStack() },
+                         onOpen = { id -> navigation.navigate("scene/$id") },
+                         onNewScene = { navigation.navigate("myscene/new") })
         }
         composable("scene/{id}") { entry ->
             val id = entry.arguments?.getString("id") ?: ""
-            SceneScreen(library = library, scenarioID = id, speaker = speaker, listener = listener, prefs = prefs,
+            SceneScreen(library = current.value, scenarioID = id, speaker = speaker, listener = listener, prefs = prefs,
+                        learnerName = coachSettings.learnerName, myScene = myScenes.scene(id),
                         onBack = { navigation.popBackStack() },
-                        onPractise = { mode, asPartner -> navigation.navigate("practice/$id/${mode.name}/$asPartner") })
+                        onPractise = { mode, asPartner -> navigation.navigate("practice/$id/${mode.name}/$asPartner") },
+                        onChange = { navigation.navigate("myscene/change/$id") },
+                        onDelete = {
+                            navigation.popBackStack()
+                            myScenes.delete(id)
+                        })
         }
         composable("practice/{id}/{mode}/{partner}") { entry ->
             val id = entry.arguments?.getString("id") ?: ""
             val mode = runCatching { ScenePractice.Mode.valueOf(entry.arguments?.getString("mode") ?: "") }
                 .getOrDefault(ScenePractice.Mode.AUTOMATIC)
             val asPartner = entry.arguments?.getString("partner") == "true"
-            PracticeScreen(library = library, scenarioID = id, mode = mode, playAsPartner = asPartner, speaker = speaker,
-                           listener = listener, progress = progress, prefs = prefs, onBack = { navigation.popBackStack() })
+            PracticeScreen(library = current.value, scenarioID = id, mode = mode, playAsPartner = asPartner, speaker = speaker,
+                           listener = listener, progress = progress, prefs = prefs, learnerName = coachSettings.learnerName,
+                           onBack = { navigation.popBackStack() })
         }
         composable("vocabulary") {
-            VocabularyScreen(library = library, speaker = speaker, prefs = prefs, onBack = { navigation.popBackStack() })
+            VocabularyScreen(library = current.value, speaker = speaker, prefs = prefs, onBack = { navigation.popBackStack() })
+        }
+        composable("settings") {
+            SettingsScreen(settings = coachSettings, coach = coach, onBack = { navigation.popBackStack() })
+        }
+        composable("myscene/new") {
+            MySceneEditor(existing = null, coach = coach, settings = coachSettings, store = myScenes, listener = listener,
+                          onBack = { navigation.popBackStack() },
+                          onSettings = { navigation.navigate("settings") },
+                          onSaved = { id ->
+                              navigation.navigate("scene/$id") { popUpTo("myscene/new") { inclusive = true } }
+                          })
+        }
+        composable("myscene/change/{id}") { entry ->
+            val id = entry.arguments?.getString("id") ?: ""
+            MySceneEditor(existing = myScenes.scene(id), coach = coach, settings = coachSettings, store = myScenes,
+                          listener = listener, onBack = { navigation.popBackStack() },
+                          onSettings = { navigation.navigate("settings") },
+                          onSaved = { navigation.popBackStack() })
         }
     }
 }
@@ -89,6 +134,7 @@ private fun HomeScreen(
     wordCount: Int,
     onScenes: () -> Unit,
     onVocabulary: () -> Unit,
+    onSettings: () -> Unit,
 ) {
     var japaneseVoice by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) { japaneseVoice = speaker.hasJapanese() }
@@ -126,10 +172,11 @@ private fun HomeScreen(
                     )
                 }
             }
-            HomeCard(Icons.Filled.Forum, "Scenes", "$sceneCount conversations: read, hear and learn every line", onScenes)
+            HomeCard(Icons.Filled.Forum, "Scenes", "$sceneCount conversations: read, hear and learn every line, or write your own", onScenes)
             HomeCard(Icons.AutoMirrored.Filled.MenuBook, "My vocabulary", "All $wordCount words in the course, with romaji", onVocabulary)
             HomeCard(Icons.Filled.RecordVoiceOver, "Speaking practice",
                      "Open a scene and tap Practise: watch, repeat, then the real conversation", onScenes)
+            HomeCard(Icons.Filled.Settings, "Settings", "Your name, and the AI coach that writes your own scenes", onSettings)
         }
     }
 }

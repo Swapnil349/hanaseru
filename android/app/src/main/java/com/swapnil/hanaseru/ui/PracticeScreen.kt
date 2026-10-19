@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -58,6 +60,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.swapnil.hanaseru.content.ContentLibrary
 import com.swapnil.hanaseru.content.Romaji
 import com.swapnil.hanaseru.practice.Progress
@@ -76,6 +80,7 @@ fun PracticeScreen(
     listener: Listener,
     progress: Progress,
     prefs: Prefs,
+    learnerName: String,
     onBack: () -> Unit,
 ) {
     val scenario = library.scenario(scenarioID)
@@ -86,7 +91,7 @@ fun PracticeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val practice = remember(scenarioID, mode, playAsPartner) {
-        ScenePractice(library, scenario, speaker, listener, progress, mode, playAsPartner, learnerName = "", scope = scope)
+        ScenePractice(library, scenario, speaker, listener, progress, mode, playAsPartner, learnerName = learnerName, scope = scope)
     }
     val state by practice.state.collectAsState()
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { practice.start() }
@@ -104,9 +109,28 @@ fun PracticeScreen(
             practice.stop()
         }
     }
+    // A phone call, or another app playing for good: pause here (keeping your place) rather than talk over it.
+    DisposableEffect(practice) {
+        val onLost: () -> Unit = { practice.pause("Paused: another app is using the sound. Tap Play to carry on.") }
+        speaker.onFocusLost = onLost
+        onDispose {
+            if (speaker.onFocusLost === onLost) speaker.onFocusLost = null
+        }
+    }
+    // Leaving the app pauses too, so you come back to the same line instead of a session that ran on without you.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        if (practice.state.value.activity != ScenePractice.Activity.FINISHED) practice.pause()
+    }
+    // Nothing would be heard without a Japanese voice, or with the media volume all the way down.
+    var japaneseVoice by remember { mutableStateOf(true) }
+    var muted by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        japaneseVoice = speaker.hasJapanese()
+        muted = speaker.isMuted
+    }
 
-    val other = if (playAsPartner) "Your usual part" else (practice.persona?.nameEn ?: "Colleague")
-    val you = if (playAsPartner) "${practice.persona?.nameEn ?: "Colleague"} · you" else "You"
+    val other = if (practice.playAsPartner) "Your usual part" else (practice.persona?.nameEn ?: "Colleague")
+    val you = if (practice.playAsPartner) "${practice.persona?.nameEn ?: "Colleague"} · you" else "You"
 
     Scaffold(topBar = { BackBar(scenario.title, onBack) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -117,6 +141,17 @@ fun PracticeScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (!japaneseVoice || muted) {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f))) {
+                        Text(
+                            if (!japaneseVoice) "This phone has no Japanese voice yet, so the lines can't be heard. In Settings › " +
+                                "System › Languages › Text-to-speech, choose Google's engine and install Japanese voice data."
+                            else "The media volume is off. Turn it up to hear the conversation.",
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
                 Text(state.step, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
 
                 // The other side.

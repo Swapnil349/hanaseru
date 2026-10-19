@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.swapnil.hanaseru.content.ContentLibrary
 import com.swapnil.hanaseru.voice.Speaker
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.text.Normalizer
 
@@ -39,6 +41,11 @@ fun VocabularyScreen(library: ContentLibrary, speaker: Speaker, prefs: Prefs, on
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var query by rememberSaveable { mutableStateOf("") }
+    // The word being said: a new tap replaces it, and leaving the screen stops it (and nothing else).
+    var saying by remember { mutableStateOf<Job?>(null) }
+    DisposableEffect(Unit) {
+        onDispose { saying?.cancel() }
+    }
     val all = remember { library.vocabulary.sortedBy { it.kana } }
     val sources = remember {
         val map = mutableMapOf<String, MutableList<String>>()
@@ -97,10 +104,8 @@ fun VocabularyScreen(library: ContentLibrary, speaker: Speaker, prefs: Prefs, on
             }
             items(shown, key = { it.id }) { term ->
                 WordRow(term = term, detail = sources[term.id]?.joinToString(", ") ?: "", showRomaji = prefs.showRomaji) {
-                    scope.launch {
-                        speaker.stop()
-                        speaker.speak(term.japanese, Speaker.Voice.COACH_JAPANESE, 0.9f)
-                    }
+                    saying?.cancel()
+                    saying = scope.launch { speaker.speak(term.japanese, Speaker.Voice.COACH_JAPANESE, 0.9f) }
                 }
                 HorizontalDivider()
             }

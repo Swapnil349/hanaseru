@@ -21,11 +21,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -57,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.swapnil.hanaseru.content.ContentLibrary
 import com.swapnil.hanaseru.content.JapaneseText
+import com.swapnil.hanaseru.content.SavedScene
 import com.swapnil.hanaseru.practice.ScenePractice
 import com.swapnil.hanaseru.voice.Listener
 import com.swapnil.hanaseru.content.ScriptEntry
@@ -79,8 +83,13 @@ fun SceneScreen(
     speaker: Speaker,
     listener: Listener,
     prefs: Prefs,
+    learnerName: String,
+    /** Set for one of your own scenes: it can be changed, exported and deleted. */
+    myScene: SavedScene?,
     onBack: () -> Unit,
     onPractise: (ScenePractice.Mode, Boolean) -> Unit,
+    onChange: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val scenario = library.scenario(scenarioID)
     if (scenario == null) {
@@ -88,8 +97,12 @@ fun SceneScreen(
         return
     }
     val context = LocalContext.current
-    val entries = remember(scenarioID) { library.script(scenario, learnerName = "") }
-    val words = remember(scenarioID) { library.vocabulary(scenario) }
+    // Keyed on the scene itself, so a scene you change shows its new lines.
+    val entries = remember(scenario, learnerName) { library.script(scenario, learnerName) }
+    val words = remember(scenario) { library.vocabulary(scenario) }
+    // A speech (monologue) has no other person: nobody else to play, nothing to answer.
+    val hasPartner = scenario.beats.any { it.line.isNotEmpty() }
+    var confirmDelete by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var playing by remember { mutableStateOf<String?>(null) }
     var job by remember { mutableStateOf<Job?>(null) }
@@ -140,11 +153,28 @@ fun SceneScreen(
         }
     }
 
+    // Only this screen's own playing stops: cancelling it stops its line. (A global stop here would cut off the
+    // practice session that has just started, since this runs once the screen has slid away.)
     DisposableEffect(Unit) {
         onDispose {
             job?.cancel()
-            speaker.stop()
         }
+    }
+
+    if (confirmDelete && myScene != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete this scene?") },
+            text = { Text("\"${scenario.title}\" will be removed from this phone. Export it first to keep a copy.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    job?.cancel()
+                    onDelete()
+                }) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+        )
     }
 
     Scaffold(topBar = {
@@ -169,16 +199,55 @@ fun SceneScreen(
                     Text(scenario.situationEn, style = MaterialTheme.typography.bodyLarge)
                 }
             }
+            if (myScene != null) {
+                item(key = "mine") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(if (myScene.isMonologue) "My speech" else "My conversation",
+                                 style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            if (myScene.description.isNotEmpty()) {
+                                Text(myScene.description, style = MaterialTheme.typography.bodySmall,
+                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                OutlinedButton(onClick = {
+                                    job?.cancel()
+                                    onChange()
+                                }) {
+                                    Icon(Icons.Filled.Edit, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Change this scene")
+                                }
+                                OutlinedButton(onClick = { shareScenes(context, listOf(myScene), scenario.title) }) {
+                                    Icon(Icons.Filled.Share, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Export")
+                                }
+                                OutlinedButton(onClick = { confirmDelete = true }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = null)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Delete")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             item(key = "practise") {
                 val name = library.persona(scenario.personaID)?.nameEn ?: "The colleague"
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Practise speaking", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text("You play", style = MaterialTheme.typography.labelMedium,
-                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(selected = !asPartner, onClick = { asPartner = false }, label = { Text("Yourself") })
-                            FilterChip(selected = asPartner, onClick = { asPartner = true }, label = { Text(name) })
+                        if (hasPartner) {
+                            Text("You play", style = MaterialTheme.typography.labelMedium,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterChip(selected = !asPartner, onClick = { asPartner = false }, label = { Text("Yourself") })
+                                FilterChip(selected = asPartner, onClick = { asPartner = true }, label = { Text(name) })
+                            }
                         }
                         Row(
                             modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -189,7 +258,10 @@ fun SceneScreen(
                                            label = { Text(option.title) })
                             }
                         }
-                        Button(onClick = { onPractise(lesson, asPartner) }, modifier = Modifier.fillMaxWidth()) {
+                        Button(onClick = {
+                            job?.cancel()
+                            onPractise(lesson, asPartner && hasPartner)
+                        }, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Filled.RecordVoiceOver, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
                             Text("Start practising")
@@ -209,7 +281,7 @@ fun SceneScreen(
                 }, modifier = Modifier.fillMaxWidth()) {
                     Icon(if (active) Icons.Filled.Stop else Icons.Filled.PlayArrow, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(if (active) "Stop" else "Play the whole conversation")
+                    Text(if (active) "Stop" else if (hasPartner) "Play the whole conversation" else "Play the whole speech")
                 }
             }
             item(key = "options") {
@@ -242,7 +314,10 @@ fun SceneScreen(
                     words = {
                         WordsButton(library, listOf(WordsLine(if (entry.isLearner) "Your line" else "Their line",
                                                               entry.japanese, entry.english)),
-                                    onSay = { word -> scope.launch { speaker.speak(word, Speaker.Voice.COACH_JAPANESE, 0.9f) } })
+                                    onSay = { word ->
+                                        play(listOf(ScriptEntry("w|$word", "", false, word, word, "", "",
+                                                                Speaker.Voice.COACH_JAPANESE)))
+                                    })
                     },
                     onSay = {
                         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==

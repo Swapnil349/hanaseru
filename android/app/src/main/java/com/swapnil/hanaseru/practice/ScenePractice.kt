@@ -8,7 +8,9 @@ import com.swapnil.hanaseru.voice.Listener
 import com.swapnil.hanaseru.voice.Speaker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -21,6 +23,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  * that the coach speaks Japanese only and the English is on screen.
  *
  * It keeps its place line by line: pause, ⏮ ↺ ⏭ and the scrubber carry on from the right line.
+ *
+ * Only one step runs at a time. A step that is replaced stops its own speech and listening when it is cancelled,
+ * so it can never silence the step that replaced it; a monologue (no other person) still cues every turn aloud.
  */
 class ScenePractice(
     private val library: ContentLibrary,
@@ -30,7 +35,7 @@ class ScenePractice(
     private val progress: Progress,
     requestedMode: Mode,
     /** You play the colleague; the app says your usual lines. */
-    val playAsPartner: Boolean,
+    asPartner: Boolean,
     learnerName: String,
     private val scope: CoroutineScope,
 ) {
@@ -79,6 +84,9 @@ class ScenePractice(
     )
 
     val persona = library.persona(scenario.personaID)
+
+    /** A speech has no other person to play. */
+    val playAsPartner: Boolean = asPartner && scenario.beats.any { it.line.isNotEmpty() }
     val lines: List<PracticeLine> = if (playAsPartner) library.partnerSideLines(scenario, learnerName)
                                     else library.lines(scenario, learnerName)
     val mode: Mode = when (requestedMode) {
@@ -135,11 +143,12 @@ class ScenePractice(
 
     fun start() = launch()
 
-    fun pause() {
+    /** Cancelling the step stops its own speech and listening. `reason` says why, when it wasn't you. */
+    fun pause(reason: String = "") {
         job?.cancel()
-        speaker.stop()
-        listener.cancel()
-        _state.update { it.copy(activity = Activity.PAUSED, speaking = null) }
+        _state.update {
+            it.copy(activity = Activity.PAUSED, speaking = null, feedback = reason.ifEmpty { it.feedback })
+        }
     }
 
     /** Carries on from the line that was playing (from its beginning). */
@@ -179,17 +188,15 @@ class ScenePractice(
         }
     }
 
+    /** Leaving the screen: only this session's step is stopped, never what another screen has started since. */
     fun stop() {
         job?.cancel()
-        speaker.stop()
-        listener.cancel()
+        job = null
     }
 
     private fun launch() {
         val previous = job
         previous?.cancel()
-        speaker.stop()
-        listener.cancel()
         job = scope.launch {
             // Never wait long for the last step to wind down.
             if (previous != null) withTimeoutOrNull(1500) { previous.join() }
@@ -213,6 +220,8 @@ class ScenePractice(
     private suspend fun say(text: String, voice: Speaker.Voice, who: Who, rate: Float = 0.95f) {
         _state.update { it.copy(activity = Activity.SPEAKING, speaking = who) }
         speaker.speak(text, voice, rate)
+        // Paused during the line (another app took the sound): stop here, before anything else is shown.
+        currentCoroutineContext().ensureActive()
         _state.update { it.copy(speaking = null) }
     }
 
@@ -246,9 +255,10 @@ class ScenePractice(
         }
     }
 
-    /** One listen; the heard text goes on screen as it comes. */
+    /** One listen; the heard text goes on screen as it comes. A tone says it's your turn. */
     private suspend fun listen(): String {
         _state.update { it.copy(activity = Activity.LISTENING, speaking = Who.YOU, heard = "") }
+        speaker.chime()
         val heard = listener.listen { partial -> _state.update { it.copy(heard = partial) } }
         _state.update { it.copy(activity = Activity.SPEAKING, speaking = null, heard = heard) }
         return heard
@@ -304,7 +314,8 @@ class ScenePractice(
                     line.partner?.let { otherSays(it.japanese, it.kana, it.english) }
                 }
                 place(true)
-                coach(if (line.isQuestion) "ask" else "youSay")
+                // A speech has nobody to answer: just repeat after the model.
+                coach(if (line.partner == null) "repeatAfterMe" else if (line.isQuestion) "ask" else "youSay")
                 model(line, 0.85f)
                 echo(line)
             }
@@ -326,7 +337,13 @@ class ScenePractice(
                     if (full) coach(if (youStart) "performYouStart" else "performStart", mapOf("name" to (persona?.nameEn ?: "")))
                     else coach(if (youStart) "goYouShort" else "goShort", mapOf("name" to (persona?.nameEn ?: "")))
                 }
-                line.partner?.let { otherSays(it.japanese, it.kana, it.english) }
+                val partner = line.partner
+                if (partner != null) {
+                    otherSays(partner.japanese, partner.kana, partner.english)
+                } else if (segment.index > 0) {
+                    // Nobody speaks before this line (a speech): cue it aloud rather than wait in silence.
+                    coach("say")
+                }
                 place(true)
                 val heard = listen()
                 val similarity = if (heard.isEmpty()) 0.0 else JapaneseText.bestSimilarity(heard, line.references)
