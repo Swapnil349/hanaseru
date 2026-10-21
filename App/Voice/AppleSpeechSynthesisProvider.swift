@@ -19,6 +19,8 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
     }
 
     private var synthesizer = AVSpeechSynthesizer()
+    /// Nothing has started on this synthesizer yet: its first sentence waits for the voice to load.
+    private var freshSynthesizer = true
     private var continuation: CheckedContinuation<Outcome, Never>?
     private var currentUtterance: ObjectIdentifier?
     private var started = false
@@ -79,7 +81,8 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
                 resetSynthesizer()
                 if let onRecoverAudio { await onRecoverAudio() }
             case .giveUp:
-                silentLines += 1
+                // Only lines that ended without a sound count towards pausing: a slow start isn't silence.
+                if verdict == .tooFast { silentLines += 1 }
                 VoiceLog.add("speech \(Self.describe(verdict, elapsed: elapsed, request: request)) again; skipped after "
                              + "\(attempt) tries (\(silentLines) silent in a row): \(request.text.prefix(40))")
                 resetSynthesizer()
@@ -154,23 +157,25 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         let expected = Self.expectedDuration(of: request)
         VoiceLog.add("say \(request.language == .japanese ? "ja" : "en"): \(request.text.prefix(50))")
 
+        let startTimeout = freshSynthesizer ? SpeechGuard.firstStartTimeout : SpeechGuard.startTimeout
         return await withTaskCancellationHandler {
             await withCheckedContinuation { (continuation: CheckedContinuation<Outcome, Never>) in
                 self.continuation = continuation
                 self.currentUtterance = id
                 self.started = false
                 self.synthesizer.speak(utterance)
-                self.watch(id, expected: expected)
+                self.watch(id, expected: expected, startTimeout: startTimeout)
             }
         } onCancel: {
             Task { @MainActor in self.finishCurrent(stop: true, outcome: .cancelled) }
         }
     }
 
-    /// Ends the utterance if it never starts (`SpeechGuard.startTimeout`) or runs far beyond its expected length.
-    private func watch(_ id: ObjectIdentifier, expected: TimeInterval) {
+    /// Ends the utterance if it never starts (`SpeechGuard.startTimeout`, longer on a new synthesizer) or runs
+    /// far beyond its expected length.
+    private func watch(_ id: ObjectIdentifier, expected: TimeInterval, startTimeout: TimeInterval) {
         Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(SpeechGuard.startTimeout * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(startTimeout * 1_000_000_000))
             guard let self, self.currentUtterance == id else { return }
             if !self.started {
                 self.finishCurrent(stop: true, outcome: .neverStarted)
@@ -188,7 +193,7 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         case .spoken:
             return "spoken"
         case .neverStarted:
-            return String(format: "never started within %.1f s", SpeechGuard.startTimeout)
+            return "never started"
         case .tooFast:
             return String(format: "ended after %.2f s of an expected %.1f s (no sound)", elapsed,
                           SpeechGuard.expectedSpeakingTime(of: request))
@@ -207,11 +212,12 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         let old = synthesizer
         old.delegate = nil
         synthesizer = AVSpeechSynthesizer()
+        freshSynthesizer = true
         configure(synthesizer)
         Self.stopQueue.async { old.stopSpeaking(at: .immediate) }
     }
 
-    private static let stopQueue = DispatchQueue(label: "hanaseru.speech-stop", qos: .userInitiated)
+    static let stopQueue = DispatchQueue(label: "hanaseru.speech-stop", qos: .userInitiated)
 
     private func finishCurrent(stop: Bool, outcome: Outcome) {
         if stop && synthesizer.isSpeaking {
@@ -224,6 +230,7 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
     }
 
     fileprivate func utteranceStarted(_ id: ObjectIdentifier) {
+        freshSynthesizer = false
         if id == currentUtterance { started = true }
     }
 
@@ -365,22 +372,75 @@ extension AppleSpeechSynthesisProvider: AVSpeechSynthesizerDelegate {
     }
 }
 
-/// Speaks a sample in Settings, outside a session.
+/// Speaks a word, a script line or a voice sample outside a session (lists, the script, Settings).
+///
+/// Guarded like the session voice: a line that hasn't started after a few seconds (a new synthesizer still loading
+/// its voice, or one that dropped it) is said once more on a fresh synthesizer, and the synthesizer is never
+/// stopped on the main thread, where that can block.
 @MainActor
-final class VoicePreview {
+final class VoicePreview: NSObject, AVSpeechSynthesizerDelegate {
     static let shared = VoicePreview()
-    private let synthesizer: AVSpeechSynthesizer = {
+    private var synthesizer = VoicePreview.makeSynthesizer()
+    private var current: AVSpeechUtterance?
+    private var started = false
+    private var fresh = true
+
+    private static func makeSynthesizer() -> AVSpeechSynthesizer {
         let synthesizer = AVSpeechSynthesizer()
         synthesizer.usesApplicationAudioSession = false
         return synthesizer
-    }()
+    }
+
+    override init() {
+        super.init()
+        synthesizer.delegate = self
+    }
 
     func play(_ text: String, voice: AVSpeechSynthesisVoice?, rate: Double = 1, pitch: Float = 1) {
-        synthesizer.stopSpeaking(at: .immediate)
+        say(text, voice: voice, rate: rate, pitch: pitch, attempt: 1)
+    }
+
+    private func say(_ text: String, voice: AVSpeechSynthesisVoice?, rate: Double, pitch: Float, attempt: Int) {
+        if synthesizer.isSpeaking { replaceSynthesizer() }
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = voice
         utterance.rate = AppleSpeechSynthesisProvider.rate(for: rate)
         utterance.pitchMultiplier = pitch
+        current = utterance
+        started = false
+        let timeout = fresh ? SpeechGuard.firstStartTimeout : SpeechGuard.startTimeout
         synthesizer.speak(utterance)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+            guard let self, self.current === utterance, !self.started else { return }
+            if attempt < 2 {
+                VoiceLog.add("preview speech never started; saying it again: \(text.prefix(40))")
+                self.replaceSynthesizer()
+                self.say(text, voice: voice, rate: rate, pitch: pitch, attempt: attempt + 1)
+            } else {
+                VoiceLog.add("preview speech never started again: \(text.prefix(40))")
+                self.replaceSynthesizer()
+            }
+        }
+    }
+
+    /// Stops what is being said without blocking: a fresh synthesizer takes over.
+    private func replaceSynthesizer() {
+        let old = synthesizer
+        old.delegate = nil
+        synthesizer = Self.makeSynthesizer()
+        synthesizer.delegate = self
+        fresh = true
+        AppleSpeechSynthesisProvider.stopQueue.async { old.stopSpeaking(at: .immediate) }
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        let id = ObjectIdentifier(utterance)
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                self.fresh = false
+                if let current = self.current, ObjectIdentifier(current) == id { self.started = true }
+            }
+        }
     }
 }

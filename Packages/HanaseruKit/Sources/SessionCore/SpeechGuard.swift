@@ -25,12 +25,16 @@ public enum SpeechGuard {
 
     /// An utterance that hasn't started by then is treated as lost. (A Premium voice's very first sentence can
     /// take a moment to load; the retry then starts at once.)
-    public static let startTimeout: TimeInterval = 2
+    public static let startTimeout: TimeInterval = 2.5
+    /// A new synthesizer (after a pause, a stop or a recovery) loads its voice before its first sentence; a
+    /// Premium voice can take several seconds, and that is not silence.
+    public static let firstStartTimeout: TimeInterval = 7
     /// Shorter text is too short to judge by its length: 「はい」 really is over in a moment.
     public static let minimumCharacters = 6
     /// Finished in less than this share of its expected time: nothing was heard.
     public static let tooFastShare = 0.25
-    /// After this many lines in a row without sound, the session pauses rather than carry on in silence.
+    /// After this many lines in a row that ended without sound (not merely slow to start), the session pauses
+    /// rather than carry on in silence.
     public static let silentLinesBeforePause = 3
 
     /// A cautious (short) estimate of how long the text takes to say, without the pause after it.
@@ -56,7 +60,7 @@ public enum SpeechGuard {
     /// The longest the session waits for one utterance, whatever the voice does: two tries, each allowed to
     /// start late and run long, and the audio recovery between them.
     public static func deadline(for request: SpeechRequest) -> TimeInterval {
-        2 * startTimeout + 3 * expectedSpeakingTime(of: request) + request.pauseAfter + 10
+        2 * firstStartTimeout + 3 * expectedSpeakingTime(of: request) + request.pauseAfter + 10
     }
 
     /// The longest the session waits for one listen. Written answers can take up to 90 s.
