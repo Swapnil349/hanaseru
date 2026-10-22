@@ -111,7 +111,9 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
 
     /// The natural pre-recorded English, when every part of the sentence was recorded. False: use iOS speech.
     private func speakRecorded(_ request: SpeechRequest) async -> Bool {
-        guard NaturalEnglishVoice.isEnabled, let engine,
+        // Without an engine (Listen) the English is always the iPhone voice: the recordings only cover the coach's cues.
+        guard let engine else { return false }
+        guard NaturalEnglishVoice.isEnabled,
               let clips = NaturalEnglishVoice.shared.recordings(for: request.text), !clips.isEmpty else {
             if NaturalEnglishVoice.shared.isAvailable { VoiceLog.add("not recorded, iPhone voice: \(request.text.prefix(50))") }
             return false

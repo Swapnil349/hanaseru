@@ -1,5 +1,6 @@
 import ConversationCore
 import LearningCore
+import SessionCore
 import SwiftData
 import SwiftUI
 
@@ -45,6 +46,10 @@ final class AppEnvironment {
     let voice = VoiceEngine()
     /// The learner's own scenes (My scenes).
     let myScenes = MySceneStore()
+    /// Listen: scenes played back to back, hands-free (docs/LISTEN.md).
+    let listen = ListenPlayer()
+    /// The practice session running, if any. Listen ends it before playing: the two never share the audio.
+    @ObservationIgnored weak var activeSession: SessionViewModel?
     private let bundledLibrary: ContentLibrary
 
     init(container: ModelContainer) {
@@ -68,6 +73,16 @@ final class AppEnvironment {
     func refreshLibrary() {
         let name = (try? container.mainContext.fetch(FetchDescriptor<LearnerProfileRecord>()))?.first?.name ?? ""
         library = bundledLibrary.including(myScenes.scenes, learnerName: name)
+    }
+
+    /// Plays a Listen playlist, ending a practice session first.
+    func startListening(_ playlist: ListenPlaylist) {
+        if let activeSession {
+            VoiceLog.add("practice session ended for Listen")
+            activeSession.teardown()
+            self.activeSession = nil
+        }
+        listen.play(playlist)
     }
 
     /// Claude via the coach proxy when configured, always backed by the offline engine (spec §59).

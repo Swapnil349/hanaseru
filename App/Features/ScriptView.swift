@@ -24,6 +24,8 @@ enum LineCheck {
         guard permitted else {
             return SayResult(heard: "", similarity: 0, problem: "Allow the microphone and speech recognition in Settings › Hanaseru.")
         }
+        // The microphone and Listen never share the audio.
+        app.listen.stop(reason: "Say it")
         do {
             try await app.voice.beginSession()
         } catch {

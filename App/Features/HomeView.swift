@@ -1,4 +1,5 @@
 import LearningCore
+import SessionCore
 import SwiftData
 import SwiftUI
 
@@ -36,6 +37,7 @@ struct HomeView: View {
                         .foregroundStyle(Palette.inkSecondary)
                         .padding(.top, -16)
 
+                    listenCard
                     scenesCard
                     heardThisCard
                     myJapaneseCard
@@ -148,6 +150,35 @@ struct HomeView: View {
             }
             .scrollClipDisabled()
         }
+    }
+
+    /// Listen: scenes back to back, hands-free (docs/LISTEN.md). Shows what is playing while it plays.
+    private var listenCard: some View {
+        let player = app.listen
+        var detail = "Short scenes back to back, nothing to say"
+        if player.isActive, let scene = player.scene {
+            detail = (player.state == .paused ? "Paused: " : "Playing: ") + scene.title
+        }
+        return NavigationLink { ListenView() } label: {
+            HStack(spacing: 14) {
+                Image(systemName: player.isActive ? "speaker.wave.2.fill" : "car.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Palette.line, in: Circle())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Listen while driving").font(.headline).foregroundStyle(Palette.ink)
+                    Text(detail).font(.footnote).foregroundStyle(Palette.inkSecondary).lineLimit(2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(Palette.inkSecondary)
+            }
+            .padding(16)
+            .background(Palette.line.opacity(0.08), in: RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Metrics.corner, style: .continuous).stroke(Palette.line.opacity(0.35), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("open-listen")
     }
 
     /// Every conversation, to start from any line — and the words used so far.

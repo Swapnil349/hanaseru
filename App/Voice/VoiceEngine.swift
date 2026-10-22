@@ -36,7 +36,8 @@ final class CueFeedbackController: CueFeedbackProvider {
 }
 
 /// AirPods / lock-screen controls (spec §61): play-pause toggles the session, "next" skips an exercise.
-/// iOS only routes these to the app that is currently "Now Playing", so this is best-effort.
+/// iOS only routes these to the app that is currently "Now Playing", so this is best-effort. Listen has its own
+/// bridge; only one of the two is active at a time (starting one stops the other).
 @MainActor
 final class RemoteCommandBridge {
     var onPause: (() -> Void)?
@@ -67,11 +68,11 @@ final class RemoteCommandBridge {
         UIApplication.shared.endReceivingRemoteControlEvents()
     }
 
-    func updateNowPlaying(title: String, detail: String, isPaused: Bool) {
+    func updateNowPlaying(title: String, detail: String, isPaused: Bool, album: String = "Hanaseru") {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
             MPMediaItemPropertyTitle: title,
             MPMediaItemPropertyArtist: detail,
-            MPMediaItemPropertyAlbumTitle: "Hanaseru",
+            MPMediaItemPropertyAlbumTitle: album,
             MPNowPlayingInfoPropertyPlaybackRate: isPaused ? 0.0 : 1.0,
         ]
     }

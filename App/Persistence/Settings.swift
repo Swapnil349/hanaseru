@@ -29,6 +29,14 @@ enum SettingsKey {
     static let answerDisplay = "answerDisplay"
     /// The learner's line of work (`WorkField`): which work scenes daily sessions use and which come first.
     static let workField = "workField"
+    /// Listen's choices: Japanese only or with English (`ListenLanguage`), about how long (`ListenLength`), where the
+    /// scenes come from (`ListenSource`) and how fast the Japanese is (`ListenSpeed`).
+    static let listenLanguage = "listenLanguage"
+    static let listenLength = "listenLength"
+    static let listenSource = "listenSource"
+    static let listenSpeed = "listenSpeed"
+    /// Ids of the scenes played in Listen lately, the latest last (at most `ListenPlaylist.recentMemory`).
+    static let listenRecent = "listenRecent"
 }
 
 extension WorkField {

@@ -1,6 +1,10 @@
 import AVFoundation
 
-/// Owns the app's audio session for a hands-free session (spec §61).
+/// Every activation and deactivation of the audio session runs here, one after another and in the order asked: a
+/// session ending just as Listen starts (or the other way round) can't switch the new one's audio off.
+private let audioSessionQueue = DispatchQueue(label: "hanaseru.audio-session", qos: .userInitiated)
+
+/// Owns the app's audio session for a hands-free session (spec §61), and for Listen.
 ///
 /// `.playAndRecord` with Bluetooth enabled lets AirPods carry both directions; `.duckOthers` lowers
 /// music rather than stopping it. Haptics are explicitly allowed during recording — iOS silences them otherwise.
@@ -39,7 +43,7 @@ final class AudioSessionController {
     /// moment (after a call, or when headphones change), and the screen must stay responsive meanwhile.
     func activateInBackground() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            DispatchQueue.global(qos: .userInitiated).async {
+            audioSessionQueue.async {
                 do {
                     let session = AVAudioSession.sharedInstance()
                     try session.setCategory(.playAndRecord, mode: .default,
@@ -55,11 +59,30 @@ final class AudioSessionController {
         observe()
     }
 
+    /// Audio for Listen (docs/LISTEN.md), away from the main thread: playback only, no microphone. Spoken audio that
+    /// doesn't mix with other apps, so the lock screen, AirPods and the car show and control it (Now Playing), and
+    /// music or a podcast playing before pauses and is told when it may carry on.
+    func activateForListeningInBackground() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            audioSessionQueue.async {
+                do {
+                    let session = AVAudioSession.sharedInstance()
+                    try session.setCategory(.playback, mode: .spokenAudio, options: [])
+                    try session.setActive(true)
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+        observe()
+    }
+
     func deactivate() {
         observers.forEach { NotificationCenter.default.removeObserver($0) }
         observers.removeAll()
         // Blocking, so away from the main thread.
-        DispatchQueue.global(qos: .utility).async {
+        audioSessionQueue.async {
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         }
     }

@@ -85,6 +85,9 @@ final class SessionViewModel {
 
     func start() async {
         guard runner == nil, phase == .preparing else { return }
+        // Listen and a session never play at once.
+        app.listen.stop(reason: "practice session started")
+        app.activeSession = self
         if !demo { guard await startRealVoice() else { return } }
         app.wakeCoach()
 
@@ -238,6 +241,7 @@ final class SessionViewModel {
     func teardown() {
         guard !tornDown else { return }
         tornDown = true
+        if app.activeSession === self { app.activeSession = nil }
         if let runner, !runner.isFinished { runner.stop() }
         guard !demo else { return }
         app.voice.onMicLevel = nil
