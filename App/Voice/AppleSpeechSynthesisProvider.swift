@@ -24,6 +24,8 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
     private var continuation: CheckedContinuation<Outcome, Never>?
     private var currentUtterance: ObjectIdentifier?
     private var started = false
+    /// When the last utterance finished: after a quiet moment the audio route (AirPods, car, speaker) may be asleep.
+    private var lastSpokeAt: Date?
     /// The last few utterances, kept alive: an identifier is only unique while its object lives, so a late
     /// callback for a finished utterance could otherwise be taken for the current one and end it unheard.
     private var recentUtterances: [AVSpeechUtterance] = []
@@ -151,6 +153,9 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         utterance.pitchMultiplier = choice.pitch
         utterance.rate = Self.rate(for: request.rate)
         utterance.postUtteranceDelay = request.pauseAfter
+        // A short silent lead-in, played through the route, so the first words aren't lost while it wakes: longer
+        // after a quiet moment (the learner was speaking, or a pause), when Bluetooth and speakers have gone to sleep.
+        utterance.preUtteranceDelay = Self.leadIn(sinceLastSpoke: lastSpokeAt.map { Date().timeIntervalSince($0) })
         // Whispered cues are quieter on headphones only; through the speaker they'd be lost.
         utterance.volume = Float(request.volume < 1 && !Self.isUsingHeadphones ? 1 : request.volume)
         let id = ObjectIdentifier(utterance)
@@ -236,7 +241,14 @@ final class AppleSpeechSynthesisProvider: NSObject, SpeechSynthesisProvider {
         if id == currentUtterance { started = true }
     }
 
+    /// Silence before an utterance: 0.12 s between lines that follow each other, 0.35 s after a quiet moment.
+    static func leadIn(sinceLastSpoke quiet: TimeInterval?) -> TimeInterval {
+        guard let quiet else { return 0.35 }
+        return quiet > 1.5 ? 0.35 : 0.12
+    }
+
     fileprivate func utteranceEnded(_ id: ObjectIdentifier) {
+        lastSpokeAt = Date()
         guard id == currentUtterance else { return }
         finishCurrent(stop: false, outcome: .finished)
     }
@@ -408,6 +420,8 @@ final class VoicePreview: NSObject, AVSpeechSynthesizerDelegate {
         utterance.voice = voice
         utterance.rate = AppleSpeechSynthesisProvider.rate(for: rate)
         utterance.pitchMultiplier = pitch
+        // Lists and the script speak after silence: a lead-in so the route is awake for the first word.
+        utterance.preUtteranceDelay = 0.3
         current = utterance
         started = false
         let timeout = fresh ? SpeechGuard.firstStartTimeout : SpeechGuard.startTimeout
