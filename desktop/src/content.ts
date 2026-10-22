@@ -28,6 +28,8 @@ export interface Scenario {
   id: string;
   title: string;
   titleJa: string;
+  /** The title's reading (built-in scenes). */
+  titleKana?: string;
   track: 'work' | 'everyday';
   level: number;
   personaID: string;

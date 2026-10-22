@@ -313,6 +313,9 @@ a.button { text-decoration: none; }
 .listen-title { font-size: 22px; }
 .listen-line { min-height: 130px; }
 .listen-line .jp { font-size: 26px; font-weight: 500; }
+.listen-line .listen-kana { font-size: 18px; }
+.listen-line .romaji { font-size: 17px; }
+.listen-title-kana { display: block; margin-top: 2px; font-weight: 400; }
 .listen-controls { margin-top: 6px; }
 .listen-list { margin: 8px 0 0; padding-left: 22px; color: var(--ink-2); }
 .listen-list li.current { color: var(--line); font-weight: 600; }

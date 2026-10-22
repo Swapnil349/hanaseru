@@ -102,6 +102,49 @@ export function endedTooFast(text: string, rate: number, milliseconds: number): 
   return characters >= 6 && milliseconds < Math.max(250, (characters * 25) / Math.max(rate, 0.5));
 }
 
+/**
+ * Keeps the sound device awake while the app is speaking. Bluetooth headphones, car audio and many PC sound cards
+ * go to sleep in the gaps between lines and wake a moment late, so the first syllables of the next line are lost.
+ * A faint noise (about 68 dB below full volume, inaudible) keeps the device on; it stops after 30 s of quiet.
+ */
+const keepAwake = (() => {
+  let context: AudioContext | null = null;
+  let source: AudioBufferSourceNode | null = null;
+  let idle: ReturnType<typeof setTimeout> | null = null;
+  const stop = () => {
+    try { source?.stop(); } catch { /* already stopped */ }
+    void context?.close().catch(() => undefined);
+    context = null;
+    source = null;
+  };
+  return {
+    /** Starts or extends it; true when it just started (the device may need a moment to wake). */
+    touch(): boolean {
+      let started = false;
+      try {
+        if (!context) {
+          context = new AudioContext();
+          const buffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.0004;
+          source = context.createBufferSource();
+          source.buffer = buffer;
+          source.loop = true;
+          source.connect(context.destination);
+          source.start();
+          started = true;
+        }
+        if (context.state === 'suspended') void context.resume();
+      } catch {
+        // Without Web Audio the voice still works; only the first syllable may be clipped.
+      }
+      if (idle) clearTimeout(idle);
+      idle = setTimeout(stop, 30_000);
+      return started;
+    },
+  };
+})();
+
 /** A voice installed in Windows (works offline), for when an online voice fails. */
 function localVoice(role: VoiceRole): SpeechSynthesisVoice | undefined {
   const list = role === 'english' ? englishVoices() : japaneseVoices();
@@ -131,8 +174,9 @@ export class WebSpeaker implements Speaker {
     await voicesReady();
     this.stop();
     const generation = this.generation;
-    // Chromium drops a line spoken straight after cancel(): give it a moment.
-    await wait(60);
+    // Chromium drops a line spoken straight after cancel(): give it a moment. If the sound device was asleep,
+    // give it time to wake so the first words aren't cut off.
+    await wait(keepAwake.touch() ? 450 : 60);
     if (generation !== this.generation) return;
     const { voice, pitch } = voiceFor(role, this.choice());
     let result = await this.attempt(text, role, rate, voice, pitch);
@@ -163,7 +207,6 @@ export class WebSpeaker implements Speaker {
         if (finished) return;
         finished = true;
         timers.forEach(clearTimeout);
-        clearInterval(keepAlive);
         if (this.pending === finish) this.pending = null;
         if (this.current === utterance) this.current = null;
         resolve(result);
@@ -178,22 +221,19 @@ export class WebSpeaker implements Speaker {
       utterance.onerror = (event) => {
         finish(event.error === 'interrupted' || event.error === 'canceled' ? 'stopped' : 'error');
       };
-      // Never started: the voice is stuck or the line was dropped.
+      // Never started: the voice is stuck or the line was dropped. Edge's online voices fetch the speech first, which
+      // can take a few seconds on a slow connection; cutting in too early would chop the line.
       timers.push(setTimeout(() => {
         if (!startedAt) {
           speechSynthesis.cancel();
           finish('never-started');
         }
-      }, 2500));
+      }, voice && !voice.localService ? 6000 : 3000));
       // Never finished: carry on anyway.
       timers.push(setTimeout(() => {
         speechSynthesis.cancel();
         finish('timeout');
       }, (text.length * 400) / Math.max(rate, 0.5) + 6000));
-      // Chromium pauses long speech after ~15 s; a nudge keeps it going.
-      const keepAlive = setInterval(() => {
-        if (speechSynthesis.speaking) speechSynthesis.resume();
-      }, 5000);
       this.pending = finish;
       speechSynthesis.speak(utterance);
     });

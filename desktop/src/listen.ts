@@ -76,13 +76,14 @@ export function utterancesOf(library: ContentLibrary, scenario: Scenario, index:
     if (bilingual && en) out.push({ text: en, role: 'english', rate: 1, pauseAfter: 0.8, japanese: ja, kana: fill(kana), english: en, speaker });
   };
 
+  const titleKana = scenario.titleKana ?? '';
   // The announcement.
   if (bilingual) {
     out.push({ text: `Scene ${index + 1}: ${scenario.title}.`, role: 'english', rate: 1, pauseAfter: 0.3, japanese: scenario.titleJa, kana: '', english: scenario.title, speaker: '' });
-    out.push({ text: scenario.titleJa, role: 'coach', rate, pauseAfter: 0.4, japanese: scenario.titleJa, kana: '', english: scenario.title, speaker: '' });
-    if (scenario.situationEn) out.push({ text: scenario.situationEn, role: 'english', rate: 1, pauseAfter: 0.8, japanese: scenario.titleJa, kana: '', english: scenario.situationEn, speaker: '' });
+    out.push({ text: scenario.titleJa, role: 'coach', rate, pauseAfter: 0.4, japanese: scenario.titleJa, kana: titleKana, english: scenario.title, speaker: '' });
+    if (scenario.situationEn) out.push({ text: scenario.situationEn, role: 'english', rate: 1, pauseAfter: 0.8, japanese: scenario.titleJa, kana: titleKana, english: scenario.situationEn, speaker: '' });
   } else {
-    out.push({ text: `場面${index + 1}。${scenario.titleJa}。`, role: 'coach', rate, pauseAfter: 0.8, japanese: scenario.titleJa, kana: '', english: scenario.title, speaker: '' });
+    out.push({ text: `場面${index + 1}。${scenario.titleJa}。`, role: 'coach', rate, pauseAfter: 0.8, japanese: scenario.titleJa, kana: titleKana, english: scenario.title, speaker: '' });
   }
 
   // Every line of the script.
@@ -119,7 +120,7 @@ export function buildPlaylist(library: ContentLibrary, options: ListenOptions, f
 }
 
 export function endingOf(options: ListenOptions): Utterance[] {
-  const end: Utterance = { text: 'おしまいです。お疲れさまでした。', role: 'coach', rate: 0.95, pauseAfter: 0.4, japanese: 'おしまいです。お疲れさまでした。', kana: '', english: "That's the end. Well done.", speaker: '' };
+  const end: Utterance = { text: 'おしまいです。お疲れさまでした。', role: 'coach', rate: 0.95, pauseAfter: 0.4, japanese: 'おしまいです。お疲れさまでした。', kana: 'おしまいです。おつかれさまでした。', english: "That's the end. Well done.", speaker: '' };
   return options.language === 'bilingual' ? [end, { ...end, text: "That's the end. Well done.", role: 'english', rate: 1 }] : [end];
 }
 

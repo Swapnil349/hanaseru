@@ -67,7 +67,7 @@ function updateMediaInfo(p: ListenPlayer, state: ListenState) {
 
 /** Hands-free scenes for driving or chores: Japanese only, or Japanese followed by English. */
 export function Listen() {
-  const { prefs } = useApp();
+  const { prefs, setPrefs } = useApp();
   const [options, setOptions] = useState<ListenOptions>(() => load(OPTIONS_KEY, { language: 'bilingual', minutes: 5, source: 'all', slower: false }));
   const [state, setState] = useState<ListenState | null>(player?.state ?? null);
   const [, setTick] = useState(0);
@@ -161,13 +161,18 @@ export function Listen() {
           <div class="label">
             {state!.finished ? 'Finished' : scene ? `Scene ${state!.scene + 1} of ${player!.playlist.length} · about ${total} min` : 'The end'}
           </div>
-          {scene && <h2 class="listen-title">{scene.scenario.title} <span class="muted" lang="ja">{scene.scenario.titleJa}</span></h2>}
+          {scene && (
+            <h2 class="listen-title">
+              {scene.scenario.title} <span class="muted" lang="ja">{scene.scenario.titleJa}</span>
+              {scene.scenario.titleKana && <span class="muted small listen-title-kana" lang="ja">{scene.scenario.titleKana}</span>}
+            </h2>
+          )}
           {line && !state!.finished && (
             <div class="listen-line">
               {line.speaker && <div class="speaker">{line.speaker}</div>}
               <div class="jp" lang="ja">{line.japanese}</div>
-              {line.kana && line.kana !== line.japanese && <div class="kana" lang="ja">{line.kana}</div>}
-              {prefs.showRomaji && line.kana && <div class="romaji">{romajiOf(line.japanese, line.kana)}</div>}
+              {line.kana && line.kana !== line.japanese && <div class="kana listen-kana" lang="ja">{line.kana}</div>}
+              {prefs.showRomaji && <div class="romaji">{romajiOf(line.japanese, line.kana)}</div>}
               {(options.language === 'bilingual' || prefs.showEnglish) && line.english && <div class="english">{line.english}</div>}
             </div>
           )}
@@ -178,6 +183,10 @@ export function Listen() {
             </button>
             <button type="button" class="button step" onClick={() => player!.next()} title="Next scene (→)">⏭<span>Next</span></button>
             <button type="button" class="button" onClick={stop}>■ Stop</button>
+          </div>
+          <div class="chips">
+            <Chip selected={prefs.showRomaji} onClick={() => setPrefs({ showRomaji: !prefs.showRomaji })}>Romaji</Chip>
+            <Chip selected={prefs.showEnglish} onClick={() => setPrefs({ showEnglish: !prefs.showEnglish })}>English on screen</Chip>
           </div>
           <ol class="listen-list">
             {player!.playlist.map((s, i) => (
