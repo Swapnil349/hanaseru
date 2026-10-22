@@ -10,8 +10,11 @@ import android.os.Looper
 /**
  * The phone's sound, held while the coach speaks or listens, so music and other apps pause instead of playing over
  * (or ducking) the lesson. It is kept for a moment between lines and given back once practice stops. Main thread only.
+ *
+ * Practice asks for it for a short while (AUDIOFOCUS_GAIN_TRANSIENT); Listen, which plays for many minutes, asks
+ * for it outright (AUDIOFOCUS_GAIN).
  */
-class AudioFocus(context: Context) {
+class AudioFocus(context: Context, gain: Int = AudioManager.AUDIOFOCUS_GAIN_TRANSIENT) {
     private val audio = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val main = Handler(Looper.getMainLooper())
     private var users = 0
@@ -23,7 +26,7 @@ class AudioFocus(context: Context) {
     /** Told of every change, e.g. AudioManager.AUDIOFOCUS_LOSS. */
     var onChange: ((Int) -> Unit)? = null
 
-    private val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+    private val request = AudioFocusRequest.Builder(gain)
         .setAudioAttributes(ATTRIBUTES)
         .setWillPauseWhenDucked(false)
         .setOnAudioFocusChangeListener({ change -> changed(change) }, main)

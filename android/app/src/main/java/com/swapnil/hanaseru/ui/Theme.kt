@@ -8,6 +8,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
+import com.swapnil.hanaseru.listen.ListenOptions
 
 /** The iPhone app's colours: the blue line of a Shinkansen and platform-sign amber for "your turn". */
 object Palette {
@@ -74,4 +75,35 @@ class Prefs(context: Context) {
             romaji.value = value
             store.edit().putBoolean("showRomaji", value).apply()
         }
+
+    private val listenChoices = mutableStateOf(readListenOptions())
+
+    /** Listen's choices (language, length, scenes, speed), as last used. */
+    var listenOptions: ListenOptions
+        get() = listenChoices.value
+        set(value) {
+            listenChoices.value = value
+            store.edit()
+                .putString("listenLanguage", value.language.name)
+                .putString("listenLength", value.length.name)
+                .putString("listenSource", value.source.name)
+                .putString("listenSpeed", value.speed.name)
+                .apply()
+        }
+
+    private fun readListenOptions(): ListenOptions {
+        val defaults = ListenOptions()
+        return ListenOptions(
+            language = choice("listenLanguage", defaults.language),
+            length = choice("listenLength", defaults.length),
+            source = choice("listenSource", defaults.source),
+            speed = choice("listenSpeed", defaults.speed),
+        )
+    }
+
+    /** A stored enum, or the default when it's missing or from another version. */
+    private inline fun <reified T : Enum<T>> choice(key: String, default: T): T {
+        val name = store.getString(key, null) ?: return default
+        return enumValues<T>().firstOrNull { it.name == name } ?: default
+    }
 }

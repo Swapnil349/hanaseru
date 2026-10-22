@@ -5,6 +5,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- The AI coach server, when you set one up (Settings). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Listen: scenes keep playing with the screen off, with controls in the notification. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <queries>
         <intent>
@@ -32,6 +37,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Listen: plays a playlist of scenes in the background, controlled from the lock screen and the car. -->
+        <service
+            android:name=".listen.ListenService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
         <!-- Shares exported scenes as files. -->
         <provider
             android:name="androidx.core.content.FileProvider"

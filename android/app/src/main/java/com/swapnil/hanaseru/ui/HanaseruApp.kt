@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -27,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +47,7 @@ import com.swapnil.hanaseru.coach.CoachSettings
 import com.swapnil.hanaseru.coach.MyScenesStore
 import com.swapnil.hanaseru.content.ContentLibrary
 import com.swapnil.hanaseru.content.including
+import com.swapnil.hanaseru.listen.ListenSession
 import com.swapnil.hanaseru.practice.Progress
 import com.swapnil.hanaseru.practice.ScenePractice
 import com.swapnil.hanaseru.voice.Listener
@@ -73,6 +76,7 @@ fun HanaseruApp(
                 sceneCount = current.value.scenarios.size,
                 wordCount = current.value.vocabulary.size,
                 onScenes = { navigation.navigate("scenes") },
+                onListen = { navigation.navigate("listen") },
                 onVocabulary = { navigation.navigate("vocabulary") },
                 onSettings = { navigation.navigate("settings") },
             )
@@ -102,6 +106,10 @@ fun HanaseruApp(
             PracticeScreen(library = current.value, scenarioID = id, mode = mode, playAsPartner = asPartner, speaker = speaker,
                            listener = listener, progress = progress, prefs = prefs, learnerName = coachSettings.learnerName,
                            onBack = { navigation.popBackStack() })
+        }
+        composable("listen") {
+            ListenScreen(library = current.value, prefs = prefs, speaker = speaker, learnerName = coachSettings.learnerName,
+                         myScenes = myScenes.scenes.map { it.id }.toSet(), onBack = { navigation.popBackStack() })
         }
         composable("vocabulary") {
             VocabularyScreen(library = current.value, speaker = speaker, prefs = prefs, onBack = { navigation.popBackStack() })
@@ -133,6 +141,7 @@ private fun HomeScreen(
     sceneCount: Int,
     wordCount: Int,
     onScenes: () -> Unit,
+    onListen: () -> Unit,
     onVocabulary: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -172,11 +181,37 @@ private fun HomeScreen(
                     )
                 }
             }
+            ListenCard(onListen)
             HomeCard(Icons.Filled.Forum, "Scenes", "$sceneCount conversations: read, hear and learn every line, or write your own", onScenes)
             HomeCard(Icons.AutoMirrored.Filled.MenuBook, "My vocabulary", "All $wordCount words in the course, with romaji", onVocabulary)
             HomeCard(Icons.Filled.RecordVoiceOver, "Speaking practice",
                      "Open a scene and tap Practise: watch, repeat, then the real conversation", onScenes)
             HomeCard(Icons.Filled.Settings, "Settings", "Your name, and the AI coach that writes your own scenes", onSettings)
+        }
+    }
+}
+
+/** Listen stands out: it's the one to reach for in the car, at a glance. */
+@Composable
+private fun ListenCard(onClick: () -> Unit) {
+    val listen by ListenSession.state.collectAsState()
+    val colors = MaterialTheme.colorScheme
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = colors.primary, contentColor = colors.onPrimary),
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Headphones, contentDescription = null, modifier = Modifier.size(40.dp))
+            Spacer(Modifier.width(14.dp))
+            Column {
+                Text("Listen while driving", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (listen.isActive) "Playing: ${listen.sceneTitle.ifBlank { "Listen" }}"
+                    else "Short scenes back to back, hands-free, with the screen off",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }

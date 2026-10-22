@@ -64,6 +64,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.swapnil.hanaseru.content.ContentLibrary
 import com.swapnil.hanaseru.content.Romaji
+import com.swapnil.hanaseru.listen.ListenService
 import com.swapnil.hanaseru.practice.Progress
 import com.swapnil.hanaseru.practice.ScenePractice
 import com.swapnil.hanaseru.voice.Listener
@@ -97,6 +98,8 @@ fun PracticeScreen(
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { practice.start() }
 
     LaunchedEffect(practice) {
+        // Listen, if it's playing, stops: the two would talk over each other.
+        ListenService.stopIfPlaying(context)
         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         if (granted) practice.start() else permission.launch(Manifest.permission.RECORD_AUDIO)
     }
