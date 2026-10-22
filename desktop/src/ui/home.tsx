@@ -49,6 +49,13 @@ export function Home() {
             <span class="muted">Open a scene and press Start: watch, repeat, then the real conversation</span>
           </span>
         </a>
+        <a class="card link-card" href="#/listen">
+          <span class="card-icon" aria-hidden="true">🎧</span>
+          <span>
+            <b>Listen while driving</b>
+            <span class="muted">Short scenes back to back, Japanese only or with English. Nothing to look at.</span>
+          </span>
+        </a>
         <a class="card link-card" href="#/vocabulary">
           <span class="card-icon" aria-hidden="true">📖</span>
           <span>

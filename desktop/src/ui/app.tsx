@@ -13,6 +13,7 @@ import { MeetingPractice } from './meeting-practice';
 import { Meetings } from './meetings';
 import { applyScenes } from '../myScenes';
 import { MySceneEditor } from './my-scene';
+import { isListening, Listen } from './listen';
 import { Practice } from './practice';
 import { SceneDetail } from './scene';
 import { Scenes } from './scenes';
@@ -50,6 +51,7 @@ type Route =
   | { page: 'practice'; id: string; mode: Mode; partner: boolean; from: number | null }
   | { page: 'vocabulary' }
   | { page: 'myScene'; editID?: string }
+  | { page: 'listen' }
   | { page: 'meetings' }
   | { page: 'meeting'; id: string }
   | { page: 'meetingPractice'; id: string; which: 'all' | 'starred' }
@@ -68,6 +70,7 @@ function parse(hash: string): Route {
         : { page: 'scenes' };
     }
     case 'vocabulary': return { page: 'vocabulary' };
+    case 'listen': return { page: 'listen' };
     case 'my-scene': return { page: 'myScene', editID: parts[1] === 'edit' ? parts[2] : undefined };
     case 'meetings': return { page: 'meetings' };
     case 'meeting': return parts[1] ? { page: 'meeting', id: parts[1] } : { page: 'meetings' };
@@ -117,8 +120,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    // Leaving a page stops whatever it was saying.
-    speaker.stop();
+    // Leaving a page stops whatever it was saying (but not Listen, which plays on in the background).
+    if (!isListening()) speaker.stop();
     listener.cancel();
     document.querySelector('main')?.scrollTo({ top: 0 });
   }, [route.page, (route as { id?: string }).id]);
@@ -154,6 +157,7 @@ export function App() {
                        partner={route.partner} from={route.from} />;
       break;
     case 'vocabulary': page = <Vocabulary />; break;
+    case 'listen': page = <Listen />; break;
     case 'myScene': page = <MySceneEditor key={route.editID ?? 'new'} editID={route.editID} />; break;
     case 'meetings': page = <Meetings />; break;
     case 'meeting': page = <MeetingPage id={route.id} key={route.id} />; break;
@@ -171,6 +175,7 @@ export function App() {
           </div>
           {nav('home', 'Home', '⌂')}
           {nav('scenes', 'Scenes', '💬')}
+          {nav('listen', 'Listen', '🎧')}
           {nav('vocabulary', 'Vocabulary', '📖')}
           {nav('meetings', 'Meetings', '⏺')}
           {nav('settings', 'Settings', '⚙')}
